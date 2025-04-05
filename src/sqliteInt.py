@@ -1,3 +1,5 @@
+from tokenToConstant import *
+
 SRT_Callback = 1  
 SRT_Mem      = 2  
 SRT_Set      = 3  
