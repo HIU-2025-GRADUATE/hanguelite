@@ -2,13 +2,14 @@ import ply.lex as lex
 
 # 토큰 이름 목록: parse.y에서 사용되는 토큰들과 SQLite의 tokenize.c에 있는 키워드들
 tokens = (
-    'TK_SELECT', 'TK_FROM', 'TK_STAR', 'TK_ID', 'TK_DOT', 'TK_COLUMN'
+    'TK_SELECT', 'TK_FROM', 'TK_STAR', 'TK_ID', 'TK_DOT', 'TK_COLUMN', 'TK_IN'
 )
 
 # 예약어 사전 (대소문자 무시 처리)
 reserved = {
     'SELECT': 'TK_SELECT',
-    'FROM': 'TK_FROM'
+    'FROM': 'TK_FROM',
+    'IN' : 'TK_IN'
 }
 
 # 정규표현식 규칙
