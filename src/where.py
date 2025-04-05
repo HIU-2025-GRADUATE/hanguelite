@@ -1,5 +1,6 @@
 from sqliteInt import *
 
+
 class ExprInfo:
     def __init__(self):
         self.p = None                # Pointer to the subexpression (Expr 객체)
@@ -9,6 +10,47 @@ class ExprInfo:
         self.prereqLeft = 0          # Tables referenced by p->pLeft (bitmask)
         self.prereqRight = 0         # Tables referenced by p->pRight (bitmask)
 
+def exprSplit(nSlot, aSlot, pExpr):
+    cnt = 0
+    if pExpr is None or nSlot < 1:
+        return 0
+    if nSlot == 1 or pExpr.op != TK_AND:
+        aSlot[0].p = pExpr
+        return 1
+    if pExpr.pLeft.op != TK_AND:
+        aSlot[0].p = pExpr.pLeft
+        cnt = 1 + exprSplit(nSlot - 1, aSlot[1:], pExpr.pRight)
+    else:
+        cnt = exprSplit(nSlot, aSlot, pExpr.pRight)
+        cnt += exprSplit(nSlot - cnt, aSlot[cnt:], pExpr.pLeft)
+    return cnt
+
+def exprTableUsage(base, p):
+    mask = 0
+    if p is None:
+        return 0
+    if p.op == TK_COLUMN:
+        return 1 << (p.iTable - base)
+    if p.pRight:
+        mask = exprTableUsage(base, p.pRight)
+    if p.pLeft:
+        mask |= exprTableUsage(base, p.pLeft)
+    return mask
+
+def exprAnalyze(base, pInfo):
+    pExpr = pInfo.p
+    pInfo.prereqLeft = exprTableUsage(base, pExpr.pLeft)
+    pInfo.prereqRight = exprTableUsage(base, pExpr.pRight)
+    pInfo.indexable = 0
+    pInfo.idxLeft = -1
+    pInfo.idxRight = -1
+    if pExpr.op == TK_EQ and (pInfo.prereqRight & pInfo.prereqLeft) == 0:
+        if pExpr.pRight.op == TK_COLUMN:
+            pInfo.idxRight = pExpr.pRight.iTable - base
+            pInfo.indexable = 1
+        if pExpr.pLeft.op == TK_COLUMN:
+            pInfo.idxLeft = pExpr.pLeft.iTable - base
+            pInfo.indexable = 1
 
 def sqliteWhereBegin(pParse, pTabList, pWhere, pushKey):
     v = pParse.pVdbe
@@ -22,10 +64,10 @@ def sqliteWhereBegin(pParse, pTabList, pWhere, pushKey):
     base = pWInfo.base = pParse.nTab
 
     aExpr = [ExprInfo() for _ in range(50)]
-    nExpr = exprSplit(len(aExpr), aExpr, pWhere)   #expr.c 파일에 구현된 함수
+    nExpr = exprSplit(len(aExpr), aExpr, pWhere)   
 
     for i in range(nExpr):
-        exprAnalyze(pParse.nTab, aExpr[i])         #expr.c 파일에 구현된 함수
+        exprAnalyze(pParse.nTab, aExpr[i])         
 
     for i in range(pTabList.nId):
         aOrder[i] = i
