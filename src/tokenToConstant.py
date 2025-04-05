@@ -4,3 +4,6 @@ TK_STAR = 3
 TK_ID = 4
 TK_DOT = 5
 TK_COLUMN = 6
+TK_AND = 7
+TK_EQ = 8
+TK_IN = 9
