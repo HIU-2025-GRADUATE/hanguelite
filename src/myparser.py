@@ -7,6 +7,12 @@ from sqliteInt import Parse
 # pParse, SRT_Callback, sqliteExec, sqliteSelect, sqliteSelectDelete,
 # sqliteSelectNew, sqliteIdListAppend 등의 함수가 이미 구현되어 있다고 가정
 
+pParse = None
+
+def set_parse_object(parse_obj):
+    global pParse
+    pParse = parse_obj
+
 def p_input(p):
     """input : cmdlist"""
     p[0] = p[1]
@@ -18,13 +24,14 @@ def p_cmdlist(p):
 def p_ecmd(p): 
     """ecmd : cmd"""
     # Execute the command.
-    sqliteExec(p[-1]) # parser.parse 함수 호출 시 extra_args 라는 매개변수로 Parse 객체 넘기면 여기서 p[-1]로 받아서 사용 가능
+    global pParse
+    sqliteExec(pParse) 
     p[0] = p[1]
 
 def p_cmd(p):
     """cmd : select"""
     # Execute the SELECT statement with callback and delete the select structure.
-    pParse = p[-1] # parser.parse 함수 호출 시 extra_args 라는 매개변수로 Parse 객체 넘기면 여기서 p[-1]로 받아서 사용 가능
+    global pParse
     sqliteSelect(pParse, p[1], SRT_Callback, 0)
     sqliteSelectDelete(p[1])
     p[0] = p[1]
@@ -60,7 +67,10 @@ def p_seltablist(p):
 def p_id(p):
     """id : TK_ID"""
     # For a simple identifier, return its string.
-    p[0] = p[1]
+    token = Token()
+    token.z = p[1]
+    token.n = len(token.z)
+    p[0] = token
 
 def p_error(p):
     print("Syntax error in input!", p)
