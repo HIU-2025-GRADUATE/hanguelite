@@ -34,7 +34,7 @@ def fillInColumnList(pParse, p):
   pTabList = p.pSrc;
   pEList = p.pEList;
 
-  for i in range(pTabList.nid):
+  for i in range(pTabList.nId):
     if pTabList.a[i].pTab != None:
       return 0
     
@@ -44,7 +44,7 @@ def fillInColumnList(pParse, p):
       pParse.nErr += 1
       return 1
     
-  if pEList== None :
+  if pEList== None:
     for i in range(pTabList.nid):
       pTab = pTabList.a[i].pTab;
       for j in range(pTab.nCol):
