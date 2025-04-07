@@ -128,7 +128,7 @@ def sqliteExprCode(pParse, pExpr): #TODO : 추후에 제대로 함수 구현 필
     v = pParse.pVdbe
 
     if pParse.useAgg:
-        sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr->iAgg, 0, 0)
+        sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr.iAgg, 0, 0)
     else:
-        sqliteVdbeAddOp(v, OP_Field, pExpr->iTable, pExpr->iColumn, 0, 0)
+        sqliteVdbeAddOp(v, OP_Field, pExpr.iTable, pExpr.iColumn, 0, 0)
       
