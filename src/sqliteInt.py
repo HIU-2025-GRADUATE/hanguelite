@@ -7,6 +7,19 @@ SRT_Union    = 5
 SRT_Except   = 6  
 SRT_Table    = 7  
 
+N_HASH = 51
+
+class sqlite:
+    def __init__(self):
+        self.pBe = None                  # Backend driver
+        self.flags = 0                  # Miscellaneous flags
+        self.file_format = 0            # File format version
+        self.nTable = 0                 # Number of tables
+        self.pBusyArg = None            # Argument for busy callback
+        self.xBusyCallback = None       # Busy callback function
+        self.apTblHash = [None] * N_HASH  # Table hash buckets
+        self.apIdxHash = [None] * N_HASH  # Index hash buckets
+
 
 class Column:
     """
