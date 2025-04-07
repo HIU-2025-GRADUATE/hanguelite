@@ -1,6 +1,7 @@
 import ply.yacc as yacc
 from mylexer import tokens  # lex에서 정의한 토큰들을 임포트
 from src.select import *
+from sqliteInt import Parse
 
 # 전역 파서 컨텍스트 등 (예: pParse, SRT_Callback 등)
 # pParse, SRT_Callback, sqliteExec, sqliteSelect, sqliteSelectDelete,
@@ -14,13 +15,13 @@ def p_cmdlist(p):
     """cmdlist : ecmd"""
     p[0] = p[1]
 
-def p_ecmd(p):
+def p_ecmd(p, pParse): # parser.parse 함수 호출 시 extra_args 라는 매개변수로 Parse 객체 넘기면 여기서 받아서 사용 가능
     """ecmd : cmd"""
     # Execute the command.
     sqliteExec(pParse)
     p[0] = p[1]
 
-def p_cmd(p):
+def p_cmd(p, pParse):
     """cmd : select"""
     # Execute the SELECT statement with callback and delete the select structure.
     sqliteSelect(pParse, p[1], SRT_Callback, 0)
