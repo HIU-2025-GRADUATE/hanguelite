@@ -1,6 +1,7 @@
 from sqliteInt import *
 from where import *
 from expr import *
+from build import *
 from tokenToConstant import *
 
 def sqliteSelectNew(pEList, pSrc, pWhere, pGroupBy, pHaving, pOrderBy, isDistinct):
