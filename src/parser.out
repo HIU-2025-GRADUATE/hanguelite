@@ -1,0 +1,265 @@
+Created by PLY (http://www.dabeaz.com/ply)
+
+Grammar
+
+Rule 0     S' -> input
+Rule 1     input -> cmdlist
+Rule 2     cmdlist -> ecmd
+Rule 3     ecmd -> cmd
+Rule 4     cmd -> create_table create_table_args
+Rule 5     create_table -> CREATE TABLE id
+Rule 6     create_table_args -> LP columnlist RP
+Rule 7     columnlist -> columnlist COMMA column
+Rule 8     columnlist -> column
+Rule 9     column -> columnid type
+Rule 10    columnid -> id
+Rule 11    type -> typename
+Rule 12    typename -> id
+Rule 13    id -> STRING
+Rule 14    id -> ID
+
+Terminals, with rules where they appear
+
+COMMA                : 7
+CREATE               : 5
+ID                   : 14
+LP                   : 6
+RP                   : 6
+STRING               : 13
+TABLE                : 5
+error                : 
+
+Nonterminals, with rules where they appear
+
+cmd                  : 3
+cmdlist              : 1
+column               : 7 8
+columnid             : 9
+columnlist           : 6 7
+create_table         : 4
+create_table_args    : 4
+ecmd                 : 2
+id                   : 5 10 12
+input                : 0
+type                 : 9
+typename             : 11
+
+
+state 0
+
+    (0) S' -> . input
+    (1) input -> . cmdlist
+    (2) cmdlist -> . ecmd
+    (3) ecmd -> . cmd
+    (4) cmd -> . create_table create_table_args
+    (5) create_table -> . CREATE TABLE id
+
+    CREATE          shift and go to state 6
+
+    input                          shift and go to state 1
+    cmdlist                        shift and go to state 2
+    ecmd                           shift and go to state 3
+    cmd                            shift and go to state 4
+    create_table                   shift and go to state 5
+
+state 1
+
+    (0) S' -> input .
+
+
+
+state 2
+
+    (1) input -> cmdlist .
+
+    $end            reduce using rule 1 (input -> cmdlist .)
+
+
+state 3
+
+    (2) cmdlist -> ecmd .
+
+    $end            reduce using rule 2 (cmdlist -> ecmd .)
+
+
+state 4
+
+    (3) ecmd -> cmd .
+
+    $end            reduce using rule 3 (ecmd -> cmd .)
+
+
+state 5
+
+    (4) cmd -> create_table . create_table_args
+    (6) create_table_args -> . LP columnlist RP
+
+    LP              shift and go to state 8
+
+    create_table_args              shift and go to state 7
+
+state 6
+
+    (5) create_table -> CREATE . TABLE id
+
+    TABLE           shift and go to state 9
+
+
+state 7
+
+    (4) cmd -> create_table create_table_args .
+
+    $end            reduce using rule 4 (cmd -> create_table create_table_args .)
+
+
+state 8
+
+    (6) create_table_args -> LP . columnlist RP
+    (7) columnlist -> . columnlist COMMA column
+    (8) columnlist -> . column
+    (9) column -> . columnid type
+    (10) columnid -> . id
+    (13) id -> . STRING
+    (14) id -> . ID
+
+    STRING          shift and go to state 14
+    ID              shift and go to state 15
+
+    columnlist                     shift and go to state 10
+    column                         shift and go to state 11
+    columnid                       shift and go to state 12
+    id                             shift and go to state 13
+
+state 9
+
+    (5) create_table -> CREATE TABLE . id
+    (13) id -> . STRING
+    (14) id -> . ID
+
+    STRING          shift and go to state 14
+    ID              shift and go to state 15
+
+    id                             shift and go to state 16
+
+state 10
+
+    (6) create_table_args -> LP columnlist . RP
+    (7) columnlist -> columnlist . COMMA column
+
+    RP              shift and go to state 17
+    COMMA           shift and go to state 18
+
+
+state 11
+
+    (8) columnlist -> column .
+
+    RP              reduce using rule 8 (columnlist -> column .)
+    COMMA           reduce using rule 8 (columnlist -> column .)
+
+
+state 12
+
+    (9) column -> columnid . type
+    (11) type -> . typename
+    (12) typename -> . id
+    (13) id -> . STRING
+    (14) id -> . ID
+
+    STRING          shift and go to state 14
+    ID              shift and go to state 15
+
+    type                           shift and go to state 19
+    typename                       shift and go to state 20
+    id                             shift and go to state 21
+
+state 13
+
+    (10) columnid -> id .
+
+    STRING          reduce using rule 10 (columnid -> id .)
+    ID              reduce using rule 10 (columnid -> id .)
+
+
+state 14
+
+    (13) id -> STRING .
+
+    STRING          reduce using rule 13 (id -> STRING .)
+    ID              reduce using rule 13 (id -> STRING .)
+    LP              reduce using rule 13 (id -> STRING .)
+    RP              reduce using rule 13 (id -> STRING .)
+    COMMA           reduce using rule 13 (id -> STRING .)
+
+
+state 15
+
+    (14) id -> ID .
+
+    STRING          reduce using rule 14 (id -> ID .)
+    ID              reduce using rule 14 (id -> ID .)
+    LP              reduce using rule 14 (id -> ID .)
+    RP              reduce using rule 14 (id -> ID .)
+    COMMA           reduce using rule 14 (id -> ID .)
+
+
+state 16
+
+    (5) create_table -> CREATE TABLE id .
+
+    LP              reduce using rule 5 (create_table -> CREATE TABLE id .)
+
+
+state 17
+
+    (6) create_table_args -> LP columnlist RP .
+
+    $end            reduce using rule 6 (create_table_args -> LP columnlist RP .)
+
+
+state 18
+
+    (7) columnlist -> columnlist COMMA . column
+    (9) column -> . columnid type
+    (10) columnid -> . id
+    (13) id -> . STRING
+    (14) id -> . ID
+
+    STRING          shift and go to state 14
+    ID              shift and go to state 15
+
+    column                         shift and go to state 22
+    columnid                       shift and go to state 12
+    id                             shift and go to state 13
+
+state 19
+
+    (9) column -> columnid type .
+
+    RP              reduce using rule 9 (column -> columnid type .)
+    COMMA           reduce using rule 9 (column -> columnid type .)
+
+
+state 20
+
+    (11) type -> typename .
+
+    RP              reduce using rule 11 (type -> typename .)
+    COMMA           reduce using rule 11 (type -> typename .)
+
+
+state 21
+
+    (12) typename -> id .
+
+    RP              reduce using rule 12 (typename -> id .)
+    COMMA           reduce using rule 12 (typename -> id .)
+
+
+state 22
+
+    (7) columnlist -> columnlist COMMA column .
+
+    RP              reduce using rule 7 (columnlist -> columnlist COMMA column .)
+    COMMA           reduce using rule 7 (columnlist -> columnlist COMMA column .)
+
