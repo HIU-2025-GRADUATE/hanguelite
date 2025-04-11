@@ -1,7 +1,6 @@
 import ply.yacc as yacc
-from src.tokenize import tokens  # lex에서 정의한 토큰들을 임포트
+from src.tokenizer import tokens  # lex에서 정의한 토큰들을 임포트
 from src.select import *
-from sqliteInt import Parse
 
 # 전역 파서 컨텍스트 등 (예: pParse, SRT_Callback 등)
 # pParse, SRT_Callback, sqliteExec, sqliteSelect, sqliteSelectDelete,
