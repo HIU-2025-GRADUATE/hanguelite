@@ -1,4 +1,5 @@
 from sqliteInt import *
+from util import *
 
 
 def sqliteExec(pParse):
