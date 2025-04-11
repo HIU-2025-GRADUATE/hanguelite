@@ -1,5 +1,5 @@
 import ply.yacc as yacc
-from myLexer import tokens  # lex에서 정의한 토큰들을 임포트
+from mylexer import tokens  # lex에서 정의한 토큰들을 임포트
 from src.select import *
 from sqliteInt import Parse
 
