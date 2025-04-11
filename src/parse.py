@@ -1,7 +1,7 @@
 import ply.yacc as yacc
 from src.build import *
 from sql_struct import Parse
-from tokenizer2 import tokens
+from tokenizer import tokens
 
 def p_input_commands(p):
     'input : cmdlist'
