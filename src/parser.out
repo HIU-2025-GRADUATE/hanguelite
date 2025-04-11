@@ -185,7 +185,7 @@ state 14
 
     (13) id -> STRING .
 
-    STRING          reduce using rule 13 (id -> STRING .)
+    STRING          redsuce using rule 13 (id -> STRING .)
     ID              reduce using rule 13 (id -> STRING .)
     LP              reduce using rule 13 (id -> STRING .)
     RP              reduce using rule 13 (id -> STRING .)
