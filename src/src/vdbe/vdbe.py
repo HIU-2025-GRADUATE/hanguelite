@@ -125,8 +125,8 @@ class Vdbe:
   ** their p2 fields.
   """
   def addOp(self, op: int, p1: int, p2: int, p3: str, lbl: int) -> int:
-    p = self # 참고
     pass
+  # int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2, const char *p3, int lbl){
   #   int i, j;
   #
   #   i = p->nOp;
@@ -167,8 +167,8 @@ class Vdbe:
   ** be inserted.
   """
   def resolveLabel(self, x: int):
-    p = self # 참고
     pass
+  # void sqliteVdbeResolveLabel(Vdbe * p, int x){
   # {
   #   int j;
   #   if( x<0 && (-x)<=p->nLabel ){
@@ -239,7 +239,7 @@ class Vdbe:
   ** strings of whitespace characters into a single space and
   ** delete leading and trailing whitespace.
   
-  파이썬으로는 문자열 조작 메서드 딸깍이면 됨 ㅋㅋ
+  파이썬으로는 문자열 조작 메서드 딸깍이면 돼서 없어도 될 것 같기도?
   """
   # void sqliteVdbeCompressSpace(Vdbe *p, int addr){
   #   char *z;
@@ -545,8 +545,7 @@ class Vdbe:
   */
   """
   def exec(self, xCallback, pArg, pzErrMsg: str, pBusyArg, xBusy) -> int:
-    rc: int = 0
-    return rc
+    pass
   """
   int sqliteVdbeExec(
     Vdbe *p,                   /* The VDBE */
