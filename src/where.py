@@ -152,17 +152,17 @@ def sqliteWhereBegin(pParse, pTabList, pWhere, pushKey):
 
         loopMask |= 1 << idx
 
-        for j in range(nExpr):
-            if aExpr[j].p is None:
-                continue
-            if ((aExpr[j].prereqRight & loopMask) != aExpr[j].prereqRight or
-                (aExpr[j].prereqLeft & loopMask) != aExpr[j].prereqLeft):
-                continue
-            if haveKey:
-                sqliteVdbeAddOp(v, OP_Fetch, base + idx, 0, 0, 0)
-                haveKey = False
-            sqliteExprIfFalse(pParse, aExpr[j].p, cont)
-            aExpr[j].p = None
+        # for j in range(nExpr):
+        #     if aExpr[j].p is None:
+        #         continue
+        #     if ((aExpr[j].prereqRight & loopMask) != aExpr[j].prereqRight or
+        #         (aExpr[j].prereqLeft & loopMask) != aExpr[j].prereqLeft):
+        #         continue
+        #     if haveKey:
+        #         sqliteVdbeAddOp(v, OP_Fetch, base + idx, 0, 0, 0)
+        #         haveKey = False
+        #     sqliteExprIfFalse(pParse, aExpr[j].p, cont)
+        #     aExpr[j].p = None
 
         brk = cont
 
