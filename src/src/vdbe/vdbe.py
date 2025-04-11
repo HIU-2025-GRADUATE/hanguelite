@@ -59,6 +59,10 @@ from vdbeOp import VdbeOp
 ** An instance of the virtual machine
 """
 class Vdbe:
+  """
+  ** 기존의 createVdbe 함수가 Dbbe 를 인자로 받아서 VDBE 구조체 기반으로 메모리 할당해서 객체 만들고 포인터를 리턴하는 방식이었음.
+  ** 이 로직은 정확히 생성자가 하는 일과 일치해서 해당 함수는 제거하고 생성자로 대체함.
+  """
   def __init__(self, pBe: Dbbe):
     self.pBe: Dbbe = pBe    # /* Opaque context structure used by DB backend */
     # FILE *trace;          # /* Write an execution trace here, if not NULL */
