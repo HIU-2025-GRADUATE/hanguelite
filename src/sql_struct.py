@@ -1,3 +1,15 @@
+"""
+    The number of entries in the in-memory hash array holding the database schema.
+"""
+N_HASH = 51
+
+"""
+    Name of the master database table.
+    The master database table is a special table
+    that holds the names and attributes of all user tables and indices.
+"""
+MASTER_NAME = "hqlite_master"
+
 class Parse:
 
     def __init__(self):

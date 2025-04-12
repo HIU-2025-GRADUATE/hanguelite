@@ -13,7 +13,7 @@ def p_commands_command_end(p):
 
 def p_command_end_command(p):
     'ecmd : cmd'
-    sql_exec(parse)  # Execute SQL
+    exec(parse)  # Execute SQL
 
 """
     CREATE TABLE
@@ -25,11 +25,12 @@ def p_create_table(p):
     'create_table : CREATE TABLE id'
     # test
     parse.error_msg = f"create table named : {p[3]}"
-    sql_start_table(parse, p[3])
+    startTable(parse, p[3])
 
 def p_create_table_args(p):
     'create_table_args : LP columnlist RP' # constraint 는 아직 고려 안함
-    sql_end_table(parse)
+    p[0] = " ".join(p[1:])
+    endTable(parse, p[0])
 
 def p_columnlist_multiple(p):
     'columnlist : columnlist COMMA column'
@@ -42,7 +43,7 @@ def p_column(p):
 
 def p_columnid(p):
     'columnid : id'
-    sql_add_column(parse, p[1])
+    addColumn(parse, p[1])
     p[0] = p[1]
 
 def p_type(p):
