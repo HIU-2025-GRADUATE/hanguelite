@@ -21,16 +21,19 @@ def fillInColumnList(pParse : Parse, p : Select):
     for i in range(pTabList.nid):
       pTab = pTabList.a[i].pTab;
       for j in range(pTab.nCol):
-        pExpr = expr(TK_DOT, None, None, None);
-        pExpr.pLeft = expr(TK_ID, None, None, None);
+        pExpr = Expr(TK_DOT, None, None, None);
+        pExpr.pLeft = Expr(TK_ID, None, None, None);
         pExpr.pLeft.token.z = pTab.zName;
         pExpr.pLeft.token.n = len(pTab.zName);
-        pExpr.pRight = expr(TK_ID, None, None, None);
+        pExpr.pRight = Expr(TK_ID, None, None, None);
         pExpr.pRight.token.z = pTab.aCol[j].zName;
         pExpr.pRight.token.n = len(pTab.aCol[j].zName);
         pExpr.span.z = "";
         pExpr.span.n = 0;
-        pEList = exprListAppend(pEList, pExpr, None);
+
+        if pEList is None:
+            pEList = ExprList()
+        pEList.exprListAppend(pExpr, None);
       
     
     p.pEList = pEList;

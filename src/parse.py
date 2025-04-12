@@ -60,7 +60,11 @@ def p_stl_prefix_empty(p):
 def p_seltablist(p):
     """seltablist : stl_prefix id"""
     # Append the identifier to the prefix list.
-    p[0] = idListAppend(p[1], p[2])
+    if p[1] is None:
+        p[1] = IdList()
+    p[1].idListAppend(p[2])
+    p[0] = p[1]
+
 
 def p_id(p):
     """id : TK_ID"""
