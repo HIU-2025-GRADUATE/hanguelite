@@ -24,14 +24,14 @@ def p_ecmd(p):
     """ecmd : cmd"""
     # Execute the command.
     global pParse
-    sqliteExec(pParse) 
+    exec(pParse) 
     p[0] = p[1]
 
 def p_cmd(p):
     """cmd : select"""
     # Execute the SELECT statement with callback and delete the select structure.
     global pParse
-    sqliteSelect(pParse, p[1], SRT_Callback, 0)
+    select(pParse, p[1], SRT_Callback, 0)
     p[0] = p[1]
 
 def p_select(p):
@@ -60,7 +60,7 @@ def p_stl_prefix_empty(p):
 def p_seltablist(p):
     """seltablist : stl_prefix id"""
     # Append the identifier to the prefix list.
-    p[0] = sqliteIdListAppend(p[1], p[2])
+    p[0] = idListAppend(p[1], p[2])
 
 def p_id(p):
     """id : TK_ID"""

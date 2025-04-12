@@ -63,7 +63,7 @@ def exprAnalyze(base : int, pInfo : ExprInfo):
             pInfo.idxLeft = pExpr.pLeft.iTable - base
             pInfo.indexable = 1
 
-def sqliteWhereBegin(pParse : Parse, pTabList : IdList, pWhere : Expr, pushKey : int):
+def whereBegin(pParse : Parse, pTabList : IdList, pWhere : Expr, pushKey : int):
     v = pParse.pVdbe
     aOrder = [0] * pTabList.nId
     pWInfo = WhereInfo()
@@ -181,7 +181,7 @@ def sqliteWhereBegin(pParse : Parse, pTabList : IdList, pWhere : Expr, pushKey :
 
     return pWInfo
 
-def sqliteWhereEnd(pWInfo : WhereInfo):
+def whereEnd(pWInfo : WhereInfo):
     v = pWInfo.pParse.pVdbe
     brk = pWInfo.iBreak
     base = pWInfo.base

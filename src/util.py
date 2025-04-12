@@ -1,6 +1,6 @@
 from sqliteInt import *
 
-def sqliteHashNoCase(z : str, n : int):
+def hashNoCase(z : str, n : int):
     UpperToLower = [i for i in range(256)]
     for i in range(ord('A'), ord('Z') + 1):
         UpperToLower[i] = ord(chr(i).lower())

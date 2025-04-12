@@ -11,7 +11,7 @@ def fillInColumnList(pParse : Parse, p : Select):
     if pTabList.a[i].pTab:
       return 0
     
-    pTabList.a[i].pTab = sqliteFindTable(pParse.db, pTabList.a[i].zName);  # build.c 파일에 구현된 함수
+    pTabList.a[i].pTab = findTable(pParse.db, pTabList.a[i].zName);  # build.c 파일에 구현된 함수
     if pTabList.a[i].pTab == None: 
     #   sqliteSetString(&pParse.zErrMsg, "no such table: ", .a[i].zName, 0);
       pParse.nErr += 1
@@ -21,16 +21,16 @@ def fillInColumnList(pParse : Parse, p : Select):
     for i in range(pTabList.nid):
       pTab = pTabList.a[i].pTab;
       for j in range(pTab.nCol):
-        pExpr = sqliteExpr(TK_DOT, None, None, None);
-        pExpr.pLeft = sqliteExpr(TK_ID, None, None, None);
+        pExpr = expr(TK_DOT, None, None, None);
+        pExpr.pLeft = expr(TK_ID, None, None, None);
         pExpr.pLeft.token.z = pTab.zName;
         pExpr.pLeft.token.n = len(pTab.zName);
-        pExpr.pRight = sqliteExpr(TK_ID, None, None, None);
+        pExpr.pRight = expr(TK_ID, None, None, None);
         pExpr.pRight.token.z = pTab.aCol[j].zName;
         pExpr.pRight.token.n = len(pTab.aCol[j].zName);
         pExpr.span.z = "";
         pExpr.span.n = 0;
-        pEList = sqliteExprListAppend(pEList, pExpr, None);
+        pEList = exprListAppend(pEList, pExpr, None);
       
     
     p.pEList = pEList;
@@ -88,7 +88,7 @@ def selectInnerLoop(pParse : Parse, pEList : ExprList, srcTab : int, nColumn : i
     # Pull the requested columns.
     if pEList:
         for i in range(pEList.nExpr):
-            sqliteExprCode(pParse, pEList.a[i].pExpr)
+            exprCode(pParse, pEList.a[i].pExpr)
         nColumn = pEList.nExpr
     else:
         for i in range(nColumn):
@@ -98,7 +98,7 @@ def selectInnerLoop(pParse : Parse, pEList : ExprList, srcTab : int, nColumn : i
 
     return 0
     
-def sqliteSelect(pParse : Parse, p : Select, eDest : int, iParm : int):
+def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     isAgg = 0
     distinct = -1
 
@@ -135,7 +135,7 @@ def sqliteSelect(pParse : Parse, p : Select, eDest : int, iParm : int):
         pOrderBy = None
 
     for i in range(pEList.nExpr):
-        sqliteExprResolveInSelect(pParse, pEList.a[i].pExpr)
+        exprResolveInSelect(pParse, pEList.a[i].pExpr)
 
     # if pWhere:
     #     sqliteExprResolveInSelect(pParse, pWhere)
@@ -152,7 +152,7 @@ def sqliteSelect(pParse : Parse, p : Select, eDest : int, iParm : int):
     #     sqliteExprResolveInSelect(pParse, pHaving)
 
     for i in range(pEList.nExpr):
-        if sqliteExprResolveIds(pParse, pTabList, pEList.a[i].pExpr):
+        if exprResolveIds(pParse, pTabList, pEList.a[i].pExpr):
             return 1
         # if sqliteExprCheck(pParse, pEList.a[i].pExpr, 1, isAgg):
         #     return 1
@@ -231,7 +231,7 @@ def sqliteSelect(pParse : Parse, p : Select, eDest : int, iParm : int):
     # if isDistinct:
     #     sqliteVdbeAddOp(v, OP_Open, distinct, 1, None, None)
 
-    pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 0)
+    pWInfo = whereBegin(pParse, pTabList, pWhere, 0)
     if pWInfo is None:
         return 1
 
@@ -286,7 +286,7 @@ def sqliteSelect(pParse : Parse, p : Select, eDest : int, iParm : int):
     #         sqliteVdbeAddOp(v, op, 0, 0, None, None)
     #         sqliteVdbeAddOp(v, OP_AggSet, 0, i, None, None)
 
-    sqliteWhereEnd(pWInfo)
+    whereEnd(pWInfo)
 
     # if isAgg:
     #     endagg = sqliteVdbeMakeLabel(v)
