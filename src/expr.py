@@ -1,10 +1,10 @@
 from sqliteInt import *
 
-def sqliteExprResolveInSelect(pParse, pExpr):
+def sqliteExprResolveInSelect(pParse : Parse, pExpr : Expr):
     if pExpr is None:
         return
 
-    if pExpr.op == TK_IN and pExpr.pSelect is not None:
+    if pExpr.op == TK_IN and pExpr.pSelect:
         pExpr.iTable = pParse.nTab
         pParse.nTab += 1
     else:
@@ -16,7 +16,7 @@ def sqliteExprResolveInSelect(pParse, pExpr):
             for expr_item in pExpr.pList.a:
                 sqliteExprResolveInSelect(pParse, expr_item.pExpr)
 
-def sqliteExprResolveIds(pParse, pTabList, pExpr):
+def sqliteExprResolveIds(pParse : Parse, pTabList : IdList, pExpr : Expr):
     if pExpr is None:
         return 0
 
@@ -124,7 +124,7 @@ def sqliteExprResolveIds(pParse, pTabList, pExpr):
 
     return 0
 
-def sqliteExprCode(pParse, pExpr): #TODO : 추후에 제대로 함수 구현 필수
+def sqliteExprCode(pParse : Parse, pExpr : Expr): #TODO : 추후에 제대로 함수 구현 필수
     v = pParse.pVdbe
 
     if pParse.useAgg:

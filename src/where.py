@@ -2,30 +2,41 @@ from sqliteInt import *
 
 
 class ExprInfo:
-    def __init__(self):
-        self.p = None                # Pointer to the subexpression (Expr 객체)
-        self.indexable = 0           # True if usable by an index
-        self.idxLeft = -1            # Index of table for p->pLeft, -1 if not a table column
-        self.idxRight = -1           # Index of table for p->pRight, -1 if not a table column
-        self.prereqLeft = 0          # Tables referenced by p->pLeft (bitmask)
-        self.prereqRight = 0         # Tables referenced by p->pRight (bitmask)
+        p : Expr
+        indexable : int
+        idxLeft : int
+        idxRight : int
+        prereqLeft : int
+        prereqRight : int
 
-def exprSplit(nSlot, aSlot, pExpr):
+        def __init__(self):
+            self.p = None
+            self.indexable = 0
+            self.idxLeft = -1
+            self.idxRight = -1
+            self.prereqLeft = 0
+            self.prereqRight = 0
+
+def exprSplit(nSlot : int, aSlot : list[ExprInfo], pExpr : Expr):
     cnt = 0
     if pExpr is None or nSlot < 1:
         return 0
     if nSlot == 1 or pExpr.op != TK_AND:
-        aSlot[0].p = pExpr
+        e = ExprInfo()
+        e.p = pExpr
+        aSlot.append(e)
         return 1
     if pExpr.pLeft.op != TK_AND:
-        aSlot[0].p = pExpr.pLeft
-        cnt = 1 + exprSplit(nSlot - 1, aSlot[1:], pExpr.pRight)
+        e = ExprInfo()
+        e.p = pExpr.pLeft
+        aSlot.append(e)
+        cnt = 1 + exprSplit(nSlot - 1, aSlot, pExpr.pRight)
     else:
         cnt = exprSplit(nSlot, aSlot, pExpr.pRight)
-        cnt += exprSplit(nSlot - cnt, aSlot[cnt:], pExpr.pLeft)
+        cnt += exprSplit(nSlot - cnt, aSlot, pExpr.pLeft)
     return cnt
 
-def exprTableUsage(base, p):
+def exprTableUsage(base : int, p : Expr):
     mask = 0
     if p is None:
         return 0
@@ -37,7 +48,7 @@ def exprTableUsage(base, p):
         mask |= exprTableUsage(base, p.pLeft)
     return mask
 
-def exprAnalyze(base, pInfo):
+def exprAnalyze(base : int, pInfo : ExprInfo):
     pExpr = pInfo.p
     pInfo.prereqLeft = exprTableUsage(base, pExpr.pLeft)
     pInfo.prereqRight = exprTableUsage(base, pExpr.pRight)
@@ -52,19 +63,17 @@ def exprAnalyze(base, pInfo):
             pInfo.idxLeft = pExpr.pLeft.iTable - base
             pInfo.indexable = 1
 
-def sqliteWhereBegin(pParse, pTabList, pWhere, pushKey):
+def sqliteWhereBegin(pParse : Parse, pTabList : IdList, pWhere : Expr, pushKey : int):
     v = pParse.pVdbe
     aOrder = [0] * pTabList.nId
     pWInfo = WhereInfo()
-    if pWInfo is None:
-        return None
 
     pWInfo.pParse = pParse
     pWInfo.pTabList = pTabList
     base = pWInfo.base = pParse.nTab
 
-    aExpr = [ExprInfo() for _ in range(50)]
-    nExpr = exprSplit(len(aExpr), aExpr, pWhere)   
+    aExpr = []
+    nExpr = exprSplit(50, aExpr, pWhere)   
 
     for i in range(nExpr):
         exprAnalyze(pParse.nTab, aExpr[i])         
@@ -80,29 +89,29 @@ def sqliteWhereBegin(pParse, pTabList, pWhere, pushKey):
         pIdx = pTab.pIndex
         pBestIdx = None
 
-        while pIdx:
-            if pIdx.nColumn > 32:
-                pIdx = pIdx.pNext
-                continue
+        # while pIdx:
+        #     if pIdx.nColumn > 32:
+        #         pIdx = pIdx.pNext
+        #         continue
 
-            columnMask = 0
-            for j in range(nExpr):
-                if aExpr[j].idxLeft == idx and (aExpr[j].prereqRight & loopMask) == aExpr[j].prereqRight:
-                    iColumn = aExpr[j].p.pLeft.iColumn
-                    for k in range(pIdx.nColumn):
-                        if pIdx.aiColumn[k] == iColumn:
-                            columnMask |= 1 << k
-                            break
-                if aExpr[j].idxRight == idx and (aExpr[j].prereqLeft & loopMask) == aExpr[j].prereqLeft:
-                    iColumn = aExpr[j].p.pRight.iColumn
-                    for k in range(pIdx.nColumn):
-                        if pIdx.aiColumn[k] == iColumn:
-                            columnMask |= 1 << k
-                            break
-            if columnMask + 1 == (1 << pIdx.nColumn):
-                if pBestIdx is None or pBestIdx.nColumn < pIdx.nColumn:
-                    pBestIdx = pIdx
-            pIdx = pIdx.pNext
+        #     columnMask = 0
+        #     for j in range(nExpr):
+        #         if aExpr[j].idxLeft == idx and (aExpr[j].prereqRight & loopMask) == aExpr[j].prereqRight:
+        #             iColumn = aExpr[j].p.pLeft.iColumn
+        #             for k in range(pIdx.nColumn):
+        #                 if pIdx.aiColumn[k] == iColumn:
+        #                     columnMask |= 1 << k
+        #                     break
+        #         if aExpr[j].idxRight == idx and (aExpr[j].prereqLeft & loopMask) == aExpr[j].prereqLeft:
+        #             iColumn = aExpr[j].p.pRight.iColumn
+        #             for k in range(pIdx.nColumn):
+        #                 if pIdx.aiColumn[k] == iColumn:
+        #                     columnMask |= 1 << k
+        #                     break
+        #     if columnMask + 1 == (1 << pIdx.nColumn):
+        #         if pBestIdx is None or pBestIdx.nColumn < pIdx.nColumn:
+        #             pBestIdx = pIdx
+        #     pIdx = pIdx.pNext
 
         aIdx[i] = pBestIdx
         loopMask |= 1 << idx
@@ -112,7 +121,7 @@ def sqliteWhereBegin(pParse, pTabList, pWhere, pushKey):
         if i < len(aIdx) and aIdx[i] is not None:
             sqliteVdbeAddOp(v, OP_Open, base + pTabList.nId + i, 0, aIdx[i].zName, 0)
 
-    pWInfo.aIdx = aIdx.copy()
+    pWInfo.aIdx = aIdx
     pWInfo.iBreak = brk = sqliteVdbeMakeLabel(v)
     loopMask = 0
 
@@ -172,7 +181,7 @@ def sqliteWhereBegin(pParse, pTabList, pWhere, pushKey):
 
     return pWInfo
 
-def sqliteWhereEnd(pWInfo):
+def sqliteWhereEnd(pWInfo : WhereInfo):
     v = pWInfo.pParse.pVdbe
     brk = pWInfo.iBreak
     base = pWInfo.base

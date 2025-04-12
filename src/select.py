@@ -1,41 +1,14 @@
-from sqliteInt import *
 from where import *
 from expr import *
 from build import *
 from tokenToConstant import *
 
-def sqliteSelectNew(pEList, pSrc, pWhere, pGroupBy, pHaving, pOrderBy, isDistinct):
-    pNew = Select()
-    if pNew is None:
-        return None  # 메모리 할당 실패 (파이썬에서는 필요 없지만 C 코드와 구조를 맞춤)
-
-    pNew.pEList = pEList
-    pNew.pSrc = pSrc
-    pNew.pWhere = pWhere
-    pNew.pGroupBy = pGroupBy
-    pNew.pHaving = pHaving
-    pNew.pOrderBy = pOrderBy
-    pNew.isDistinct = isDistinct
-    pNew.op = TK_SELECT 
-    return pNew
-
-def sqliteSelectDelete(p):
-  if p is None:
-     return
-  del p
-
-def sqliteParseInfoReset(pParse):
-  pParse.aAgg = 0
-  pParse.nAgg = 0
-  pParse.iAggCount = -1
-  pParse.useAgg = 0
-
-def fillInColumnList(pParse, p):
+def fillInColumnList(pParse : Parse, p : Select):
   pTabList = p.pSrc;
   pEList = p.pEList;
 
   for i in range(pTabList.nId):
-    if pTabList.a[i].pTab != None:
+    if pTabList.a[i].pTab:
       return 0
     
     pTabList.a[i].pTab = sqliteFindTable(pParse.db, pTabList.a[i].zName);  # build.c 파일에 구현된 함수
@@ -44,20 +17,20 @@ def fillInColumnList(pParse, p):
       pParse.nErr += 1
       return 1
     
-  if pEList== None:
+  if pEList == None:
     for i in range(pTabList.nid):
       pTab = pTabList.a[i].pTab;
       for j in range(pTab.nCol):
-        pExpr = sqliteExpr(TK_DOT, 0, 0, 0);
-        pExpr.pLeft = sqliteExpr(TK_ID, 0, 0, 0);
+        pExpr = sqliteExpr(TK_DOT, None, None, None);
+        pExpr.pLeft = sqliteExpr(TK_ID, None, None, None);
         pExpr.pLeft.token.z = pTab.zName;
         pExpr.pLeft.token.n = len(pTab.zName);
-        pExpr.pRight = sqliteExpr(TK_ID, 0, 0, 0);
+        pExpr.pRight = sqliteExpr(TK_ID, None, None, None);
         pExpr.pRight.token.z = pTab.aCol[j].zName;
         pExpr.pRight.token.n = len(pTab.aCol[j].zName);
         pExpr.span.z = "";
         pExpr.span.n = 0;
-        pEList = sqliteExprListAppend(pEList, pExpr, 0);
+        pEList = sqliteExprListAppend(pEList, pExpr, None);
       
     
     p.pEList = pEList;
@@ -65,7 +38,7 @@ def fillInColumnList(pParse, p):
   return 0
 
 # opcode 상수로 치환 필요
-def generateColumnNames(pParse, pTabList, pEList):
+def generateColumnNames(pParse : Parse, pTabList : IdList, pEList : ExprList):
     v = pParse.pVdbe  
 
     if pParse.colNamesSet:
@@ -75,9 +48,6 @@ def generateColumnNames(pParse, pTabList, pEList):
     sqliteVdbeAddOp(v, "OP_ColumnCount", pEList.nExpr, 0, 0, 0)
 
     for i in range(pEList.nExpr):
-        p = None
-        addr = None
-
         if pEList.a[i].zName:
             zName = pEList.a[i].zName
             sqliteVdbeAddOp(v, "OP_ColumnName", i, 0, zName, 0)
@@ -96,7 +66,6 @@ def generateColumnNames(pParse, pTabList, pEList):
 
         else:
             if pTabList.nId > 1:
-                zName = None
                 pTab = pTabList.a[p.iTable].pTab
                 zTab = pTabList.a[p.iTable].zAlias
 
@@ -112,7 +81,8 @@ def generateColumnNames(pParse, pTabList, pEList):
                 sqliteVdbeAddOp(v, "OP_ColumnName", i, 0, zName, 0)
 
 # opcode 상수로 치환 필요
-def selectInnerLoop(pParse, pEList, srcTab, nColumn, pOrderBy, distinct, eDest, iParm, iContinue, iBreak):
+def selectInnerLoop(pParse : Parse, pEList : ExprList, srcTab : int, nColumn : int, pOrderBy : ExprList, 
+                    distinct : int, eDest : int, iParm : int, iContinue : int, iBreak : int):
     v = pParse.pVdbe  # 포인터 참조 -> 점(.)으로 변경
 
     # Pull the requested columns.
@@ -128,8 +98,7 @@ def selectInnerLoop(pParse, pEList, srcTab, nColumn, pOrderBy, distinct, eDest, 
 
     return 0
     
-def sqliteSelect(pParse, p, eDest, iParm):
-    i = 0
+def sqliteSelect(pParse : Parse, p : Select, eDest : int, iParm : int):
     isAgg = 0
     distinct = -1
 
@@ -146,7 +115,7 @@ def sqliteSelect(pParse, p, eDest, iParm):
     if pParse.nErr > 0:
         return 1
 
-    sqliteParseInfoReset(pParse)
+    pParse.infoReset()
 
     if fillInColumnList(pParse, p):
         return 1
@@ -241,10 +210,10 @@ def sqliteSelect(pParse, p, eDest, iParm):
     if v is None:
         v = sqliteVdbeCreate(pParse.db.pBe)
         pParse.pVdbe = v
-    if v is None:
-        pParse.zErrMsg = "out of memory"
-        pParse.nErr += 1
-        return 1
+    # if v is None:
+    #     pParse.zErrMsg = "out of memory"
+    #     pParse.nErr += 1
+    #     return 1
 
     # if pOrderBy:
     #     sqliteVdbeAddOp(v, OP_SortOpen, 0, 0, None, None)
@@ -262,12 +231,12 @@ def sqliteSelect(pParse, p, eDest, iParm):
     # if isDistinct:
     #     sqliteVdbeAddOp(v, OP_Open, distinct, 1, None, None)
 
-    pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, None)
+    pWInfo = sqliteWhereBegin(pParse, pTabList, pWhere, 0)
     if pWInfo is None:
         return 1
 
     if not isAgg:
-        if selectInnerLoop(pParse, pEList, None, None, pOrderBy, distinct, eDest, iParm,
+        if selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
                            pWInfo.iContinue, pWInfo.iBreak):
             return 1
     # else:
