@@ -32,7 +32,6 @@ def p_cmd(p):
     # Execute the SELECT statement with callback and delete the select structure.
     global pParse
     sqliteSelect(pParse, p[1], SRT_Callback, 0)
-    sqliteSelectDelete(p[1])
     p[0] = p[1]
 
 def p_select(p):
@@ -42,7 +41,7 @@ def p_select(p):
 def p_oneselect(p):
     """oneselect : TK_SELECT selcollist from"""
     # Create a new SELECT structure using the parsed select list and from clause.
-    p[0] = sqliteSelectNew(p[2], p[3], None, None, None, None, None)
+    p[0] = Select(p[2], p[3], None, None, None, None, 0)
 
 def p_selcollist_star(p):
     """selcollist : TK_STAR"""
