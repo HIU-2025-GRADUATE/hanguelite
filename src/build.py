@@ -1,7 +1,7 @@
 from sqliteInt import *
 from util import *
 
-
+# 원형 : sqliteExec
 def exec(pParse):
     if pParse.pVdbe:
         if pParse.explain:
@@ -20,49 +20,6 @@ def exec(pParse):
         sqliteVdbeDelete(pParse.pVdbe)
         pParse.pVdbe = None
         pParse.colNamesSet = False
-
-def expr(op : int, pLeft : Expr, pRight : Expr, pToken : Token):
-    if pToken:
-        pNew = Expr(op, pLeft, pRight, pToken)
-    else:
-        pNew = Expr(op, pLeft, pRight, Token())
-
-    if pLeft and pRight:
-        exprSpan(pNew, pLeft.span, pRight.span)
-    else:
-        pNew.span = pNew.token
-
-    return pNew
-
-def exprSpan(pExpr : Expr, pLeft : Token, pRight : Token): #TODO 포인터 계산 처리 방법 고안
-    pExpr.span.z = pLeft.z
-    # pExpr.span.n = len(pRight.z) + (get_char_offset(pRight.z) - get_char_offset(pLeft.z))
-
-def idListAppend(pList : IdList, pToken : Token):
-    resultList = pList or IdList()
-
-    resultList.a.append(IdListItem())  # 기본값으로 새 IdItem 추가
-
-    if pToken:
-        resultList.a[resultList.nId].zName = pToken.z[:pToken.n].strip()
-
-    resultList.nId += 1
-    return resultList
-
-def exprListAppend(pList : ExprList, pExpr : Expr, pName : Token):
-    resultList = pList or ExprList()
-
-    item = ExprListItem()
-    item.pExpr = pExpr
-    item.zName = ""
-
-    if pName:
-        item.zName = pName.z[:pName.n].strip()
-
-    resultList.a.append(item)
-    resultList.nExpr += 1
-
-    return resultList
 
 def findTable(db : sqlite, zName : str):
     h = hashNoCase(zName, 0) % N_HASH
