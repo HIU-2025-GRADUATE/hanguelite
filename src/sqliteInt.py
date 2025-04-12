@@ -47,6 +47,7 @@ class Column:
         self.zDflt = ""
         self.notNull = 0
 
+
 class Table:
     zName: str
     pHash: 'Table'
@@ -63,7 +64,6 @@ class Table:
         self.readOnly = 0
         self.pIndex = None
         
-
 
 class Index:
     zName: str
@@ -83,6 +83,7 @@ class Index:
         self.isUnique = 0
         self.pNext = None
 
+
 class Token:
     z: str
     n: int
@@ -90,6 +91,7 @@ class Token:
     def __init__(self):
         self.z = ""
         self.n = 0
+
 
 class Expr:
     op: int
@@ -103,17 +105,23 @@ class Expr:
     iAgg: int
     pSelect: 'Select'
 
-    def __init__(self, op, pLeft, pRight, token):
+    def __init__(self, op : int, pLeft : 'Expr', pRight : 'Expr', token : Token):
         self.op = op
         self.pLeft = pLeft
         self.pRight = pRight
-        self.token = token
+        self.token = token or Token()
         self.pList = None
-        self.span = None
         self.iTable = 0
         self.iColumn = 0
         self.iAgg = 0
         self.pSelect = None
+
+        if pLeft and pRight:
+            self.span.z = pLeft.span.z
+            #TODO 포인터 계산 처리 방법 고안
+            # self.span.n = len(pRight.span.z) + (get_char_offset(pRight.span.z) - get_char_offset(pLeft.span.z))
+        else:
+            self.span = self.token
 
 
 class ExprListItem:
@@ -130,6 +138,7 @@ class ExprListItem:
         self.isAgg = 0
         self.done = 0
 
+
 class ExprList:
     nExpr: int
     a: list[ExprListItem]
@@ -137,6 +146,17 @@ class ExprList:
     def __init__(self):
         self.a = []
         self.nExpr = 0
+    
+    def exprListAppend(self, pExpr : Expr, pName : Token):
+        item = ExprListItem()
+        item.pExpr = pExpr
+        item.zName = ""
+
+        if pName:
+            item.zName = pName.z[:pName.n].strip()
+
+        self.a.append(item)
+        self.nExpr += 1
 
 
 class IdListItem:
@@ -151,6 +171,7 @@ class IdListItem:
         self.pTab = None
         self.idx = 0
 
+
 class IdList:
     nId: int
     a: list[IdListItem]
@@ -158,6 +179,13 @@ class IdList:
     def __init__(self):
         self.a = []
         self.nId = 0
+
+    def idListAppend(self, pToken : Token):
+        self.a.append(IdListItem())
+        if pToken:
+            self.a[self.nId].zName = pToken.z[:pToken.n].strip()
+
+        self.nId += 1
 
 
 class WhereInfo:
@@ -199,6 +227,7 @@ class Select:
         self.op = TK_SELECT 
         self.pPrior = None
 
+
 class AggExpr:
     isAgg: int
     pExpr: Expr
@@ -206,6 +235,7 @@ class AggExpr:
     def __init__(self):
         self.isAgg = 0
         self.pExpr = None
+    
     
 class Parse:
     db: sqlite
