@@ -128,7 +128,7 @@ def exprCode(pParse : Parse, pExpr : Expr): #TODO : 추후에 제대로 함수 �
     v = pParse.pVdbe
 
     if pParse.useAgg:
-        sqliteVdbeAddOp(v, OP_AggGet, 0, pExpr.iAgg, 0, 0)
+        v.addOp(OP_AggGet, 0, pExpr.iAgg, 0, 0)
     else:
-        sqliteVdbeAddOp(v, OP_Field, pExpr.iTable, pExpr.iColumn, 0, 0)
+        v.addOp(OP_Field, pExpr.iTable, pExpr.iColumn, 0, 0)
       

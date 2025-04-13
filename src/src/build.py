@@ -2,22 +2,22 @@ from sqliteInt import *
 from util import *
 
 # 원형 : sqliteExec
-def exec(pParse):
+def exec(pParse : Parse):
     if pParse.pVdbe:
         if pParse.explain:
-            sqliteVdbeList(pParse.pVdbe, pParse.xCallback, pParse.pArg, pParse.zErrMsg)
+            # sqliteVdbeList(pParse.pVdbe, pParse.xCallback, pParse.pArg, pParse.zErrMsg)
+            pass
         else:
             # trace = sys.stderr if (pParse.db.flags & SQLITE_VdbeTrace) != 0 else None
             # sqliteVdbeTrace(pParse.pVdbe, trace)
-            sqliteVdbeExec(
-                pParse.pVdbe,
+            pParse.pVdbe.exec(
                 pParse.xCallback,
                 pParse.pArg,
                 pParse.zErrMsg,
                 pParse.db.pBusyArg,
                 pParse.db.xBusyCallback
             )
-        sqliteVdbeDelete(pParse.pVdbe)
+        pParse.pVdbe.delete()
         pParse.pVdbe = None
         pParse.colNamesSet = False
 

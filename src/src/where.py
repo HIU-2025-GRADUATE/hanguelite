@@ -117,21 +117,21 @@ def whereBegin(pParse : Parse, pTabList : IdList, pWhere : Expr, pushKey : int):
         loopMask |= 1 << idx
 
     for i in range(pTabList.nId):
-        sqliteVdbeAddOp(v, OP_Open, base + i, 0, pTabList.a[i].pTab.zName, 0)
+        v.addOp(OP_Open, base + i, 0, pTabList.a[i].pTab.zName, 0)
         if i < len(aIdx) and aIdx[i] is not None:
-            sqliteVdbeAddOp(v, OP_Open, base + pTabList.nId + i, 0, aIdx[i].zName, 0)
+            v.addOp(OP_Open, base + pTabList.nId + i, 0, aIdx[i].zName, 0)
 
     pWInfo.aIdx = aIdx
-    pWInfo.iBreak = brk = sqliteVdbeMakeLabel(v)
+    pWInfo.iBreak = brk = v.makeLabel()
     loopMask = 0
 
     for i in range(pTabList.nId):
         idx = aOrder[i]
         pIdx = aIdx[i] if i < len(aIdx) else None
-        cont = sqliteVdbeMakeLabel(v)
+        cont = v.makeLabel()
 
         if pIdx is None:
-            sqliteVdbeAddOp(v, OP_Next, base + idx, brk, 0, cont)
+            v.addOp(OP_Next, base + idx, brk, 0, cont)
             haveKey = False
         # else:
         #     for j in range(pIdx.nColumn):
@@ -177,7 +177,7 @@ def whereBegin(pParse : Parse, pTabList : IdList, pWhere : Expr, pushKey : int):
 
     pWInfo.iContinue = cont
     if pushKey and not haveKey:
-        sqliteVdbeAddOp(v, OP_Key, base, 0, 0, 0)
+        v.addOp(OP_Key, base, 0, 0, 0)
 
     return pWInfo
 
@@ -186,13 +186,13 @@ def whereEnd(pWInfo : WhereInfo):
     brk = pWInfo.iBreak
     base = pWInfo.base
 
-    sqliteVdbeAddOp(v, OP_Goto, 0, pWInfo.iContinue, 0, 0)
+    v.addOp(OP_Goto, 0, pWInfo.iContinue, 0, 0)
 
     for i in range(pWInfo.pTabList.nId):
-        sqliteVdbeAddOp(v, OP_Close, base + i, 0, 0, brk)
+        v.addOp(OP_Close, base + i, 0, 0, brk)
         brk = 0
         if i < len(pWInfo.aIdx) and pWInfo.aIdx[i] is not None:
-            sqliteVdbeAddOp(v, OP_Close, base + pWInfo.pTabList.nId + i, 0, 0, 0)
+            v.addOp(OP_Close, base + pWInfo.pTabList.nId + i, 0, 0, 0)
 
     if brk != 0:
-        sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, brk)
+        v.addOp(OP_Noop, 0, 0, 0, brk)

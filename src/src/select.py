@@ -48,24 +48,26 @@ def generateColumnNames(pParse : Parse, pTabList : IdList, pEList : ExprList):
         return
     pParse.colNamesSet = 1
 
-    sqliteVdbeAddOp(v, "OP_ColumnCount", pEList.nExpr, 0, 0, 0)
+    v.addOp("OP_ColumnCount", pEList.nExpr, 0, 0, 0)
 
     for i in range(pEList.nExpr):
         if pEList.a[i].zName:
             zName = pEList.a[i].zName
-            sqliteVdbeAddOp(v, "OP_ColumnName", i, 0, zName, 0)
+            v.addOp("OP_ColumnName", i, 0, zName, 0)
             continue
 
         p = pEList.a[i].pExpr
 
         if p.span.z and p.span.z[0]:
-            addr = sqliteVdbeAddOp(v, "OP_ColumnName", i, 0, 0, 0)
-            sqliteVdbeChangeP3(v, addr, p.span.z, p.span.n)
-            sqliteVdbeCompressSpace(v, addr)
+            tmpStr = p.span.z[:p.span.n]
+            tmpStr = ' '.join(tmpStr.split())
+            v.addOp("OP_ColumnName", i, 0, tmpStr, 0)
+            # sqliteVdbeChangeP3(v, addr, p.span.z, p.span.n)
+            # sqliteVdbeCompressSpace(v, addr)
 
         elif p.op != TK_COLUMN or pTabList == None:
             zName = f"column{i + 1}"  # sprintf 대체
-            sqliteVdbeAddOp(v, "OP_ColumnName", i, 0, zName, 0)
+            v.addOp("OP_ColumnName", i, 0, zName, 0)
 
         else:
             if pTabList.nId > 1:
@@ -76,12 +78,12 @@ def generateColumnNames(pParse : Parse, pTabList : IdList, pEList : ExprList):
                     zTab = pTab.zName
 
                 zName = zTab + "." + pTab.aCol[p.iColumn].zName
-                sqliteVdbeAddOp(v, "OP_ColumnName", i, 0, zName, 0)
+                v.addOp("OP_ColumnName", i, 0, zName, 0)
 
             else:
                 pTab = pTabList.a[0].pTab
                 zName = pTab.aCol[p.iColumn].zName
-                sqliteVdbeAddOp(v, "OP_ColumnName", i, 0, zName, 0)
+                v.addOp("OP_ColumnName", i, 0, zName, 0)
 
 # opcode 상수로 치환 필요
 def selectInnerLoop(pParse : Parse, pEList : ExprList, srcTab : int, nColumn : int, pOrderBy : ExprList, 
@@ -95,9 +97,9 @@ def selectInnerLoop(pParse : Parse, pEList : ExprList, srcTab : int, nColumn : i
         nColumn = pEList.nExpr
     else:
         for i in range(nColumn):
-            sqliteVdbeAddOp(v, "OP_Field", srcTab, i, 0, 0)
+            v.addOp("OP_Field", srcTab, i, 0, 0)
 
-    sqliteVdbeAddOp(v, "OP_Callback", nColumn, 0, 0, 0)
+    v.addOp("OP_Callback", nColumn, 0, 0, 0)
 
     return 0
     
@@ -211,7 +213,7 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     v = pParse.pVdbe
 
     if v is None:
-        v = sqliteVdbeCreate(pParse.db.pBe)
+        v = Vdbe(pParse.db.pBe)
         pParse.pVdbe = v
     # if v is None:
     #     pParse.zErrMsg = "out of memory"
