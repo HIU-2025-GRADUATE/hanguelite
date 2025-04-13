@@ -1,4 +1,5 @@
 from tokenToConstant import *
+from src.vdbe.vdbe import *
 
 SRT_Callback = 1  
 SRT_Mem      = 2  
@@ -8,13 +9,6 @@ SRT_Except   = 6
 SRT_Table    = 7  
 
 N_HASH = 51
-
-class Vdbe: #TODO 후에 Vdbe.py 따로 분리 
-    pass
-
-class Dbbe: #TODO 후에 Dbbe.py 따로 분리 
-    pass
-
 
 class sqlite:
     pBe: Dbbe
