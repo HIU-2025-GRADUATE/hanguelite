@@ -1,70 +1,38 @@
-"""
-** The code in this file implements the Virtual Database Engine (VDBE)
-**
-** The SQL parser generates a program which is then executed by
-** the VDBE to do the work of the SQL statement.  VDBE programs are
-** similar in form to assembly language.  The program consists of
-** a linear sequence of operations.  Each operation has an opcode
-** and 3 operands.  Operands P1 and P2 are integers.  Operand P3
-** is a null-terminated string.   The P2 operand must be non-negative.
-** Opcodes will typically ignore one or more operands.  Many opcodes
-** ignore all three operands.
-**
-** Computation results are stored on a stack.  Each entry on the
-** stack is either an integer or a null-terminated string.  An
-** inplicit conversion from one type to the other occurs as necessary.
-**
-** Most of the code in this file is taken up by the sqliteVdbeExec()
-** function which does the work of interpreting a VDBE program.
-** But other routines are also provided to help in building up
-** a program instruction by instruction.
-"""
-
 from ..dbbe import *
-from vdbeOp import VdbeOp
+from vdbeOp import *
+from cursor import *
 
-"""
-** A single level of the stack is an instance of the following
-** structure.  Except, string values are stored on a separate
-** list of of pointers to character.  The reason for storing
-** strings separately is so that they can be easily passed
-** to the callback function.
-"""
-# struct Stack {
-#   int i;         /* Integer value */
-#   int n;         /* Number of characters in string value, including '\0' */
-#   int flags;     /* Some combination of STK_Null, STK_Str, STK_Dyn, etc. */
-#   double r;      /* Real value */
-# };
+OP_Open = 1
+OP_Close = 2
+OP_Fetch = 3
+OP_Fcnt = 4
+OP_New = 5
+OP_Put = 6
 
-"""
-** Memory cells use the same structure as the stack except that space
-** for an arbitrary string is added.
-"""
-# struct Mem {
-#   Stack s;       /* All values of the memory cell besides string */
-#   char *z;       /* String value for this memory cell */
-# };
-
-"""
-** Allowed values for Stack.flags
-"""
-#define STK_Null      0x0001   /* Value is NULL */
-#define STK_Str       0x0002   /* Value is a string */
-#define STK_Int       0x0004   /* Value is an integer */
-#define STK_Real      0x0008   /* Value is a real number */
-#define STK_Dyn       0x0010   /* Need to call sqliteFree() on zStack[*] */
-
-"""
-** An instance of the virtual machine
-"""
 class Vdbe:
   """
   ** 기존의 createVdbe 함수가 Dbbe 를 인자로 받아서 VDBE 구조체 기반으로 메모리 할당해서 객체 만들고 포인터를 리턴하는 방식이었음.
   ** 이 로직은 정확히 생성자가 하는 일과 일치해서 해당 함수는 제거하고 생성자로 대체함.
   """
   def __init__(self, pBe: Dbbe):
-    self.pBe: Dbbe = pBe    # /* Opaque context structure used by DB backend */
+    # DB backend 객체
+    # self.pBe = 0
+    # (ForTest) 임시 Dbbe 객체를 생성하였음
+    # 실제는 main 파일에서 sqliteDbbeOpen 함수 호출을 통해 db 객체에 할당해야함    
+    self.pBe: Dbbe = pBe
+
+    # 실행을 아래 파일에 기록
+    self.trace = None
+    # opcode가 저장된 리스트
+    self.aOp = list()
+    # self.aOp의 길이
+    self.nOp = 0
+    # 피연산자 스택
+    self.aStack = list()
+    # 열려있는 커서 리스트 (Cursor 객체 리스트)
+    self.aCsr = list()
+    # self.aCsr의 길이
+    self.nCursor = 0
     # FILE *trace;          # /* Write an execution trace here, if not NULL */
     # int nOp;           # /* Number of instructions in the program */
     # int nOpAlloc;      # /* Number of slots allocated for aOp[] */
@@ -95,64 +63,17 @@ class Vdbe:
     # Set *aSet;         # /* An array of sets */
     # int nFetch;        # /* Number of OP_Fetch instructions executed */
 
-  """
-  # ** Turn tracing on or off
-  
-  사실상 Setter
-  """
-  # void sqliteVdbeTrace(Vdbe *p, FILE *trace){
-  #   p->trace = trace;
-  # }
+  # 로그 파일 (trace) Setter
+  def Trace(self, trace):
+    self.trace = trace
 
-  """
-  ** Add a new instruction to the list of instructions current in the
-  ** VDBE.  Return the address of the new instruction.
-  **
-  ** Parameters:
-  **
-  **    p               Pointer to the VDBE
-  **
-  **    op              The opcode for this instruction
-  **
-  **    p1, p2, p3      Three operands.
-  **
-  **    lbl             A symbolic label for this instruction.
-  **
-  ** Symbolic labels are negative numbers that stand for the address
-  ** of instructions that have yet to be coded.  When the instruction
-  ** is coded, its real address is substituted in the p2 field of
-  ** prior and subsequent instructions that have the lbl value in
-  ** their p2 fields.
-  """
+  # op, p1, p2, p3 를 입력받아 VDBE.aOp에 추가
   def addOp(self, op: int, p1: int, p2: int, p3: str, lbl: int) -> int:
-    pass
+    # (TODO) lbl 활용 부분 구현해야함
+    self.aOp.append(VdbeOp(op, p1, p2, p3))
+    return 0
   # int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2, const char *p3, int lbl){
-  #   int i, j;
-  #
-  #   i = p->nOp;
-  #   p->nOp++;
-  #   if( i>=p->nOpAlloc ){
-  #     int oldSize = p->nOpAlloc;
-  #     p->nOpAlloc = p->nOpAlloc*2 + 10;
-  #     p->aOp = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
-  #     if( p->aOp==0 ){
-  #       p->nOp = 0;
-  #       p->nOpAlloc = 0;
-  #       return 0;
-  #     }
-  #     memset(&p->aOp[oldSize], 0, (p->nOpAlloc-oldSize)*sizeof(Op));
-  #   }
-  #   p->aOp[i].opcode = op;
-  #   p->aOp[i].p1 = p1;
-  #   if( p2<0 && (-1-p2)<p->nLabel && p->aLabel[-1-p2]>=0 ){
-  #     p2 = p->aLabel[-1-p2];
-  #   }
-  #   p->aOp[i].p2 = p2;
-  #   if( p3 && p3[0] ){
-  #     p->aOp[i].p3 = sqliteStrDup(p3);
-  #   }else{
-  #     p->aOp[i].p3 = 0;
-  #   }
+  #   (중략)
   #   if( lbl<0 && (-lbl)<=p->nLabel ){
   #     p->aLabel[-1-lbl] = i;
   #     for(j=0; j<i; j++){
@@ -189,32 +110,13 @@ class Vdbe:
   ** Add a whole list of operations to the operation stack.  Return the
   ** address of the first operation added.
   """
+  # VdbeOp 인스턴스의 리스트를 Vdbe.aOp에 추가
+  # (Q) 이거 VdbeOp 인스턴스를 받는거면 그냥 addOp 메소드도
+  # 인스턴스를 받도록 통일시켜버리면 어떤지...?
   def addOpList(self, nOp: int, aOp: list[VdbeOp]) -> int:
-    pass
-  # int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOp const *aOp){
-  #   int addr;
-  #   if( p->nOp + nOp >= p->nOpAlloc ){
-  #     int oldSize = p->nOpAlloc;
-  #     p->nOpAlloc = p->nOpAlloc*2 + nOp + 10;
-  #     p->aOp = sqliteRealloc(p->aOp, p->nOpAlloc*sizeof(Op));
-  #     if( p->aOp==0 ){
-  #       p->nOp = 0;
-  #       p->nOpAlloc = 0;
-  #       return 0;
-  #     }
-  #     memset(&p->aOp[oldSize], 0, (p->nOpAlloc-oldSize)*sizeof(Op));
-  #   }
-  #   addr = p->nOp;
-  #   if( nOp>0 ){
-  #     int i;
-  #     for(i=0; i<nOp; i++){
-  #       int p2 = aOp[i].p2;
-  #       if( p2<0 ) p2 = addr + ADDR(p2);
-  #       sqliteVdbeAddOp(p, aOp[i].opcode, aOp[i].p1, p2, aOp[i].p3, 0);
-  #     }
-  #   }
-  #   return addr;
-  # }
+    for OP in aOp: self.aOp.append(OP)
+    self.nOp += len(aOp)
+    return 0
 
   """
   ** If the P3 operand to the specified instruction appears
@@ -225,14 +127,10 @@ class Vdbe:
   ** or a double quote character (ASCII 0x22).  Two quotes in a row
   ** resolve to be a single actual quote character within the string.
   """
+  # 입력받은 addr번째 inst의 p3에서 Quotation Mark (")를 제거
   def dequoteP3(self, addr: int):
-    pass
-  # void sqliteVdbeDequoteP3(Vdbe *p, int addr){
-  #   char *z;
-  #   if( addr<0 || addr>=p->nOp ) return;
-  #   z = p->aOp[addr].p3;
-  #   sqliteDequote(z);
-  # }
+    if addr<0 or addr>self.nOp: return
+    self.aOp[addr-1] = self.aOp[addr-1].replace('"','')
 
   """
   ** On the P3 argument of the given instruction, change all
@@ -497,25 +395,9 @@ class Vdbe:
   """
   ** Delete an entire VDBE.
   """
+  # VDBE 인스턴스를 통째로 삭제
   def delete(self):
-    pass
-  # void sqliteVdbeDelete(Vdbe *p){
-  #   int i;
-  #   if( p==0 ) return;
-  #   Cleanup(p);
-  #   if( p->nOpAlloc==0 ){
-  #     p->aOp = 0;
-  #     p->nOp = 0;
-  #   }
-  #   for(i=0; i<p->nOp; i++){
-  #     sqliteFree(p->aOp[i].p3);
-  #   }
-  #   sqliteFree(p->aOp);
-  #   sqliteFree(p->aLabel);
-  #   sqliteFree(p->aStack);
-  #   sqliteFree(p->zStack);
-  #   sqliteFree(p);
-  # }
+    del self
 
   """
   /*
@@ -545,6 +427,54 @@ class Vdbe:
   */
   """
   def exec(self, xCallback, pArg, pzErrMsg: str, pBusyArg, xBusy) -> int:
+    # program counter
+    pc = 0
+    while pc < self.nOp:
+      # pc가 가리키는 명령어 실행행
+      pOp = self.aOp[pc]
+      if pOp.opcode == OP_Open:
+        i = pOp.p1
+        if i < 0: return
+        # (TODO) 이미 동일한 id가 존재하면 커서 삭제
+        # p.aCsr[i].pCursor에 새로운 커서를 할당
+        for j in range(self.nCursor, i+1): self.aCsr.append(0)
+        self.nCursor = i+1
+        self.aCsr[i] = Cursor()
+        self.aCsr[i].pCursor.openCursor(self.pBe, pOp.p3, pOp.p2)
+        self.aCsr[i].index = 0
+        self.aCsr[i].keyAsData = 0
+
+      elif pOp.opcode == OP_Close:
+        i = pOp.p1
+        if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          self.aCsr[i].pCursor.closeCursor()
+          #self.aCsr[i].pCursor = 0
+
+      elif pOp.opcode == OP_Fetch:
+        pass
+
+      elif pOp.opcode == OP_Next:
+        pass
+
+      elif pOp.opcode == OP_Field:
+        pass
+
+      elif pOp.opcode == OP_Callback:
+        pass
+
+      elif pOp.opcode == OP_Goto:
+        pc = pOp.p2 - 1
+
+      elif pOp.opcode == OP_Halt:
+        pc = len(self.aOp)-1
+
+      elif pOp.opcode == OP_Noop:
+        pass
+
+      elif pOp.opcode == OP_MakeRecord:
+        pass
+
+      pc+=1
     pass
   """
   int sqliteVdbeExec(
