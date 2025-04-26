@@ -1,7 +1,7 @@
-from .build import execute, startTable, endTable, addColumn
-from .sqliteInt import Parse, IdList, Token, Select, SRT_Callback
-from ..ply import yacc
-from .tokenizer import tokens # lex에서 정의한 토큰들을 임포트
+from src.src.build import execute, startTable, endTable, addColumn
+from src.src.sqliteInt import Parse, IdList, Token, Select, SRT_Callback
+from src.ply import yacc
+from src.src.tokenizer import tokens # lex에서 정의한 토큰들을 임포트
 from select import *
 
 # 전역 파서 컨텍스트 등 (예: pParse, SRT_Callback 등)
@@ -125,8 +125,6 @@ def p_id(p):
     token.z = p[1]
     token.n = len(token.z)
     p[0] = token
-    # TEST
-    p[0] = p[1]
 
 def p_error(p):
     if p:
