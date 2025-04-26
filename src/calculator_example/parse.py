@@ -1,6 +1,5 @@
 # Yacc example
-
-import ply.yacc as yacc
+from src.ply import yacc
 
 # Get the token map from the lexer.  This is required.
 from tokenizer import tokens
