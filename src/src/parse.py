@@ -2,7 +2,7 @@ from src.src.build import execute, startTable, endTable, addColumn
 from src.src.sqliteInt import Parse, IdList, Token, Select, SRT_Callback
 from src.ply import yacc
 from src.src.tokenizer import tokens # lex에서 정의한 토큰들을 임포트
-from select import *
+from src.src.select import *
 
 # 전역 파서 컨텍스트 등 (예: pParse, SRT_Callback 등)
 # pParse, SRT_Callback, sqliteExec, sqliteSelect, sqliteSelectDelete,
