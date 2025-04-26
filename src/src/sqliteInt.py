@@ -1,5 +1,6 @@
-from tokenToConstant import *
-from src.vdbe.vdbe import *
+from src.src.util import hashNoCase
+from .tokenToConstant import *
+from .vdbe.vdbe import *
 
 SRT_Callback = 1  
 SRT_Mem      = 2  
@@ -8,7 +9,60 @@ SRT_Union    = 5
 SRT_Except   = 6  
 SRT_Table    = 7  
 
+"""
+    The number of entries in the in-memory hash array holding the database schema.
+"""
 N_HASH = 51
+
+"""
+    Name of the master database table.
+    The master database table is a special table that holds the names and attributes of all user tables and indices.
+"""
+MASTER_NAME = "hqlite_master"
+
+class Column:
+    zName: str
+    zDflt: str
+    notNull: int
+
+    def __init__(self, column_name: str):
+        self.zName = column_name
+        self.zDflt = ""
+        self.notNull = 0
+
+class Table:
+    zName: str
+    pHash: 'Table'
+    nCol: int
+    aCol: list[Column]
+    readOnly: int
+    pIndex: 'Index'
+
+    def __init__(self, tableName: str):
+        self.aCol = []
+        self.zName = tableName
+        self.pHash = None
+        self.nCol = 0
+        self.readOnly = 0
+        self.pIndex = None
+
+class Index:
+    zName: str
+    pHash: 'Index'
+    nColumn: int
+    aiColumn: list[int]
+    pTable: Table
+    isUnique: int
+    pNext: 'Index'
+
+    def __init__(self):
+        self.aiColumn = []
+        self.zName = ""
+        self.pHash = None
+        self.nColumn = 0
+        self.pTable = None
+        self.isUnique = 0
+        self.pNext = None
 
 class sqlite:
     pBe: Dbbe
@@ -30,52 +84,28 @@ class sqlite:
       self.apTblHash = [None] * N_HASH
       self.apIdxHash = [None] * N_HASH
 
+    def findTable(self, tableName: str) -> Table:
+        h = hashNoCase(tableName, 0) % N_HASH
+        pTable: Table = self.apTblHash[h]
 
-class Column:
-    zName: str
-    zDflt: str
-    notNull: int
+        while pTable:
+            if pTable.zName == tableName:
+                return pTable
 
-    def __init__(self):
-        self.zName = ""
-        self.zDflt = ""
-        self.notNull = 0
+            pTable = pTable.pHash
 
+        return None
 
-class Table:
-    zName: str
-    pHash: 'Table'
-    nCol: int
-    aCol: list[Column]
-    readOnly: int
-    pIndex: 'Index'
+    def findIndex(self, indexName: str) -> Index:
+        h = hashNoCase(indexName, 0) % N_HASH
+        pIndex: Index = self.apIdxHash[h]
+        while pIndex:
+            if pIndex.zName == indexName:
+                return pIndex
 
-    def __init__(self):
-        self.aCol = []
-        self.zName = ""
-        self.pHash = None
-        self.nCol = 0
-        self.readOnly = 0
-        self.pIndex = None
-        
+            pIndex = pIndex.pHash
 
-class Index:
-    zName: str
-    pHash: 'Index'
-    nColumn: int
-    aiColumn: list[int]
-    pTable: Table
-    isUnique: int
-    pNext: 'Index'
-
-    def __init__(self):
-        self.aiColumn = []
-        self.zName = ""
-        self.pHash = None
-        self.nColumn = 0
-        self.pTable = None
-        self.isUnique = 0
-        self.pNext = None
+        return None
 
 
 class Token:
@@ -242,8 +272,8 @@ class Parse:
     pNewTable: Table
     pVdbe: Vdbe
     colNamesSet: int
-    explain: int
-    initFlag: int
+    explain: bool
+    initFlag: bool
     nErr: int
     nTab: int
     nMem: int
@@ -264,8 +294,8 @@ class Parse:
         self.pNewTable = None
         self.pVdbe = None
         self.colNamesSet = 0
-        self.explain = 0
-        self.initFlag = 0
+        self.explain = False
+        self.initFlag = False
         self.nErr = 0
         self.nTab = 0
         self.nMem = 0
@@ -280,3 +310,16 @@ class Parse:
         self.nAgg = 0
         self.iAggCount = -1
         self.useAgg = 0
+
+    def getVdbe(self):
+        """ single tone"""
+        v: Vdbe = self.pVdbe
+        if not v:
+            v = Vdbe(self.db.pBe)
+            self.pVdbe = v
+
+        return v
+
+    @staticmethod
+    def empty():
+        return Parse()
