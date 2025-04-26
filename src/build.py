@@ -1,6 +1,6 @@
-from src.src.sqliteInt import *
-from src.src.vdbe.vdbeOp import *
-from util import *
+from src.sqliteInt import *
+from src.vdbe.vdbeOp import *
+from src.util import *
 
 # 원형 : sqliteExec
 def execute(pParse : Parse):

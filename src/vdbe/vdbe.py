@@ -20,7 +20,7 @@
 ** a program instruction by instruction.
 """
 
-from ..dbbe import *
+from src.dbbe import *
 from .vdbeOp import VdbeOp
 
 """

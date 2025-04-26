@@ -1,6 +1,6 @@
-from src.src.util import hashNoCase
-from src.src.tokenToConstant import *
-from src.src.vdbe.vdbe import *
+from src.util import hashNoCase
+from src.tokenToConstant import *
+from src.vdbe.vdbe import *
 
 SRT_Callback = 1  
 SRT_Mem      = 2  

@@ -1,4 +1,4 @@
-from src.ply import lex
+from ply import lex
 
 # 예약어 사전 (대소문자 무시 처리)
 reserved = {
