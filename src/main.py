@@ -1,5 +1,5 @@
-from parse import parser
-from tokenizer import lexer
+from src.src.parse import parser
+from src.tokenizer import lexer
 
 def main():
 #     # Test it out
