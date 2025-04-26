@@ -33,42 +33,42 @@ def p_ecmd(p):
     CREATE TABLE
 """
 def p_command_create(p):
-    'cmd : create_table create_table_args' #
+    """cmd : create_table create_table_args"""  #
 
 def p_create_table(p):
-    'create_table : TK_CREATE TK_TABLE id' #
+    """create_table : TK_CREATE TK_TABLE id"""  #
 
     # test
     parse.zErrMsg = f"create table named : {p[3]}"
     startTable(parse, p[3])
 
 def p_create_table_args(p):
-    'create_table_args : TK_LP columnlist TK_RP' # constraint 는 아직 고려 안함
+    """create_table_args : TK_LP columnlist TK_RP"""  # constraint 는 아직 고려 안함
     p[0] = " ".join(p[1:])
     endTable(parse, p[0])
 
 def p_columnlist_multiple(p):
-    'columnlist : columnlist TK_COMMA column'
+    """columnlist : columnlist TK_COMMA column"""
 
 def p_columnlist_single(p):
-    'columnlist : column'
+    """columnlist : column"""
 
 def p_column(p):
-    'column : columnid type' # constraint 는 아직 고려 안함
+    """column : columnid type"""  # constraint 는 아직 고려 안함
 
 def p_columnid(p):
-    'columnid : id'
+    """columnid : id"""
     addColumn(parse, p[1])
     p[0] = p[1]
 
 def p_type(p):
-    'type : typename'
+    """type : typename"""
 
 def p_typename(p):
-    'typename : id'
+    """typename : id"""
 
 def p_id_from_string(p):
-    'id : TK_STRING'
+    """id : TK_STRING"""
     p[0] = p[1]
 
 """
