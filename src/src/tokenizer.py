@@ -11,7 +11,7 @@ reserved = {
 
 # 토큰 이름 목록: parse.y에서 사용되는 토큰들과 SQLite의 tokenize.c에 있는 키워드들
 tokens = (
-    'TK_SELECT', 'TK_FROM', 'TK_STAR', 'TK_ID', 'TK_DOT', 'TK_COLUMN', 'TK_IN', 'TK_IGNORE',
+    'TK_STAR', 'TK_ID', 'TK_DOT', 'TK_COLUMN', 'TK_IGNORE',
     'TK_STRING', 'TK_LP', 'TK_RP', 'TK_COMMA',
 ) + tuple(reserved.values())
 
@@ -19,11 +19,11 @@ tokens = (
 t_TK_STAR       = r'\*'
 t_TK_DOT        = r'\.'
 t_TK_IGNORE     = r' \t\n'
-t_TK_LP            = r'\('
-t_TK_RP            = r'\)'
-t_TK_COMMA         = r','
+t_TK_LP         = r'\('
+t_TK_RP         = r'\)'
+t_TK_COMMA      = r','
 
-t_ignore = ' \t'
+t_ignore        = ' \t'
 
 # 식별자 처리: 예약어와 일반 ID 구분
 def t_ID(t):
