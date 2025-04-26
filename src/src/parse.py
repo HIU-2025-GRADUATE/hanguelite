@@ -8,7 +8,7 @@ from select import *
 # pParse, SRT_Callback, sqliteExec, sqliteSelect, sqliteSelectDelete,
 # sqliteSelectNew, sqliteIdListAppend 등의 함수가 이미 구현되어 있다고 가정
 
-parse: Parse = Parse.empty()
+pParse: Parse = Parse.empty()
 
 def set_parse_object(parse_obj):
     global pParse
@@ -17,8 +17,8 @@ def set_parse_object(parse_obj):
 def p_input(p):
     """input : cmdlist"""
     p[0] = p[1]
-    if parse.zErrMsg:
-        print(parse.zErrMsg)
+    if pParse.zErrMsg:
+        print(pParse.zErrMsg)
 
 def p_cmdlist(p):
     """cmdlist : ecmd"""
@@ -39,33 +39,38 @@ def p_create_table(p):
     """create_table : TK_CREATE TK_TABLE id"""  #
 
     # test
-    parse.zErrMsg = f"create table named : {p[3]}"
-    startTable(parse, p[3])
+    pParse.zErrMsg = f"create table named : {p[3]}"
+    startTable(pParse, p[3])
 
 def p_create_table_args(p):
     """create_table_args : TK_LP columnlist TK_RP"""  # constraint 는 아직 고려 안함
     p[0] = " ".join(p[1:])
-    endTable(parse, p[0])
+    endTable(pParse, p[0])
 
 def p_columnlist_multiple(p):
     """columnlist : columnlist TK_COMMA column"""
+    p[0] = p[1]
 
 def p_columnlist_single(p):
     """columnlist : column"""
+    p[0] = p[1]
 
 def p_column(p):
     """column : columnid type"""  # constraint 는 아직 고려 안함
+    p[0] = p[1] + " " + p[2]
 
 def p_columnid(p):
     """columnid : id"""
-    addColumn(parse, p[1])
+    addColumn(pParse, p[1])
     p[0] = p[1]
 
 def p_type(p):
     """type : typename"""
+    p[0] = p[1]
 
 def p_typename(p):
     """typename : id"""
+    p[0] = p[1]
 
 def p_id_from_string(p):
     """id : TK_STRING"""
@@ -120,6 +125,8 @@ def p_id(p):
     token.z = p[1]
     token.n = len(token.z)
     p[0] = token
+    # TEST
+    p[0] = p[1]
 
 def p_error(p):
     if p:

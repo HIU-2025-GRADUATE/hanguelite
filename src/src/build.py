@@ -39,6 +39,12 @@ def findTable(db : sqlite, zName : str):
     CREATE TABLE 구문을 처리할 때 처음으로 실행되는 함수
 """
 def startTable(parse: Parse, zName: str):
+    """ TEST """ #
+    print("called startTable")
+    parse.pNewTable = Table(zName) # TEST CODE
+    return # TEST CODE
+    """ TEST""" #
+
     db: sqlite = parse.db
     table: Table = db.findTable(zName)
 
@@ -65,6 +71,11 @@ def startTable(parse: Parse, zName: str):
     따라서 이 경우엔 이 테이블에 대한 entry 가 마스터 테이블에 이미 존재하며, 다시 새로 만들지 않는다.  
 """
 def endTable(parse: Parse, createQuery: str):
+    """ TEST """  #
+    print("called endTable")
+    return  # TEST CODE
+    """ TEST"""  #
+
     if parse.nErr != 0:
         return
 
