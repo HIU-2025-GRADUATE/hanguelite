@@ -25,8 +25,8 @@ class Column:
     zDflt: str
     notNull: int
 
-    def __init__(self, column_name: str):
-        self.zName = column_name
+    def __init__(self, columnName: str):
+        self.zName = columnName
         self.zDflt = ""
         self.notNull = 0
 
