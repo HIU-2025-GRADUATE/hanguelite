@@ -3,7 +3,7 @@ from util import *
 from .vdbe.vdbeOp import *
 
 # 원형 : sqliteExec
-def executeSql(pParse : Parse):
+def execute(pParse : Parse):
     if pParse.pVdbe:
         if pParse.explain:
             # sqliteVdbeList(pParse.pVdbe, pParse.xCallback, pParse.pArg, pParse.zErrMsg)

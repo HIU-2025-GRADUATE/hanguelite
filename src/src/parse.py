@@ -1,4 +1,4 @@
-from .build import executeSql, startTable, endTable, addColumn
+from .build import execute, startTable, endTable, addColumn
 from .sqliteInt import Parse, IdList, Token, Select, SRT_Callback
 from ..ply import yacc
 from .tokenizer import tokens # lex에서 정의한 토큰들을 임포트
@@ -26,7 +26,7 @@ def p_cmdlist(p):
 
 def p_ecmd(p): 
     """ecmd : cmd"""
-    executeSql(pParse) # Execute the command.
+    execute(pParse) # Execute the command.
     p[0] = p[1]
 
 """

@@ -166,7 +166,7 @@ state 10
     (4) cmd -> create_table create_table_args .
 
     $end            reduce using rule 4 (cmd -> create_table create_table_args .)
-
+sd
 
 state 11
 
