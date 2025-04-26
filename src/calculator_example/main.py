@@ -21,7 +21,7 @@ def main():
         except EOFError:
             break
         if not s: continue
-        result = parser.pParse(s)
+        result = parser.parse(s)
         print(result)
 
 if __name__ == '__main__':
