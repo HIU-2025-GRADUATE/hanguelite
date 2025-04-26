@@ -21,7 +21,7 @@
 """
 
 from ..dbbe import *
-from vdbeOp import VdbeOp
+from .vdbeOp import VdbeOp
 
 """
 ** A single level of the stack is an instance of the following
@@ -189,6 +189,7 @@ class Vdbe:
   ** Add a whole list of operations to the operation stack.  Return the
   ** address of the first operation added.
   """
+  # TODO : nOp 필요한지 검토 필요, 필요 없으면 삭제
   def addOpList(self, nOp: int, aOp: list[VdbeOp]) -> int:
     pass
   # int sqliteVdbeAddOpList(Vdbe *p, int nOp, VdbeOp const *aOp){

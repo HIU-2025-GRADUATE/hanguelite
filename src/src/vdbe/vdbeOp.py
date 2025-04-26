@@ -116,4 +116,8 @@ OP_MAX           =     88
 ** of the following structure.
 """
 class VdbeOp:
-    pass
+    def __init__(self, opcode: int, p1: int, p2: int, p3: str = None):
+        self.opcode: int = opcode
+        self.p1: int = p1
+        self.p2: int = p2
+        self.p3: str = p3
