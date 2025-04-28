@@ -47,7 +47,7 @@ def p_create_table_args(p):
 
 def p_columnlist_multiple(p):
     """columnlist : columnlist TK_COMMA column"""
-    p[0] = p[1]
+    p[0] = " ".join(p[1:])
 
 def p_columnlist_single(p):
     """columnlist : column"""
