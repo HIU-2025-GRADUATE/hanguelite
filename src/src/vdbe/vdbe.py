@@ -426,13 +426,131 @@ class Vdbe:
   ** and this routine returns SQLITE_BUSY.
   */
   """
-  def exec(self, xCallback, pArg, pzErrMsg: str, pBusyArg, xBusy) -> int:
+  def execute(self, xCallback, pArg, pzErrMsg: str, pBusyArg, xBusy) -> int:
     # program counter
     pc = 0
     while pc < self.nOp:
       # pc가 가리키는 명령어 실행행
       pOp = self.aOp[pc]
-      if pOp.opcode == OP_Open:
+
+      if pOp.opcode == OP_Goto:
+        pc = pOp.p2 - 1
+
+      elif pOp.opcode == OP_Halt:
+        pc = len(self.aOp)-1
+
+      # P1 정수 값을 스택에 추가
+      elif pOp.opcode == OP_Integer:
+        self.aStack.append(pOp.p1)
+
+      # P3 문자열 값을 스택에 추가
+      elif pOp.opcode == OP_String:
+        self.aStack.append(pOp.p3)
+
+      # NULL 값을 스택에 추가 
+      # (TODO) 일단 NONE 값으로 추가하였음 원본은 STK_Null 값 사용
+      elif pOp.opcode == OP_Null:
+        self.aStack.append(None)
+
+      # P1 elements are popped off of the top of stack and discarded
+      # (TODO) 스택에서 Pop하면 탑을 빼는거지 뭔 소리임 이게?
+      # case OP_Pop: {
+      #   PopStack(p, pOp->p1);
+      #   break;
+      # }
+      # static void PopStack(Vdbe *p, int N){
+      #   if( p->zStack==0 ) return;
+      #   while( p->tos>=0 && N-->0 ){
+      #     int i = p->tos--;
+      #     if( p->aStack[i].flags & STK_Dyn ){
+      #       sqliteFree(p->zStack[i]);
+      #     }
+      #     p->aStack[i].flags = 0;
+      #     p->zStack[i] = 0;
+      #   }    
+      # }
+      elif pOp.opcode == OP_Pop:
+        pass
+
+      # 스택 위에서 P1 번째 원소를 복제해서 스택의 top에 추가
+      elif pOp.opcode == OP_Dup:
+        self.aStack.append(self.aStack[-(pOp.p1+1)])
+
+      # 스택 위에서 P1 번째 스택을 빼서 top에 추가
+      # Pull 0 0 0 는 no-op
+      elif pOp.opcode == OP_Pull:
+        self.aStack.append(self.aStack[-(pOp.p1+1)])
+        del self.aStack[-(pOp.p1+2)]
+
+      # Specify the number of column values that will appear in the
+      # array passed as the 4th parameter to the callback.  No checking
+      # is done.  If this value is wrong, a coredump can result.
+      elif pOp.opcode == OP_ColumnCount:
+        pass
+
+      # P3 becomes the P1-th column name (first is 0).  An array of pointers
+      # to all column names is passed as the 4th parameter to the callback.
+      # The ColumnCount opcode must be executed first to allocate space to
+      # hold the column names.  Failure to do this will likely result in
+      # a coredump.
+      elif pOp.opcode == OP_ColumnName:
+        pass
+
+      elif pOp.opcode == OP_Callback:
+        pass
+
+      elif pOp.opcode == OP_Concat:
+        pass
+
+      elif pOp.opcode in [OP_Add, OP_Subtract,OP_Multiply, OP_Divide]:
+        pass
+
+      elif pOp.opcode == OP_Max:
+        pass
+
+      elif pOp.opcode == OP_Min:
+        pass
+
+      elif pOp.opcode == OP_AddImm:
+        pass
+
+      elif pOp.opcode in [OP_Eq, OP_Ne, OP_Lt, OP_Le, OP_Gt, OP_Ge]:
+        pass
+
+      elif pOp.opcode == OP_Like:
+        pass
+
+      elif pOp.opcode == OP_Glob:
+        pass
+
+      elif pOp.opcode in [OP_And, OP_Or]:
+        pass
+
+      elif pOp.opcode == OP_Negative:
+        pass
+
+      elif pOp.opcode == OP_Not:
+        pass
+
+      elif pOp.opcode == OP_Noop:
+        pass
+
+      elif pOp.opcode == OP_If:
+        pass
+
+      elif pOp.opcode == OP_IsNull:
+        pass
+
+      elif pOp.opcode == OP_NotNull:
+        pass
+
+      elif pOp.opcode == OP_MakeRecord:
+        pass
+
+      elif pOp.opcode == OP_MakeKey:
+        pass
+
+      elif pOp.opcode == OP_Open:
         i = pOp.p1
         if i < 0: return
         # (TODO) 이미 동일한 id가 존재하면 커서 삭제
@@ -453,25 +571,139 @@ class Vdbe:
       elif pOp.opcode == OP_Fetch:
         pass
 
-      elif pOp.opcode == OP_Next:
+      elif pOp.opcode == OP_Fcnt:
+        pass
+
+      elif pOp.opcode in [OP_Distinct, OP_NotFound, OP_Found]:
+        pass
+
+      elif pOp.opcode == OP_New:
+        pass
+
+      elif pOp.opcode == OP_Put:
+        pass
+
+      elif pOp.opcode == OP_Delete:
+        pass
+
+      elif pOp.opcode == OP_KeyAsData:
         pass
 
       elif pOp.opcode == OP_Field:
         pass
 
-      elif pOp.opcode == OP_Callback:
+      elif pOp.opcode == OP_Key:
         pass
 
-      elif pOp.opcode == OP_Goto:
-        pc = pOp.p2 - 1
-
-      elif pOp.opcode == OP_Halt:
-        pc = len(self.aOp)-1
-
-      elif pOp.opcode == OP_Noop:
+      elif pOp.opcode == OP_Rewind:
         pass
 
-      elif pOp.opcode == OP_MakeRecord:
+      elif pOp.opcode == OP_Next:
+        pass
+
+      elif pOp.opcode == OP_ResetIdx:
+        pass
+
+      elif pOp.opcode == OP_NextIdx:
+        pass
+
+      elif pOp.opcode == OP_PutIdx:
+        pass
+
+      elif pOp.opcode == OP_DeleteIdx:
+        pass
+
+      elif pOp.opcode == OP_Destroy:
+        pass
+
+      elif pOp.opcode == OP_ListOpen:
+        pass
+
+      elif pOp.opcode == OP_ListWrite:
+        pass
+
+      elif pOp.opcode == OP_ListRewind:
+        pass
+
+      elif pOp.opcode == OP_ListRead:
+        pass
+
+      elif pOp.opcode == OP_ListClose:
+        pass
+
+      elif pOp.opcode == OP_SortOpen:
+        pass
+
+      elif pOp.opcode == OP_SortPut:
+        pass
+
+      elif pOp.opcode == OP_SortMakeRec:
+        pass
+
+      elif pOp.opcode == OP_SortMakeKey:
+        pass
+
+      elif pOp.opcode == OP_Sort:
+        pass
+
+      elif pOp.opcode == OP_SortNext:
+        pass
+
+      elif pOp.opcode == OP_SortKey:
+        pass
+
+      elif pOp.opcode == OP_SortCallback:
+        pass
+
+      elif pOp.opcode == OP_SortClose:
+        pass
+
+      elif pOp.opcode == OP_FileOpen:
+        pass
+
+      elif pOp.opcode == OP_FileClose:
+        pass
+
+      elif pOp.opcode == OP_FileRead:
+        pass
+
+      elif pOp.opcode == OP_FileField:
+        pass
+
+      elif pOp.opcode == OP_MemStore:
+        pass
+
+      elif pOp.opcode == OP_MemLoad:
+        pass
+
+      elif pOp.opcode == OP_AggReset:
+        pass
+
+      elif pOp.opcode == OP_AggFocus:
+        pass
+
+      elif pOp.opcode == OP_AggIncr:
+        pass
+
+      elif pOp.opcode == OP_AggSet:
+        pass
+
+      elif pOp.opcode == OP_AggGet:
+        pass
+
+      elif pOp.opcode == OP_AggNext:
+        pass
+
+      elif pOp.opcode == OP_SetClear:
+        pass
+
+      elif pOp.opcode == OP_SetInsert:
+        pass
+
+      elif pOp.opcode == OP_SetFound:
+        pass
+
+      elif pOp.opcode == OP_SetNotFound:
         pass
 
       pc+=1
