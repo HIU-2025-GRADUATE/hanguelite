@@ -31,10 +31,22 @@ class rc4:
         self.j = 0
         self.s = None
 
+        # (TODO) 원래 gdbm에서 관리하던 키 값을 임시로 dbbe에서 관리
+        self.keyList = []
+
     def __del__(self):
         del self.i
         del self.j
         del self.s
+
+    def rc4byte(self):
+        self.i = (self.i + 1) & 0xff
+        self.j = (self.j + self.s[self.i]) & 0xff
+        t = self.s[self.i]
+        self.s[self.i] = self.s[self.j]
+        self.s[self.j] = t
+        t = self.s[self.i] + self.s[self.j]
+        return t & 0xff
 
 class Dbbe:
     def __init__(self):
@@ -59,9 +71,9 @@ class Dbbe:
 class DbbeCursor:
     def __init__(self):
         # 이 커서가 포함된 DB
-        self.pBe = Dbbe()
+        self.pBe: Dbbe
         # 이 table의 실제 파일
-        self.pFile = BeFile()
+        self.pFile: BeFile
         # 최근에 사용한 key
         self.key = None
         # 최근에 사용한 data
@@ -109,4 +121,18 @@ class DbbeCursor:
 
         # ppCursr에 DbbeCursor 할당
         self.pBe = pBe
-        return
+        return 
+    
+    def new(self):
+        if self.pFile == None or self.pfile.dbf == None: return 1
+        while 1:
+            iKey = 0
+            for _ in range(4):
+                iKey = (iKey<<8) + self.pBe.rc4.rc4byte()
+            if iKey == 0: continue
+            if iKey in self.pBe.rc4.keyList: continue
+            break
+        return iKey
+    
+
+
