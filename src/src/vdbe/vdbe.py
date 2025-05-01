@@ -2,12 +2,12 @@ from ..dbbe import *
 from vdbeOp import *
 from cursor import *
 
-OP_Open = 1
-OP_Close = 2
-OP_Fetch = 3
-OP_Fcnt = 4
-OP_New = 5
-OP_Put = 6
+#  Allowed values for Stack.flags
+STK_Null = 0x0001     # Value is NULL */
+STK_Str = 0x0002      # Value is a string */
+STK_Int = 0x0004      # Value is an integer */
+STK_Real = 0x0008     # Value is a real number */
+STK_Dyn = 0x0010      # Need to call sqliteFree() on zStack[*] */
 
 class Vdbe:
   """
@@ -426,16 +426,18 @@ class Vdbe:
   ** and this routine returns SQLITE_BUSY.
   */
   """
-  def execute(self, xCallback, pArg, pzErrMsg: str, pBusyArg, xBusy) -> int:
+  def exec(self, xCallback, pArg, pzErrMsg: str, pBusyArg, xBusy) -> int:
     # program counter
     pc = 0
     while pc < self.nOp:
       # pc가 가리키는 명령어 실행행
       pOp = self.aOp[pc]
 
+      # 특정 위치로 이동동
       if pOp.opcode == OP_Goto:
         pc = pOp.p2 - 1
 
+      # 종료료
       elif pOp.opcode == OP_Halt:
         pc = len(self.aOp)-1
 
@@ -447,8 +449,8 @@ class Vdbe:
       elif pOp.opcode == OP_String:
         self.aStack.append(pOp.p3)
 
-      # NULL 값을 스택에 추가 
-      # (TODO) 일단 NONE 값으로 추가하였음 원본은 STK_Null 값 사용
+      # NULL 값을 스택에 추가
+      # (TODO) 일단 None 값으로 추가하였음 원본은 STK_Null 값 사용
       elif pOp.opcode == OP_Null:
         self.aStack.append(None)
 
@@ -496,6 +498,7 @@ class Vdbe:
       elif pOp.opcode == OP_ColumnName:
         pass
 
+      # 
       elif pOp.opcode == OP_Callback:
         pass
 
@@ -544,8 +547,14 @@ class Vdbe:
       elif pOp.opcode == OP_NotNull:
         pass
 
+      # 스택의 top에서 p1개의 원소를 꺼내 Record로 만듬
+      # (TODO) 원래는 헤더 + 데이터 구조로 이루어져 있는데
+      # 굳이 그렇게할 필요 없을 것 같아서 일단 리스트 하나로 묶어서 Record로 만듬듬
       elif pOp.opcode == OP_MakeRecord:
-        pass
+        nField = pOp.p1
+        record = self.aStack[-nField:]
+        del self.aStack[-nField:]
+        self.aStack.append(record)
 
       elif pOp.opcode == OP_MakeKey:
         pass
@@ -577,7 +586,12 @@ class Vdbe:
       elif pOp.opcode in [OP_Distinct, OP_NotFound, OP_Found]:
         pass
 
+      # p1번째 커서와 연관된 키를 생성 (이전에 사용된적 없는 정수값)
+      # 생성 후, 스택에 push
       elif pOp.opcode == OP_New:
+        if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: v=0
+        else: v = Dbbe.dbbeNew(self.aCsr[pOp.p1])
+
         pass
 
       elif pOp.opcode == OP_Put:
@@ -707,7 +721,7 @@ class Vdbe:
         pass
 
       pc+=1
-    pass
+    
   """
   int sqliteVdbeExec(
     Vdbe *p,                   /* The VDBE */
@@ -1438,9 +1452,11 @@ class Vdbe:
               nByte += p->aStack[i].n;
             }
           }
+
           nByte += sizeof(int)*nField;
           zNewRecord = sqliteMalloc( nByte );
           if( zNewRecord==0 ) goto no_mem;
+
           j = 0;
           addr = sizeof(int)*nField;
           for(i=p->tos-nField+1; i<=p->tos; i++){

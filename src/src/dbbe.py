@@ -109,4 +109,4 @@ class DbbeCursor:
 
         # ppCursr에 DbbeCursor 할당
         self.pBe = pBe
-        return 
+        return
