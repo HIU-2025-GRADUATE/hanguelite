@@ -1,12 +1,12 @@
-import ply.yacc as yacc
-from src.tokenizer import tokens  # lex에서 정의한 토큰들을 임포트
+from ply import yacc
 from src.select import *
+from src.tokenizer import tokens
 
 # 전역 파서 컨텍스트 등 (예: pParse, SRT_Callback 등)
 # pParse, SRT_Callback, sqliteExec, sqliteSelect, sqliteSelectDelete,
 # sqliteSelectNew, sqliteIdListAppend 등의 함수가 이미 구현되어 있다고 가정
 
-pParse = None
+pParse: Parse = Parse.empty()
 
 def set_parse_object(parse_obj):
     global pParse
@@ -15,6 +15,8 @@ def set_parse_object(parse_obj):
 def p_input(p):
     """input : cmdlist"""
     p[0] = p[1]
+    if pParse.zErrMsg:
+        print(pParse.zErrMsg)
 
 def p_cmdlist(p):
     """cmdlist : ecmd"""
@@ -22,11 +24,59 @@ def p_cmdlist(p):
 
 def p_ecmd(p): 
     """ecmd : cmd"""
-    # Execute the command.
-    global pParse
-    exec(pParse) 
+    execute(pParse) # Execute the command.
     p[0] = p[1]
 
+"""
+    CREATE TABLE
+"""
+def p_command_create(p):
+    """cmd : create_table create_table_args"""  #
+
+def p_create_table(p):
+    """create_table : TK_CREATE TK_TABLE id"""  #
+
+    # test
+    pParse.zErrMsg = f"create table named : {p[3]}"
+    startTable(pParse, p[3])
+
+def p_create_table_args(p):
+    """create_table_args : TK_LP columnlist TK_RP"""  # constraint 는 아직 고려 안함
+    # p[0] = " ".join(p[1:])
+    endTable(pParse, p[0])
+
+def p_columnlist_multiple(p):
+    """columnlist : columnlist TK_COMMA column"""
+    # p[0] = " ".join(p[1:])
+
+def p_columnlist_single(p):
+    """columnlist : column"""
+    # p[0] = p[1]
+
+def p_column(p):
+    """column : columnid type"""  # constraint 는 아직 고려 안함
+    # p[0] = p[1] + " " + p[2]
+
+def p_columnid(p):
+    """columnid : id"""
+    addColumn(pParse, p[1])
+    # p[0] = p[1]
+
+def p_type(p):
+    """type : typename"""
+    # p[0] = p[1]
+
+def p_typename(p):
+    """typename : id"""
+    # p[0] = p[1]
+
+def p_id_from_string(p):
+    """id : TK_STRING"""
+    # p[0] = p[1]
+
+"""
+    SELECT
+"""
 def p_cmd(p):
     """cmd : select"""
     # Execute the SELECT statement with callback and delete the select structure.
@@ -69,13 +119,13 @@ def p_seltablist(p):
 def p_id(p):
     """id : TK_ID"""
     # For a simple identifier, return its string.
-    token = Token()
-    token.z = p[1]
-    token.n = len(token.z)
-    p[0] = token
+    p[0] = Token(p[1])
 
 def p_error(p):
-    print("Syntax error in input!", p)
+    if p:
+        print(f"[SYNTAX ERROR] Unexpected token: {p.type} ({p.value}) at line {p.lineno}")
+    else:
+        print('Syntax error in input!')
 
 # Build the parser
-parser = yacc.yacc()
+parser = yacc.yacc(debug=True)

@@ -1,4 +1,4 @@
-from sqliteInt import *
+from src.sqliteInt import *
 
 def exprResolveInSelect(pParse : Parse, pExpr : Expr):
     if pExpr is None:

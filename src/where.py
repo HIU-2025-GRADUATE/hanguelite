@@ -1,4 +1,4 @@
-from sqliteInt import *
+from src.sqliteInt import *
 
 
 class ExprInfo:

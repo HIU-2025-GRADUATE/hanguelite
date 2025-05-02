@@ -1,4 +1,5 @@
-from ..dbbe import *
+from src.dbbe import *
+from .vdbeOp import VdbeOp
 from vdbeOp import *
 from cursor import *
 
@@ -111,9 +112,7 @@ class Vdbe:
   ** Add a whole list of operations to the operation stack.  Return the
   ** address of the first operation added.
   """
-  # VdbeOp 인스턴스의 리스트를 Vdbe.aOp에 추가
-  # (Q) 이거 VdbeOp 인스턴스를 받는거면 그냥 addOp 메소드도
-  # 인스턴스를 받도록 통일시켜버리면 어떤지...?
+  # TODO : nOp 필요한지 검토 필요, 필요 없으면 삭제
   def addOpList(self, nOp: int, aOp: list[VdbeOp]) -> int:
     for OP in aOp: self.aOp.append(OP)
     self.nOp += len(aOp)
