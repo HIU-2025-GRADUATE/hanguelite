@@ -42,37 +42,37 @@ def p_create_table(p):
 
 def p_create_table_args(p):
     """create_table_args : TK_LP columnlist TK_RP"""  # constraint 는 아직 고려 안함
-    p[0] = " ".join(p[1:])
+    # p[0] = " ".join(p[1:])
     endTable(pParse, p[0])
 
 def p_columnlist_multiple(p):
     """columnlist : columnlist TK_COMMA column"""
-    p[0] = " ".join(p[1:])
+    # p[0] = " ".join(p[1:])
 
 def p_columnlist_single(p):
     """columnlist : column"""
-    p[0] = p[1]
+    # p[0] = p[1]
 
 def p_column(p):
     """column : columnid type"""  # constraint 는 아직 고려 안함
-    p[0] = p[1] + " " + p[2]
+    # p[0] = p[1] + " " + p[2]
 
 def p_columnid(p):
     """columnid : id"""
     addColumn(pParse, p[1])
-    p[0] = p[1]
+    # p[0] = p[1]
 
 def p_type(p):
     """type : typename"""
-    p[0] = p[1]
+    # p[0] = p[1]
 
 def p_typename(p):
     """typename : id"""
-    p[0] = p[1]
+    # p[0] = p[1]
 
 def p_id_from_string(p):
     """id : TK_STRING"""
-    p[0] = p[1]
+    # p[0] = p[1]
 
 """
     SELECT
@@ -119,10 +119,7 @@ def p_seltablist(p):
 def p_id(p):
     """id : TK_ID"""
     # For a simple identifier, return its string.
-    token = Token()
-    token.z = p[1]
-    token.n = len(token.z)
-    p[0] = token
+    p[0] = Token(p[1])
 
 def p_error(p):
     if p:

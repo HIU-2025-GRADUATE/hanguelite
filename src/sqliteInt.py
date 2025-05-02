@@ -112,9 +112,9 @@ class Token:
     z: str
     n: int
 
-    def __init__(self):
-        self.z = ""
-        self.n = 0
+    def __init__(self, token: str):
+        self.z = token
+        self.n = len(token)
 
 
 class Expr:
