@@ -1,9 +1,8 @@
 # Yacc example
+from ply import yacc
 
-import ply.yacc as yacc
 
 # Get the token map from the lexer.  This is required.
-from tokenizer import tokens
 
 def p_expression_plus(p):
     'expression : expression PLUS term'

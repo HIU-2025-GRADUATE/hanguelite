@@ -1,4 +1,4 @@
-from ..dbbe import DbbeCursor
+from src.dbbe import DbbeCursor
 
 """
 ** A cursor is a pointer into a database file.  The database file

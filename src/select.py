@@ -1,7 +1,7 @@
-from where import *
-from expr import *
-from build import *
-from tokenToConstant import *
+from src.where import *
+from src.expr import *
+from src.build import *
+from src.tokenToConstant import *
 
 def fillInColumnList(pParse : Parse, p : Select):
   pTabList = p.pSrc;
