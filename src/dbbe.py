@@ -1,4 +1,5 @@
-import csv, os
+import csv, os, random, time
+from gdbm import *
 
 class BeFile:
     def __init__(self):
@@ -25,29 +26,6 @@ class BeFile:
         del self.pPrev
         del self.pNext
 
-class rc4:
-    def __init__(self):
-        self.i = 0
-        self.j = 0
-        self.s = None
-
-        # (TODO) 원래 gdbm에서 관리하던 키 값을 임시로 dbbe에서 관리
-        self.keyList = []
-
-    def __del__(self):
-        del self.i
-        del self.j
-        del self.s
-
-    def rc4byte(self):
-        self.i = (self.i + 1) & 0xff
-        self.j = (self.j + self.s[self.i]) & 0xff
-        t = self.s[self.i]
-        self.s[self.i] = self.s[self.j]
-        self.s[self.j] = t
-        t = self.s[self.i] + self.s[self.j]
-        return t & 0xff
-
 class Dbbe:
     def __init__(self):
         # DB를 저장하는 디렉토리
@@ -59,14 +37,11 @@ class Dbbe:
         self.write = False
         # 열린 파일 리스트 (BeFile 끼리의 연결 리스트)
         self.pOpen = None
-        # rc 클래스의 인스턴스
-        self.rc4 = rc4()
 
     def __del__(self):
         del self.zDir
         del self.write
         del self.pOpen
-        del self.rc4
 
 class DbbeCursor:
     def __init__(self):
@@ -113,7 +88,7 @@ class DbbeCursor:
         # writeable==False 면 읽기 전용
         # (ForTest) csv 파일을 읽도록 만들었음
         if not writeable:
-            self.pFile.dbf = open(pBe.zDir+zFile+".csv", "r", encoding='utf-8')
+            self.pFile.dbf = gdbm_open(pBe.zDir+zFile+".csv", "r")
 
         # pFile 객체 변수를 세탕하고 pBe.pOpen에 대입
         self.pFile.writeable = writeable
@@ -129,12 +104,20 @@ class DbbeCursor:
         return 
     
     def new(self):
-        if self.pFile == None or self.pfile.dbf == None: return 1
+        if self.pFile == None or self.pFile.dbf == None: return 1
         while 1:
-            iKey = 0
-            for _ in range(4):
-                iKey = (iKey<<8) + self.pBe.rc4.rc4byte()
-            if iKey == 0: continue
-            if iKey in self.pBe.rc4.keyList: continue
+            random.seed(time.time())
+            iKey = f"{random.getrandbits(64):016x}"
+            if gdbm_exists(self.pFile.dbf, iKey): continue
             break
         return iKey
+    
+    def put(self, key, data):
+        if self.pFile==0 or self.pFile.dbf==0: return "SQLITE_ERROR"
+        gdbm_store(self.pFile.dbf, key, data, GDBM_REPLACE)
+
+
+if __name__ == "__main__":
+    pCursor = DbbeCursor()
+    pCursor.openCursor(Dbbe(), "tableA")
+    print(pCursor.new())

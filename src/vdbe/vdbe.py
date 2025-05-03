@@ -451,25 +451,10 @@ class Vdbe:
       elif pOp.opcode == OP_Null:
         self.aStack.append(None)
 
-      # P1 elements are popped off of the top of stack and discarded
-      # (TODO) 스택에서 Pop하면 탑을 빼는거지 뭔 소리임 이게?
-      # case OP_Pop: {
-      #   PopStack(p, pOp->p1);
-      #   break;
-      # }
-      # static void PopStack(Vdbe *p, int N){
-      #   if( p->zStack==0 ) return;
-      #   while( p->tos>=0 && N-->0 ){
-      #     int i = p->tos--;
-      #     if( p->aStack[i].flags & STK_Dyn ){
-      #       sqliteFree(p->zStack[i]);
-      #     }
-      #     p->aStack[i].flags = 0;
-      #     p->zStack[i] = 0;
-      #   }    
-      # }
+      # 스택의 top에서 p1 개의 원소를 삭제제
       elif pOp.opcode == OP_Pop:
-        pass
+        for _ in range(pOp.p1):
+          del self.aStack[-1]
 
       # 스택 위에서 P1 번째 원소를 복제해서 스택의 top에 추가
       elif pOp.opcode == OP_Dup:
@@ -585,6 +570,11 @@ class Vdbe:
         self.aStack.append(v)
 
       elif pOp.opcode == OP_Put:
+        if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
+        data = self.aStack[-1]
+        key = self.aStack[-2]
+        self.aCsr[pOp.p1].pCursor.put(key, data)
+        self.aStack = self.aStack[:-2]
         pass
 
       elif pOp.opcode == OP_Delete:
@@ -594,6 +584,7 @@ class Vdbe:
         pass
 
       elif pOp.opcode == OP_Field:
+
         pass
 
       elif pOp.opcode == OP_Key:
