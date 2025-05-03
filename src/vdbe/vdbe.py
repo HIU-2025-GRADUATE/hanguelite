@@ -34,20 +34,17 @@ class Vdbe:
     self.aCsr = list()
     # self.aCsr의 길이
     self.nCursor = 0
+    # 각 컬럼의 이름 리스트
+    self.azColName = list()
     # FILE *trace;          # /* Write an execution trace here, if not NULL */
-    # int nOp;           # /* Number of instructions in the program */
     # int nOpAlloc;      # /* Number of slots allocated for aOp[] */
-    # Op *aOp;           # /* Space to hold the virtual machine's program */
     # int nLabel;        # /* Number of labels used */
     # int nLabelAlloc;   # /* Number of slots allocated in aLabel[] */
     # int *aLabel;       # /* Space to hold the labels */
     # int tos;           # /* Index of top of stack */
     # int nStackAlloc;   # /* Size of the stack */
-    # Stack *aStack;     # /* The operand stack, except string values */
     # char **zStack;     # /* Text or binary values of the stack */
     # char **azColName;  # /* Becomes the 4th parameter to callbacks */
-    # int nCursor;       # /* Number of slots in aCsr[] */
-    # Cursor *aCsr;      # /* On element of this array for each open cursor */
     # int nList;         # /* Number of slots in apList[] */
     # FILE **apList;     # /* An open file for each list */
     # int nSort;         # /* Number of slots in apSort[] */
@@ -62,7 +59,7 @@ class Vdbe:
     # Agg agg;           # /* Aggregate information */
     # int nSet;          # /* Number of sets allocated */
     # Set *aSet;         # /* An array of sets */
-    # OP_Fetch 명령어 실행 횟수수
+    # OP_Fetch 명령어 실행 횟수
     self.nFetch = 0
 
   # 로그 파일 (trace) Setter
@@ -484,19 +481,14 @@ class Vdbe:
         self.aStack.append(self.aStack[-(pOp.p1+1)])
         del self.aStack[-(pOp.p1+2)]
 
-      # Specify the number of column values that will appear in the
-      # array passed as the 4th parameter to the callback.  No checking
-      # is done.  If this value is wrong, a coredump can result.
+      # self.azColName 리스트의 길이 설정정
       elif pOp.opcode == OP_ColumnCount:
-        pass
+        self.azColName = [0] * pOp.p1
+        self.azColName[pOp.p1] = 0
 
-      # P3 becomes the P1-th column name (first is 0).  An array of pointers
-      # to all column names is passed as the 4th parameter to the callback.
-      # The ColumnCount opcode must be executed first to allocate space to
-      # hold the column names.  Failure to do this will likely result in
-      # a coredump.
+      # azColName[p1]=p3 로 설정
       elif pOp.opcode == OP_ColumnName:
-        pass
+        self.azColName[pOp.p1] = pOp.p3
 
       elif pOp.opcode == OP_Callback:
         pass
@@ -577,7 +569,6 @@ class Vdbe:
           #self.aCsr[i].pCursor = 0
 
       elif pOp.opcode == OP_Fetch:
-        
         pass
 
       elif pOp.opcode == OP_Fcnt:

@@ -73,7 +73,7 @@ class DbbeCursor:
         # 이 커서가 포함된 DB
         self.pBe: Dbbe
         # 이 table의 실제 파일
-        self.pFile: BeFile
+        self.pFile = BeFile()
         # 최근에 사용한 key
         self.key = None
         # 최근에 사용한 data
@@ -91,6 +91,11 @@ class DbbeCursor:
         del self.needRewind
         del self.readPending
 
+    def open(self, zName=0, writeFlag=0, createFlag=0, pzErrMsg=0):
+        if not writeFlag: createFlag=0
+        if createFlag: os.mkdir(zName)
+        if not os.path.isdir(zName): return 0
+
     def closeCursor(self):
         if self==0: return
         self.pFile.nRef -= 1
@@ -104,7 +109,7 @@ class DbbeCursor:
         return
 
     def openCursor(self, pBe, zFile, writeable=False):
-        # (ToDo) writeable==True 이면 쓸 수 writer 추가
+        # (TODO) writeable==True 이면 쓸 수 writer 추가
         # writeable==False 면 읽기 전용
         # (ForTest) csv 파일을 읽도록 만들었음
         if not writeable:
@@ -133,6 +138,3 @@ class DbbeCursor:
             if iKey in self.pBe.rc4.keyList: continue
             break
         return iKey
-    
-
-
