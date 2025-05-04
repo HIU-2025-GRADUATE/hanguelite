@@ -1,7 +1,7 @@
 from src.dbbe import *
 from .vdbeOp import VdbeOp
-from vdbeOp import *
-from cursor import *
+from src.vdbe.vdbeOp import *
+from src.vdbe.cursor import *
 
 #  Allowed values for Stack.flags
 STK_Null = 0x0001     # Value is NULL */
@@ -69,9 +69,10 @@ class Vdbe:
     self.trace = trace
 
   # op, p1, p2, p3 를 입력받아 VDBE.aOp에 추가
-  def addOp(self, op: int, p1: int, p2: int, p3: str, lbl: int) -> int:
+  def addOp(self, op: int, p1: int, p2: int, p3: str, lbl: int=0) -> int:
     # (TODO) lbl 활용 부분 구현해야함
     self.aOp.append(VdbeOp(op, p1, p2, p3))
+    self.nOp+=1
     return 0
   # int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2, const char *p3, int lbl){
   #   (중략)
@@ -425,14 +426,16 @@ class Vdbe:
   ** and this routine returns SQLITE_BUSY.
   */
   """
-  def exec(self, xCallback, pArg, pzErrMsg: str, pBusyArg, xBusy) -> int:
+  def exec(self, xCallback=0, pArg=0, pzErrMsg: str=0, pBusyArg=0, xBusy=0) -> int:
     # program counter
     pc = 0
     while pc < self.nOp:
-      # pc가 가리키는 명령어 실행행
+      # pc가 가리키는 명령어 실행
       pOp = self.aOp[pc]
+      #print(pOp.opcode, pOp.p1, pOp.p2, pOp.p3)
+      #print(self.aStack)
 
-      # 특정 위치로 이동동
+      # 특정 위치로 이동
       if pOp.opcode == OP_Goto:
         pc = pOp.p2 - 1
 
@@ -468,17 +471,20 @@ class Vdbe:
         self.aStack.append(self.aStack[-(pOp.p1+1)])
         del self.aStack[-(pOp.p1+2)]
 
-      # self.azColName 리스트의 길이 설정정
+      # self.azColName 리스트의 길이 설정
       elif pOp.opcode == OP_ColumnCount:
         self.azColName = [0] * pOp.p1
-        self.azColName[pOp.p1] = 0
 
       # azColName[p1]=p3 로 설정
       elif pOp.opcode == OP_ColumnName:
         self.azColName[pOp.p1] = pOp.p3
 
+      # (TEST) 동작 확인을 위해 스택에서 p1개 원소를 꺼내 print로 작성
+      # (TODO) 나중에 callback 함수 만들어야함
       elif pOp.opcode == OP_Callback:
-        pass
+        print(', '.join(self.aStack[-pOp.p1:]))
+        for _ in range(pOp.p1):
+          del self.aStack[-1]
 
       elif pOp.opcode == OP_Concat:
         pass
@@ -589,7 +595,7 @@ class Vdbe:
 
       elif pOp.opcode == OP_Field:
         if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
-        z = self.aCrs[pOp.p1].readData(pOp.p2)
+        z = self.aCsr[pOp.p1].pCursor.readData(pOp.p2)
         self.aStack.append(z)
 
       elif pOp.opcode == OP_Key:
@@ -762,3 +768,4 @@ def opcode(zName: str) -> int:
 #   }
 #   return 0;
 # }
+

@@ -45,7 +45,7 @@ def gdbm_nextKey(dbf, key):
     keys = list(db.keys())
     idx = keys.index(key)
     
-    if idx + 1< len(keys): return keys[idx+1]
+    if idx+1 < len(keys): return keys[idx+1]
     else: return None
 
 if __name__ == "__main__":

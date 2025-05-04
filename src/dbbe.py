@@ -1,5 +1,5 @@
 import csv, os, random, time
-from gdbm import *
+from src.gdbm import *
 
 class BeFile:
     def __init__(self):
@@ -31,7 +31,7 @@ class Dbbe:
         # DB를 저장하는 디렉토리
         # self.zDir = None
         # (ForTest) 현재 디렉토리 절대경로를 가리키게 작성
-        self.zDir = '/'.join(os.path.abspath(__file__).split("\\")[:-1])+'/'
+        self.zDir = '/'.join(os.path.abspath(__file__).split("\\")[:-1])+'/db/'
         
         # write 권한이 있는지
         self.write = False
@@ -87,8 +87,8 @@ class DbbeCursor:
         # (TODO) writeable==True 이면 쓸 수 writer 추가
         # writeable==False 면 읽기 전용
         # (ForTest) csv 파일을 읽도록 만들었음
-        if not writeable:
-            self.pFile.dbf = gdbm_open(pBe.zDir+zFile+".csv", "r")
+        if not writeable: self.pFile.dbf = gdbm_open(pBe.zDir+zFile+".csv", "r+")
+        else: self.pFile.dbf = gdbm_open(pBe.zDir+zFile+".csv", "w+")
 
         # pFile 객체 변수를 세탕하고 pBe.pOpen에 대입
         self.pFile.writeable = writeable
