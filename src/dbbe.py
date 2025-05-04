@@ -134,9 +134,10 @@ class DbbeCursor:
         else:
             self.readPending = True
             rc = 1
-        
-        print(self.key)
         return rc
+    
+    def rewind(self):
+        self.needRewind = 1
 
 
 if __name__ == "__main__":

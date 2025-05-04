@@ -590,7 +590,8 @@ class Vdbe:
         pass
 
       elif pOp.opcode == OP_Rewind:
-        pass
+        if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
+        self.aCsr[pOp.p1].pCursor.rewind()
 
       # p1 커서의 dbf 에서 가리키고 있는 레코드의 다음 레코드를 가리키도록 이동
       elif pOp.opcode == OP_Next:
