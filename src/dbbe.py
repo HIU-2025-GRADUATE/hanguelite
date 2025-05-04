@@ -129,6 +129,7 @@ class DbbeCursor:
         self.key = nextKey
         if nextKey == None:
             self.needRewind = True
+            # (TODO) readPending = True 일때 안읽은거 아닌가..?
             self.readPending = False
             rc = 0
         else:
@@ -139,9 +140,18 @@ class DbbeCursor:
     def rewind(self):
         self.needRewind = 1
 
+    # (TODO) readKey 파트 만들어야됌
+    def readData(self, offset):
+        if self.readPending and self.pFile and self.pFile.dbf:
+            self.data = gdbm_fetch(self.pFile.dbf, self.key)
+            self.readPending = False
+        if offset<0 or offset>=len(self.data): return ''
+        return self.data[offset]
+
 
 if __name__ == "__main__":
     pCursor = DbbeCursor()
     pCursor.openCursor(Dbbe(), "tableA")
-    for _ in range(7): pCursor.nextKey()
-    print(pCursor.new())
+    for _ in range(7):
+        pCursor.nextKey()
+        print(pCursor.readData(1))

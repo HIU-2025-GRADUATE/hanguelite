@@ -18,8 +18,10 @@ def gdbm_store(dbf=0, key='', data='', mode=0):
 def gdbm_open(filePath, mode):
     return open(filePath, mode, encoding='utf-8')
 
-def gdbm_fetch():
-    return
+def gdbm_fetch(dbf, key):
+    dbf.seek(0)
+    db = {l[0]:l[1:] for l in csv.reader(dbf)}
+    return db[key]
 
 def gdbm_exists(dbf, key):
     dbf.seek(0)

@@ -30,6 +30,8 @@ class Vdbe:
     self.nOp = 0
     # 피연산자 스택
     self.aStack = list()
+    # 문자열 스택
+    self.zStack = list()
     # 열려있는 커서 리스트 (Cursor 객체 리스트)
     self.aCsr = list()
     # self.aCsr의 길이
@@ -583,8 +585,12 @@ class Vdbe:
       elif pOp.opcode == OP_KeyAsData:
         pass
 
+      # p1 커서의 dbf 에서 p2 번째 필드 값을 읽어옴
+
       elif pOp.opcode == OP_Field:
-        pass
+        if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
+        z = self.aCrs[pOp.p1].readData(pOp.p2)
+        self.aStack.append(z)
 
       elif pOp.opcode == OP_Key:
         pass
