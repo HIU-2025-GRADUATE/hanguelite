@@ -116,8 +116,31 @@ class DbbeCursor:
         if self.pFile==0 or self.pFile.dbf==0: return "SQLITE_ERROR"
         gdbm_store(self.pFile.dbf, key, data, GDBM_REPLACE)
 
+    def nextKey(self):
+        if self.pFile==0 or self.pFile.dbf==0:
+            self.readPending = False
+            return 0
+        if self.needRewind:
+            nextKey = gdbm_firstKey(self.pFile.dbf)
+            self.needRewind = False
+        else:
+            nextKey = gdbm_nextKey(self.pFile.dbf, self.key)
+
+        self.key = nextKey
+        if nextKey == None:
+            self.needRewind = True
+            self.readPending = False
+            rc = 0
+        else:
+            self.readPending = True
+            rc = 1
+        
+        print(self.key)
+        return rc
+
 
 if __name__ == "__main__":
     pCursor = DbbeCursor()
     pCursor.openCursor(Dbbe(), "tableA")
+    for _ in range(7): pCursor.nextKey()
     print(pCursor.new())

@@ -584,7 +584,6 @@ class Vdbe:
         pass
 
       elif pOp.opcode == OP_Field:
-
         pass
 
       elif pOp.opcode == OP_Key:
@@ -593,8 +592,11 @@ class Vdbe:
       elif pOp.opcode == OP_Rewind:
         pass
 
+      # p1 커서의 dbf 에서 가리키고 있는 레코드의 다음 레코드를 가리키도록 이동
       elif pOp.opcode == OP_Next:
-        pass
+        if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
+        if self.aCsr[pOp.p1].pCursor.nextKey() == 0: pc = pOp.p2-1
+        else: self.nFetch+=1
 
       elif pOp.opcode == OP_ResetIdx:
         pass
