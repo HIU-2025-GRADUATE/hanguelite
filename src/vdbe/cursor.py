@@ -11,6 +11,6 @@ from src.dbbe import DbbeCursor
 ** instance of the following structure.
 """
 class Cursor:
-    pCursor: DbbeCursor  # /* The cursor structure of the backend */
+    pCursor = DbbeCursor()  # /* The cursor structure of the backend */
     index: int           # /* The next index to extract */
     keyAsData: int       # /* The OP_Field command works on key instead of data */
