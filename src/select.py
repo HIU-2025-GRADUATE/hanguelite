@@ -40,7 +40,6 @@ def fillInColumnList(pParse : Parse, p : Select):
   
   return 0
 
-# opcode 상수로 치환 필요
 def generateColumnNames(pParse : Parse, pTabList : IdList, pEList : ExprList):
     v = pParse.pVdbe  
 
@@ -48,12 +47,12 @@ def generateColumnNames(pParse : Parse, pTabList : IdList, pEList : ExprList):
         return
     pParse.colNamesSet = 1
 
-    v.addOp("OP_ColumnCount", pEList.nExpr, 0, 0, 0)
+    v.addOp(OP_ColumnCount, pEList.nExpr, 0, 0, 0)
 
     for i in range(pEList.nExpr):
         if pEList.a[i].zName:
             zName = pEList.a[i].zName
-            v.addOp("OP_ColumnName", i, 0, zName, 0)
+            v.addOp(OP_ColumnName, i, 0, zName, 0)
             continue
 
         p = pEList.a[i].pExpr
@@ -61,13 +60,13 @@ def generateColumnNames(pParse : Parse, pTabList : IdList, pEList : ExprList):
         if p.span.z and p.span.z[0]:
             tmpStr = p.span.z[:p.span.n]
             tmpStr = ' '.join(tmpStr.split())
-            v.addOp("OP_ColumnName", i, 0, tmpStr, 0)
+            v.addOp(OP_ColumnName, i, 0, tmpStr, 0)
             # sqliteVdbeChangeP3(v, addr, p.span.z, p.span.n)
             # sqliteVdbeCompressSpace(v, addr)
 
         elif p.op != TK_COLUMN or pTabList == None:
             zName = f"column{i + 1}"  # sprintf 대체
-            v.addOp("OP_ColumnName", i, 0, zName, 0)
+            v.addOp(OP_ColumnName, i, 0, zName, 0)
 
         else:
             if pTabList.nId > 1:
@@ -78,14 +77,13 @@ def generateColumnNames(pParse : Parse, pTabList : IdList, pEList : ExprList):
                     zTab = pTab.zName
 
                 zName = zTab + "." + pTab.aCol[p.iColumn].zName
-                v.addOp("OP_ColumnName", i, 0, zName, 0)
+                v.addOp(OP_ColumnName, i, 0, zName, 0)
 
             else:
                 pTab = pTabList.a[0].pTab
                 zName = pTab.aCol[p.iColumn].zName
-                v.addOp("OP_ColumnName", i, 0, zName, 0)
+                v.addOp(OP_ColumnName, i, 0, zName, 0)
 
-# opcode 상수로 치환 필요
 def selectInnerLoop(pParse : Parse, pEList : ExprList, srcTab : int, nColumn : int, pOrderBy : ExprList, 
                     distinct : int, eDest : int, iParm : int, iContinue : int, iBreak : int):
     v = pParse.pVdbe  # 포인터 참조 -> 점(.)으로 변경
@@ -97,9 +95,9 @@ def selectInnerLoop(pParse : Parse, pEList : ExprList, srcTab : int, nColumn : i
         nColumn = pEList.nExpr
     else:
         for i in range(nColumn):
-            v.addOp("OP_Field", srcTab, i, 0, 0)
+            v.addOp(OP_Field, srcTab, i, 0, 0)
 
-    v.addOp("OP_Callback", nColumn, 0, 0, 0)
+    v.addOp(OP_Callback, nColumn, 0, 0, 0)
 
     return 0
     
