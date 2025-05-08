@@ -32,8 +32,6 @@ class Dbbe:
         """ dbbe.c : sqliteDbbeOpen() 198 ~ 204"""
         # DB를 저장하는 디렉토리
         self.zDir = databaseName
-        # (ForTest) 현재 디렉토리 절대경로를 가리키게 작성
-        self.zDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db')
         
         # write 권한이 있는지
         self.write = writeFlag
@@ -195,7 +193,7 @@ class DbbeCursor:
 
 if __name__ == "__main__":
     pCursor = DbbeCursor()
-    pCursor.openCursor(Dbbe("test", False), "tableA")
+    pCursor.openCursor(Dbbe(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'), False), "tableA")
     for _ in range(7):
         pCursor.nextKey()
         print(pCursor.readData(1))
