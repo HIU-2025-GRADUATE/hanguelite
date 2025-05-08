@@ -1,5 +1,6 @@
 import csv, os, random, time
 from src.gdbm import *
+from src.constant import MASTER_NAME
 
 class BeFile:
     def __init__(self):
@@ -27,21 +28,62 @@ class BeFile:
         del self.pNext
 
 class Dbbe:
-    def __init__(self):
+    def __init__(self, databaseName: str, writeFlag: bool):
+        """ dbbe.c : sqliteDbbeOpen() 198 ~ 204"""
         # DB를 저장하는 디렉토리
-        # self.zDir = None
+        self.zDir = databaseName
         # (ForTest) 현재 디렉토리 절대경로를 가리키게 작성
-        self.zDir = '/'.join(os.path.abspath(__file__).split("\\")[:-1])+'/db/'
+        self.zDir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db')
         
         # write 권한이 있는지
-        self.write = False
+        self.write = writeFlag
         # 열린 파일 리스트 (BeFile 끼리의 연결 리스트)
         self.pOpen = None
+        # self.rc4 = rc4init()
 
     def __del__(self):
         del self.zDir
         del self.write
         del self.pOpen
+
+    @staticmethod
+    def open(databaseName, writeFlag, createFlag):
+        """dbbe.c : sqliteDbbeOpen()"""
+        if not writeFlag:
+            createFlag = False
+
+        if not os.path.exists(databaseName):
+            if createFlag:
+                os.makedirs(databaseName, mode=0o750)
+            if not os.path.exists(databaseName):
+                if createFlag:
+                    raise Exception(f"can't find or create directory \"{databaseName}\".\"")
+                else:
+                    raise Exception(f"can't find directory \"{databaseName}\".")
+
+        if not os.path.isdir(databaseName):
+            raise Exception(f"not a directory: \"{databaseName}\"")
+
+        # TODO : 데이터베이스 폴더 쓰기 권한 체크
+        """
+        if( access(zName, writeFlag ? (X_OK|W_OK|R_OK) : (X_OK|R_OK)) ){
+            sqliteSetString(pzErrMsg, "access permission denied", 0);
+            return 0;
+          }
+        """
+
+        # TODO : 마스터 테이블 접근 권한 체크
+        """
+        zMaster = databaseName + "/" + MASTER_NAME + ".tbl"
+        # if (stat(zMaster, & statbuf) == 0
+        #         & & access(zMaster, writeFlag ? (W_OK | R_OK): R_OK) != 0 ){
+        #     sqliteSetString(pzErrMsg, "access permission denied for ", zMaster, 0);
+        # sqliteFree(zMaster);
+        # return 0;
+        # }
+        """
+
+        return Dbbe(databaseName, writeFlag)
 
 class DbbeCursor:
     def __init__(self):
@@ -87,8 +129,10 @@ class DbbeCursor:
         # (TODO) writeable==True 이면 쓸 수 writer 추가
         # writeable==False 면 읽기 전용
         # (ForTest) csv 파일을 읽도록 만들었음
-        if not writeable: self.pFile.dbf = gdbm_open(pBe.zDir+zFile+".csv", "r+")
-        else: self.pFile.dbf = gdbm_open(pBe.zDir+zFile+".csv", "w+")
+        if not writeable:
+            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile)+".csv", "r+")
+        else:
+            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile)+".csv", "w+")
 
         # pFile 객체 변수를 세탕하고 pBe.pOpen에 대입
         self.pFile.writeable = writeable
@@ -151,7 +195,7 @@ class DbbeCursor:
 
 if __name__ == "__main__":
     pCursor = DbbeCursor()
-    pCursor.openCursor(Dbbe(), "tableA")
+    pCursor.openCursor(Dbbe("test", False), "tableA")
     for _ in range(7):
         pCursor.nextKey()
         print(pCursor.readData(1))

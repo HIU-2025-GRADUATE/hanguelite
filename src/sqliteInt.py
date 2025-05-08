@@ -14,12 +14,6 @@ SRT_Table    = 7
 """
 N_HASH = 51
 
-"""
-    Name of the master database table.
-    The master database table is a special table that holds the names and attributes of all user tables and indices.
-"""
-MASTER_NAME = "hqlite_master"
-
 class Column:
     zName: str
     zDflt: str
@@ -83,6 +77,23 @@ class sqlite:
       self.xBusyCallback = None 
       self.apTblHash = [None] * N_HASH
       self.apIdxHash = [None] * N_HASH
+
+    @staticmethod
+    def open(filename: str):
+        """main.c : sqlite_open()"""
+        db = sqlite()
+        db.pBe = Dbbe.open(filename)
+        if not db.pBe:
+            return None
+
+        db.file_format = 1
+        rc = db.initialize()
+        if rc != SQLITE_OK and rc != SQLITE_BUSY:
+            db.close()
+            return None
+
+        return db
+
 
     def findTable(self, tableName: str) -> Table:
         h = hashNoCase(tableName, 0) % N_HASH
@@ -283,8 +294,8 @@ class Parse:
     iAggCount: int
     useAgg: int
 
-    def __init__(self):
-        self.db = None
+    def __init__(self, db: sqlite):
+        self.db = db
         self.xCallback = None
         self.pArg = None
         self.zErrMsg = ""

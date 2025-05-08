@@ -1,4 +1,15 @@
-from src.parse import parser
+from src.parse import parser, set_parse_object
+from src.sqliteInt import Parse, sqlite
+
+
+def runParser(parse: Parse, sql: str):
+    set_parse_object(parse)
+    result = parser.parse(sql, debug=True)
+    print(result)
+
+def execute_sql(db, sql):
+    parse = Parse(db)
+    runParser(parse, sql)
 
 
 def main():
@@ -15,14 +26,15 @@ def main():
 #             break  # No more input
 #         print(tok)
 #
+    db = sqlite()
     while True:
         try:
             s = input('sql > ')
         except EOFError:
             break
         if not s: continue
-        result = parser.parse(s, debug=False)
-        print(result)
+
+        execute_sql(db, s)
 
 if __name__ == '__main__':
     main()

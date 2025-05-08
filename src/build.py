@@ -42,7 +42,7 @@ def startTable(parse: Parse, zName: str):
     """ TEST """ #
     print("called startTable")
     parse.pNewTable = Table(zName) # TEST CODE
-    return # TEST CODE
+    # return # TEST CODE
     """ TEST""" #
 
     db: sqlite = parse.db
