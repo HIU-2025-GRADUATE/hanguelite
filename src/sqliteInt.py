@@ -1,4 +1,5 @@
 from src.util import hashNoCase
+from src.constant import SQLITE_OK, SQLITE_Initialized
 from src.tokenToConstant import *
 from src.vdbe.vdbe import *
 
@@ -82,7 +83,7 @@ class sqlite:
     def open(filename: str):
         """main.c : sqlite_open()"""
         db = sqlite()
-        db.pBe = Dbbe.open(filename)
+        db.pBe = Dbbe.open(filename, writeFlag=True, createFlag=True)
         if not db.pBe:
             return None
 
@@ -117,6 +118,89 @@ class sqlite:
             pIndex = pIndex.pHash
 
         return None
+
+    def openCb(self, argc: int, argv: [str], azColName: [str]):
+        """ main.c : sqliteOpenCb() """
+        if argc == 2: # there is meta information (argv[1]) in the sqlite_master file. Typical meta information is the file format version
+            # TODO : argc == 2 인 케이스 구현
+            """
+            if( sscanf(argv[1],"file format %d",&db->file_format)==1 ){
+              return 0;
+            }
+            /* Unknown meta information.  Ignore it. */
+            return 0;
+            """
+            pass
+
+        if argc != 1:
+            return 0
+
+        parse = Parse(self)
+        parse.initFlag = True
+
+        # execute master table create sql
+        from main import runParser
+        return runParser(parse, argv[0])
+
+
+
+    def initialize(self):
+        """ main.c : sqliteInit() """
+        master_schema = ("CREATE TABLE " + MASTER_NAME + " (\n"
+                         "  type text,\n"                       # table / index / meta 중 하나
+                         "  name text,\n"                       # table 또는 index 이름
+                         "  tbl_name text,\n"                   # 관련된 테이블 이름
+                         "  sql text\n"                         # 이 레코드와 관련된 테이블의 CREATE 구문
+                         ")")
+
+        initProg = [
+            VdbeOp(OP_Open,       0, 0, MASTER_NAME),
+            VdbeOp(OP_Next,       0, 9, 0),   # / * 1 * /
+            VdbeOp(OP_Field,      0, 0, 0),
+            VdbeOp(OP_String,     0, 0, "meta"),
+            VdbeOp(OP_Ne,         0, 1, 0),
+            VdbeOp(OP_Field,      0, 0, 0),
+            VdbeOp(OP_Field,      0, 3, 0),
+            VdbeOp(OP_Callback,   2, 0, 0),
+            VdbeOp(OP_Goto,       0, 1, 0),
+            VdbeOp(OP_Rewind,     0, 0, 0),   # / *9 * /
+            VdbeOp(OP_Next,       0, 17, 0),  # / *10 * /
+            VdbeOp(OP_Field,      0, 0, 0),
+            VdbeOp(OP_String,     0, 0, "table"),
+            VdbeOp(OP_Ne,         0, 10, 0),
+            VdbeOp(OP_Field,      0, 3, 0),
+            VdbeOp(OP_Callback,   1, 0, 0),
+            VdbeOp(OP_Goto,       0, 10, 0),
+            VdbeOp(OP_Rewind,     0, 0, 0),   # / *17 * /
+            VdbeOp(OP_Next,       0, 25, 0),  # / *18 * /
+            VdbeOp(OP_Field,      0, 0, 0),
+            VdbeOp(OP_String,     0, 0, "index"),
+            VdbeOp(OP_Ne,         0, 18, 0),
+            VdbeOp(OP_Field,      0, 3, 0),
+            VdbeOp(OP_Callback,   1, 0, 0),
+            VdbeOp(OP_Goto,       0, 18, 0),
+            VdbeOp(OP_Halt,       0, 0, 0)    # / *25 * /
+        ]
+
+        vdbe = Vdbe(self.pBe)
+        vdbe.addOpList(len(initProg), initProg)
+        # rc = vdbe.exec() # 처음 dbms 를 시작하면 마스터 테이블 파일이 없는 게 정상 아닌가? OP_Open 에서 파일 없다는 에러 남.
+        rc = SQLITE_OK # TEST
+
+        if rc == SQLITE_OK and self.file_format < 2 and self.nTable > 0:
+            raise Exception("obsolete file format")
+            # rc = SQLITE_ERROR
+
+        if rc == SQLITE_OK:
+            self.openCb(1, [master_schema, 0], [])
+            table = self.findTable(MASTER_NAME)
+
+            if table:
+                table.readOnly = 1
+
+            self.flags |= SQLITE_Initialized
+
+        return rc
 
 
 class Token:

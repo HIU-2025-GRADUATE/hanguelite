@@ -16,7 +16,6 @@ def gdbm_store(dbf=0, key='', data='', mode=0):
     return
 
 def gdbm_open(filePath, mode):
-    print(filePath)
     return open(filePath, mode, encoding='utf-8')
 
 def gdbm_fetch(dbf, key):

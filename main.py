@@ -1,5 +1,6 @@
 from src.parse import parser, set_parse_object
 from src.sqliteInt import Parse, sqlite
+import os
 
 
 def runParser(parse: Parse, sql: str):
@@ -26,7 +27,7 @@ def main():
 #             break  # No more input
 #         print(tok)
 #
-    db = sqlite()
+    db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
     while True:
         try:
             s = input('sql > ')

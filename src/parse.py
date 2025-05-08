@@ -6,7 +6,7 @@ from src.tokenizer import tokens
 # pParse, SRT_Callback, sqliteExec, sqliteSelect, sqliteSelectDelete,
 # sqliteSelectNew, sqliteIdListAppend 등의 함수가 이미 구현되어 있다고 가정
 
-pParse: Parse = Parse.empty()
+pParse: Parse = None
 
 def set_parse_object(parse_obj):
     global pParse
