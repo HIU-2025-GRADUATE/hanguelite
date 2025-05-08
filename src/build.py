@@ -38,27 +38,27 @@ def findTable(db : sqlite, zName : str):
     메모리에 새로운 테이블 정보를 저장
     CREATE TABLE 구문을 처리할 때 처음으로 실행되는 함수
 """
-def startTable(parse: Parse, zName: str):
+def startTable(parse: Parse, pName: Token):
     """ TEST """ #
     print("called startTable")
-    parse.pNewTable = Table(zName) # TEST CODE
+    parse.pNewTable = Table(pName.z) # TEST CODE
     # return # TEST CODE
     """ TEST""" #
 
     db: sqlite = parse.db
-    table: Table = db.findTable(zName)
+    table: Table = db.findTable(pName.z)
 
     if table:
-        parse.zErrMsg = "table %s already exists" % zName
+        parse.zErrMsg = "table %s already exists" % pName
         parse.nErr += 1
         return
 
-    if db.findIndex(zName):
-        parse.zErrMsg = "there is already an index named %s" % zName
+    if db.findIndex(pName.z):
+        parse.zErrMsg = "there is already an index named %s" % pName
         parse.nErr += 1
         return
 
-    parse.pNewTable = Table(zName)
+    parse.pNewTable = Table(pName.z)
 
 
 """

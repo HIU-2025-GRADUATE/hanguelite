@@ -5,7 +5,7 @@ import os
 
 def runParser(parse: Parse, sql: str):
     set_parse_object(parse)
-    result = parser.parse(sql, debug=True)
+    result = parser.parse(sql, debug=False)
     print(result)
 
 def execute_sql(db, sql):

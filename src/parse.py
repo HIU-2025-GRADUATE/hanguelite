@@ -37,7 +37,7 @@ def p_create_table(p):
     """create_table : TK_CREATE TK_TABLE id"""  #
 
     # test
-    pParse.zErrMsg = f"create table named : {p[3]}"
+    pParse.zErrMsg = f"create table named : {p[3].z}"
     startTable(pParse, p[3])
 
 def p_create_table_args(p):
