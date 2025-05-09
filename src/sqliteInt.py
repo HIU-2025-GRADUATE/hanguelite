@@ -233,7 +233,7 @@ class Expr:
         self.op = op
         self.pLeft = pLeft
         self.pRight = pRight
-        self.token = token or Token()
+        self.token = token or Token("")
         self.pList = None
         self.iTable = 0
         self.iColumn = 0

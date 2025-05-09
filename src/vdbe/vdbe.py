@@ -437,8 +437,7 @@ class Vdbe:
 
       # 특정 위치로 이동
       if pOp.opcode == OP_Goto:
-        pc = pOp.p2 - 1
-
+        pc =  pOp.p2 - 1                   #7 => makeLabel 없어서 하드 코딩
       # 종료료
       elif pOp.opcode == OP_Halt:
         pc = len(self.aOp)-1
@@ -608,7 +607,7 @@ class Vdbe:
       # p1 커서의 dbf 에서 가리키고 있는 레코드의 다음 레코드를 가리키도록 이동
       elif pOp.opcode == OP_Next:
         if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
-        if self.aCsr[pOp.p1].pCursor.nextKey() == 0: pc = pOp.p2-1
+        if self.aCsr[pOp.p1].pCursor.nextKey() == 0: pc = pOp.p2-1            #16 => makeLabel 없어서 하드 코딩
         else: self.nFetch+=1
 
       elif pOp.opcode == OP_ResetIdx:

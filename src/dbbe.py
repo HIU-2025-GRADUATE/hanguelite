@@ -86,7 +86,7 @@ class Dbbe:
 class DbbeCursor:
     def __init__(self):
         # 이 커서가 포함된 DB
-        self.pBe: Dbbe
+        self.pBe: Dbbe = None
         # 이 table의 실제 파일
         self.pFile = BeFile()
         # 최근에 사용한 key
