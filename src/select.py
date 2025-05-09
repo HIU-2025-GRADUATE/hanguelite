@@ -11,6 +11,17 @@ def fillInColumnList(pParse : Parse, p : Select):
     if pTabList.a[i].pTab:
       return 0
     
+    # ================================= #
+    # select * from tableA 쿼리가 정상 동작하도록 하는 코드
+    # newTab = Table("tableA")
+    # newTab.nCol = 6
+    # newTab.aCol.append(Column("rowid"))
+    # newTab.aCol.append(Column("학번"))
+    # newTab.aCol.append(Column("이름"))
+    # newTab.aCol.append(Column("학년"))
+    # newTab.aCol.append(Column("전공"))
+    # newTab.aCol.append(Column("전화번호"))
+    # ================================= #
     pTabList.a[i].pTab = findTable(pParse.db, pTabList.a[i].zName);  # build.c 파일에 구현된 함수
     if pTabList.a[i].pTab == None: 
     #   sqliteSetString(&pParse.zErrMsg, "no such table: ", .a[i].zName, 0);
@@ -18,7 +29,7 @@ def fillInColumnList(pParse : Parse, p : Select):
       return 1
     
   if pEList == None:
-    for i in range(pTabList.nid):
+    for i in range(pTabList.nId):
       pTab = pTabList.a[i].pTab;
       for j in range(pTab.nCol):
         pExpr = Expr(TK_DOT, None, None, None);
