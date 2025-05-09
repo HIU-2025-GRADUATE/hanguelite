@@ -156,6 +156,7 @@ class DbbeCursor:
     
     def put(self, key, data):
         if self.pFile==0 or self.pFile.dbf==0: return "SQLITE_ERROR"
+        print(key, data)
         gdbm_store(self.pFile.dbf, key, data, GDBM_REPLACE)
 
     def nextKey(self):

@@ -73,7 +73,6 @@ def startTable(parse: Parse, pName: Token):
 def endTable(parse: Parse, createQuery: str):
     """ TEST """  #
     print("called endTable")
-    return  # TEST CODE
     """ TEST"""  #
 
     if parse.nErr != 0:

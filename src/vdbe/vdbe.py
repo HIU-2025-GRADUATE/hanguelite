@@ -432,6 +432,7 @@ class Vdbe:
     while pc < self.nOp:
       # pc가 가리키는 명령어 실행
       pOp = self.aOp[pc]
+      print(pOp.opcode, pOp.p1, pOp.p2, pOp.p3)
       #print(pOp.opcode, pOp.p1, pOp.p2, pOp.p3)
       #print(self.aStack)
 

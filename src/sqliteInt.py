@@ -1,5 +1,5 @@
 from src.util import hashNoCase
-from src.constant import SQLITE_OK, SQLITE_Initialized
+from src.constant import SQLITE_OK, SQLITE_Initialized, SQLITE_BUSY
 from src.tokenToConstant import *
 from src.vdbe.vdbe import *
 
@@ -136,7 +136,7 @@ class sqlite:
             return 0
 
         parse = Parse(self)
-        parse.initFlag = True
+        parse.initFlag = True # 테이블을 디스크에 생성하지 않음
 
         # execute master table create sql
         from main import runParser
@@ -155,37 +155,42 @@ class sqlite:
 
         initProg = [
             VdbeOp(OP_Open,       0, 0, MASTER_NAME),
-            VdbeOp(OP_Next,       0, 9, 0),   # / * 1 * /
-            VdbeOp(OP_Field,      0, 0, 0),
+            VdbeOp(OP_Next,       0, 9),   # / * 1 * /
+            VdbeOp(OP_Field,      0, 0),
             VdbeOp(OP_String,     0, 0, "meta"),
-            VdbeOp(OP_Ne,         0, 1, 0),
-            VdbeOp(OP_Field,      0, 0, 0),
-            VdbeOp(OP_Field,      0, 3, 0),
-            VdbeOp(OP_Callback,   2, 0, 0),
-            VdbeOp(OP_Goto,       0, 1, 0),
-            VdbeOp(OP_Rewind,     0, 0, 0),   # / *9 * /
-            VdbeOp(OP_Next,       0, 17, 0),  # / *10 * /
-            VdbeOp(OP_Field,      0, 0, 0),
+            VdbeOp(OP_Ne,         0, 1),
+            VdbeOp(OP_Field,      0, 0),
+            VdbeOp(OP_Field,      0, 3),
+            VdbeOp(OP_Callback,   2, 0),
+            VdbeOp(OP_Goto,       0, 1),
+            VdbeOp(OP_Rewind,     0, 0),   # / *9 * /
+            VdbeOp(OP_Next,       0, 17),  # / *10 * /
+            VdbeOp(OP_Field,      0, 0),
             VdbeOp(OP_String,     0, 0, "table"),
-            VdbeOp(OP_Ne,         0, 10, 0),
-            VdbeOp(OP_Field,      0, 3, 0),
-            VdbeOp(OP_Callback,   1, 0, 0),
-            VdbeOp(OP_Goto,       0, 10, 0),
-            VdbeOp(OP_Rewind,     0, 0, 0),   # / *17 * /
-            VdbeOp(OP_Next,       0, 25, 0),  # / *18 * /
-            VdbeOp(OP_Field,      0, 0, 0),
+            VdbeOp(OP_Ne,         0, 10),
+            VdbeOp(OP_Field,      0, 3),
+            VdbeOp(OP_Callback,   1, 0),
+            VdbeOp(OP_Goto,       0, 10),
+            VdbeOp(OP_Rewind,     0, 0),   # / *17 * /
+            VdbeOp(OP_Next,       0, 25),  # / *18 * /
+            VdbeOp(OP_Field,      0, 0),
             VdbeOp(OP_String,     0, 0, "index"),
-            VdbeOp(OP_Ne,         0, 18, 0),
-            VdbeOp(OP_Field,      0, 3, 0),
-            VdbeOp(OP_Callback,   1, 0, 0),
-            VdbeOp(OP_Goto,       0, 18, 0),
-            VdbeOp(OP_Halt,       0, 0, 0)    # / *25 * /
+            VdbeOp(OP_Ne,         0, 18),
+            VdbeOp(OP_Field,      0, 3),
+            VdbeOp(OP_Callback,   1, 0),
+            VdbeOp(OP_Goto,       0, 18),
+            VdbeOp(OP_Halt,       0, 0)    # / *25 * /
         ]
 
         vdbe = Vdbe(self.pBe)
         vdbe.addOpList(len(initProg), initProg)
-        # rc = vdbe.exec() # 처음 dbms 를 시작하면 마스터 테이블 파일이 없는 게 정상 아닌가? OP_Open 에서 파일 없다는 에러 남.
+        # OP_Open 에서 파일 없다는 에러 남.
+        # 마스터 테이블 파일은 최초에 그냥 존재한다는 가정이 깔려있는 듯 함. (마스터 테이블 CREATE 구문도 실행은 하는데 디스크에 파일 저장은 안함)
+        rc = vdbe.exec() # 여기에서 실행시 에러
+
+        # TODO : TEST
         rc = SQLITE_OK # TEST
+        # TODO : TEST
 
         if rc == SQLITE_OK and self.file_format < 2 and self.nTable > 0:
             raise Exception("obsolete file format")
