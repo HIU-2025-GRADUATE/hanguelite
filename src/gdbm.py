@@ -9,7 +9,6 @@ def gdbm_store(dbf=0, key='', data='', mode=0):
     if mode == GDBM_INSERT and key in db:
         return "ERROR"
     db[key]=data
-    print(dbf.name)
     with open(os.path.abspath(dbf.name), "w", encoding='utf-8') as f:
         for key in db:
             f.write(str(key)+", "+', '.join(db[key])+'\n')
