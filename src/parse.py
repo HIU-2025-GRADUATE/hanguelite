@@ -6,7 +6,7 @@ from src.tokenizer import tokens
 # pParse, SRT_Callback, sqliteExec, sqliteSelect, sqliteSelectDelete,
 # sqliteSelectNew, sqliteIdListAppend 등의 함수가 이미 구현되어 있다고 가정
 
-pParse: Parse = Parse.empty()
+pParse: Parse = None
 
 def set_parse_object(parse_obj):
     global pParse
@@ -37,7 +37,7 @@ def p_create_table(p):
     """create_table : TK_CREATE TK_TABLE id"""  #
 
     # test
-    pParse.zErrMsg = f"create table named : {p[3]}"
+    pParse.zErrMsg = f"create table named : {p[3].z}"
     startTable(pParse, p[3])
 
 def p_create_table_args(p):
