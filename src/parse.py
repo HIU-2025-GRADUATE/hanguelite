@@ -98,6 +98,21 @@ def p_selcollist_star(p):
     # When a '*' is encountered, it is represented by 0.
     p[0] = None
 
+def p_selcollist(p):
+    """selcollist : sclp expr"""
+    if p[1] is None:
+        p[1] = ExprList()
+    p[1].exprListAppend(p[2], None)
+    p[0] = p[1]
+
+def p_sclp_comma(p):
+    """sclp : selcollist COMMA"""
+    p[0] = p[1]
+
+def p_sclp_empty(p):
+    """sclp :"""
+    p[0] = None
+
 def p_from(p):
     """from : TK_FROM seltablist"""
     p[0] = p[2]
@@ -115,6 +130,9 @@ def p_seltablist(p):
     p[1].idListAppend(p[2])
     p[0] = p[1]
 
+def p_expr_id(p):
+    "expr : TK_ID"
+    p[0] = Expr(TK_ID, None, None, Token(p[1]))
 
 def p_id(p):
     """id : TK_ID"""
