@@ -22,28 +22,27 @@ def exprResolveIds(pParse : Parse, pTabList : IdList, pExpr : Expr):
 
     if pExpr.op == TK_ID:
         cnt = 0
-        # z = sqliteStrNDup(pExpr.token.z, pExpr.token.n)
-        # for i in range(pTabList.nId):
-        #     pTab = pTabList.a[i].pTab
-        #     if pTab is None:
-        #         continue
-        #     for j in range(pTab.nCol):
-        #         if sqliteStrICmp(pTab.aCol[j].zName, z) == 0:
-        #             cnt += 1
-        #             pExpr.iTable = i + pParse.nTab
-        #             pExpr.iColumn = j
-        # sqliteFree(z)
-        # if cnt == 0:
-        #     sqliteSetNString(pParse, "zErrMsg", "no such column: ", -1,
-        #                      pExpr.token.z, pExpr.token.n, 0)
-        #     pParse.nErr += 1
-        #     return 1
-        # elif cnt > 1:
-        #     sqliteSetNString(pParse, "zErrMsg", "ambiguous column name: ", -1,
-        #                      pExpr.token.z, pExpr.token.n, 0)
-        #     pParse.nErr += 1
-        #     return 1
-        # pExpr.op = TK_COLUMN
+        z = pExpr.token.z
+        for i in range(pTabList.nId):
+            pTab = pTabList.a[i].pTab
+            if pTab is None:
+                continue
+            for j in range(pTab.nCol):
+                if pTab.aCol[j].zName == z:
+                    cnt += 1
+                    pExpr.iTable = i + pParse.nTab
+                    pExpr.iColumn = j
+        if cnt == 0:
+            # sqliteSetNString(pParse, "zErrMsg", "no such column: ", -1,
+            #                  pExpr.token.z, pExpr.token.n, 0)
+            pParse.nErr += 1
+            return 1
+        elif cnt > 1:
+            # sqliteSetNString(pParse, "zErrMsg", "ambiguous column name: ", -1,
+            #                  pExpr.token.z, pExpr.token.n, 0)
+            pParse.nErr += 1
+            return 1
+        pExpr.op = TK_COLUMN
 
     elif pExpr.op == TK_DOT:
         cnt = 0
