@@ -591,7 +591,6 @@ class Vdbe:
         pass
 
       # p1 커서의 dbf 에서 p2 번째 필드 값을 읽어옴
-
       elif pOp.opcode == OP_Field:
         if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
         z = self.aCsr[pOp.p1].pCursor.readData(pOp.p2)
