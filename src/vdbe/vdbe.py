@@ -437,8 +437,9 @@ class Vdbe:
 
       # 특정 위치로 이동
       if pOp.opcode == OP_Goto:
-        pc =  pOp.p2 - 1                   #7 => makeLabel 없어서 하드 코딩
-      # 종료료
+        pc = pOp.p2 - 1                   #7 => makeLabel 없어서 하드 코딩
+      
+      # 종료
       elif pOp.opcode == OP_Halt:
         pc = len(self.aOp)-1
 
@@ -500,8 +501,22 @@ class Vdbe:
       elif pOp.opcode == OP_AddImm:
         pass
 
+      # 스택의 top에서 원소 두개를 꺼내서 비교 연산 -> true이면 Goto p2
+      # NOS (comp) TOS
       elif pOp.opcode in [OP_Eq, OP_Ne, OP_Lt, OP_Le, OP_Gt, OP_Ge]:
-        pass
+        tos = self.aStack[-1]
+        del self.aStack[-1]
+        nos = self.aStack[-1]
+        del self.aStack[-1]
+
+        if pOp.opcode == OP_Eq: c = (nos==tos)
+        elif pOp.opcode == Op_Ne: c = (nos!=tos)
+        elif pOp.opcode == Op_Lt: c = (nos<tos)
+        elif pOp.opcode == Op_Le: c = (nos<=tos)
+        elif pOp.opcode == Op_Gt: c = (nos>tos)
+        elif pOp.opcode == Op_Ge: c = (nos>=tos)
+
+        if c: pc = pOp.p2-1
 
       elif pOp.opcode == OP_Like:
         pass
@@ -539,8 +554,18 @@ class Vdbe:
         del self.aStack[-nField:]
         self.aStack.append(record)
 
+      # 스택에서 P1개의 항목을 하나의 키 문자열로 합침 (spilter = '\t')
+      # P2가 0이면 원소를 삭제 (pop), 1이면 유지
       elif pOp.opcode == OP_MakeKey:
-        pass
+        # (TODO) 오류 출력 만들어야함
+        if len(self.aStack) < pOp.p1: return "Error"
+        tmp = ""
+        idx = len(self.aStack)-pOp.p1
+        for _ in range(pOp.p1):
+          tmp += str(self.aStack[idx])
+          if pOp.p2: 
+            del self.aStack[idx]
+        self.aStack.append(tmp)
 
       elif pOp.opcode == OP_Open:
         i = pOp.p1
