@@ -43,6 +43,7 @@ class Vdbe:
     # int nLabel;        # /* Number of labels used */
     # int nLabelAlloc;   # /* Number of slots allocated in aLabel[] */
     # int *aLabel;       # /* Space to hold the labels */
+    self.aLabel = list()
     # int tos;           # /* Index of top of stack */
     # int nStackAlloc;   # /* Size of the stack */
     # char **zStack;     # /* Text or binary values of the stack */
@@ -89,19 +90,15 @@ class Vdbe:
   ** Resolve label "x" to be the address of the next instruction to
   ** be inserted.
   """
+  # void sqliteVdbeResolveLabel(Vdbe * p, int x)
   def resolveLabel(self, x: int):
-    pass
-  # void sqliteVdbeResolveLabel(Vdbe * p, int x){
-  # {
-  #   int j;
-  #   if( x<0 && (-x)<=p->nLabel ){
-  #     p->aLabel[-1-x] = p->nOp;
-  #     for(j=0; j<p->nOp; j++){
-  #       if( p->aOp[j].p2==x ) p->aOp[j].p2 = p->nOp;
-  #     }
-  #   }
-  # }
-
+    if x<0 and -x<=len(self.aLabel):
+      self.aLabel[-1-x] = self.nOp
+      for j in range(self.nOp):
+        # Lable Goto가 -(미정)인 opcode 업데이트
+        if self.aOp[j].p2 == x:
+          self.aOp[j].p2 = self.nOp
+          
   """
   ** Return the address of the next instruction to be inserted.
   """
@@ -172,23 +169,12 @@ class Vdbe:
   ** always negative and P2 values are suppose to be non-negative.
   ** Hence, a negative P2 value is a label that has yet to be resolved.
   """
+  # int sqliteVdbeMakeLabel(Vdbe *p)
   def makeLabel(self) -> int:
-    pass
-  # int sqliteVdbeMakeLabel(Vdbe *p){
-  #   int i;
-  #   i = p->nLabel++;
-  #   if( i>=p->nLabelAlloc ){
-  #     p->nLabelAlloc = p->nLabelAlloc*2 + 10;
-  #     p->aLabel = sqliteRealloc( p->aLabel, p->nLabelAlloc*sizeof(int));
-  #   }
-  #   if( p->aLabel==0 ){
-  #     p->nLabel = 0;
-  #     p->nLabelAlloc = 0;
-  #     return 0;
-  #   }
-  #   p->aLabel[i] = -1;
-  #   return -1-i;
-  # }
+    if len(self.aLabel)==0:
+      return 0
+    self.aLabel.append(-1)
+    return -(1+len(self.aLabel))
 
   """
   ** Convert the given stack entity into a string if it isn't one
