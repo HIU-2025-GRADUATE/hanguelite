@@ -43,6 +43,7 @@ class Vdbe:
     # int nLabel;        # /* Number of labels used */
     # int nLabelAlloc;   # /* Number of slots allocated in aLabel[] */
     # int *aLabel;       # /* Space to hold the labels */
+    self.aLabel = list()
     # int tos;           # /* Index of top of stack */
     # int nStackAlloc;   # /* Size of the stack */
     # char **zStack;     # /* Text or binary values of the stack */
@@ -89,19 +90,15 @@ class Vdbe:
   ** Resolve label "x" to be the address of the next instruction to
   ** be inserted.
   """
+  # void sqliteVdbeResolveLabel(Vdbe * p, int x)
   def resolveLabel(self, x: int):
-    pass
-  # void sqliteVdbeResolveLabel(Vdbe * p, int x){
-  # {
-  #   int j;
-  #   if( x<0 && (-x)<=p->nLabel ){
-  #     p->aLabel[-1-x] = p->nOp;
-  #     for(j=0; j<p->nOp; j++){
-  #       if( p->aOp[j].p2==x ) p->aOp[j].p2 = p->nOp;
-  #     }
-  #   }
-  # }
-
+    if x<0 and -x<=len(self.aLabel):
+      self.aLabel[-1-x] = self.nOp
+      for j in range(self.nOp):
+        # Lable Goto가 -(미정)인 opcode 업데이트
+        if self.aOp[j].p2 == x:
+          self.aOp[j].p2 = self.nOp
+          
   """
   ** Return the address of the next instruction to be inserted.
   """
@@ -172,23 +169,12 @@ class Vdbe:
   ** always negative and P2 values are suppose to be non-negative.
   ** Hence, a negative P2 value is a label that has yet to be resolved.
   """
+  # int sqliteVdbeMakeLabel(Vdbe *p)
   def makeLabel(self) -> int:
-    pass
-  # int sqliteVdbeMakeLabel(Vdbe *p){
-  #   int i;
-  #   i = p->nLabel++;
-  #   if( i>=p->nLabelAlloc ){
-  #     p->nLabelAlloc = p->nLabelAlloc*2 + 10;
-  #     p->aLabel = sqliteRealloc( p->aLabel, p->nLabelAlloc*sizeof(int));
-  #   }
-  #   if( p->aLabel==0 ){
-  #     p->nLabel = 0;
-  #     p->nLabelAlloc = 0;
-  #     return 0;
-  #   }
-  #   p->aLabel[i] = -1;
-  #   return -1-i;
-  # }
+    if len(self.aLabel)==0:
+      return 0
+    self.aLabel.append(-1)
+    return -len(self.aLabel)
 
   """
   ** Convert the given stack entity into a string if it isn't one
@@ -437,8 +423,9 @@ class Vdbe:
 
       # 특정 위치로 이동
       if pOp.opcode == OP_Goto:
-        pc =  pOp.p2 - 1                   #7 => makeLabel 없어서 하드 코딩
-      # 종료료
+        pc = pOp.p2 - 1                   #7 => makeLabel 없어서 하드 코딩
+      
+      # 종료
       elif pOp.opcode == OP_Halt:
         pc = len(self.aOp)-1
 
@@ -500,8 +487,22 @@ class Vdbe:
       elif pOp.opcode == OP_AddImm:
         pass
 
+      # 스택의 top에서 원소 두개를 꺼내서 비교 연산 -> true이면 Goto p2
+      # NOS (comp) TOS
       elif pOp.opcode in [OP_Eq, OP_Ne, OP_Lt, OP_Le, OP_Gt, OP_Ge]:
-        pass
+        tos = self.aStack[-1]
+        del self.aStack[-1]
+        nos = self.aStack[-1]
+        del self.aStack[-1]
+
+        if pOp.opcode == OP_Eq: c = (nos==tos)
+        elif pOp.opcode == Op_Ne: c = (nos!=tos)
+        elif pOp.opcode == Op_Lt: c = (nos<tos)
+        elif pOp.opcode == Op_Le: c = (nos<=tos)
+        elif pOp.opcode == Op_Gt: c = (nos>tos)
+        elif pOp.opcode == Op_Ge: c = (nos>=tos)
+
+        if c: pc = pOp.p2-1
 
       elif pOp.opcode == OP_Like:
         pass
@@ -539,8 +540,18 @@ class Vdbe:
         del self.aStack[-nField:]
         self.aStack.append(record)
 
+      # 스택에서 P1개의 항목을 하나의 키 문자열로 합침 (spilter = '\t')
+      # P2가 0이면 원소를 삭제 (pop), 1이면 유지
       elif pOp.opcode == OP_MakeKey:
-        pass
+        # (TODO) 오류 출력 만들어야함
+        if len(self.aStack) < pOp.p1: return "Error"
+        tmp = ""
+        idx = len(self.aStack)-pOp.p1
+        for _ in range(pOp.p1):
+          tmp += str(self.aStack[idx])
+          if pOp.p2: 
+            del self.aStack[idx]
+        self.aStack.append(tmp)
 
       elif pOp.opcode == OP_Open:
         i = pOp.p1
@@ -591,7 +602,6 @@ class Vdbe:
         pass
 
       # p1 커서의 dbf 에서 p2 번째 필드 값을 읽어옴
-
       elif pOp.opcode == OP_Field:
         if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
         z = self.aCsr[pOp.p1].pCursor.readData(pOp.p2)
