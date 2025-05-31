@@ -78,6 +78,13 @@ def endTable(parse: Parse, createQuery: str):
     if parse.nErr != 0:
         return
 
+    ### Create Qeury 는 파이썬으로 처리시 여기에서 바로 알 수 없음
+    ### 일단 비워두고 시작
+    if createQuery is None:
+        createQuery = ""
+    #################
+    #################
+
     table: Table = parse.pNewTable
 
     # True to insert a meta records into the file
