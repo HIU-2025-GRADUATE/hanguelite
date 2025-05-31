@@ -36,7 +36,8 @@ def gdbm_exists(dbf, key):
 def gdbm_firstKey(dbf):
     dbf.seek(0)
     db = {l[0]:l[1:] for l in csv.reader(dbf)}
-    key = next(iter(db))
+    if len(db)==0: key = None
+    else: key = next(iter(db))
     return key
     
 def gdbm_nextKey(dbf, key):
