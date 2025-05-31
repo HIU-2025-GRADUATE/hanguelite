@@ -70,21 +70,19 @@ class Vdbe:
     self.trace = trace
 
   # op, p1, p2, p3 를 입력받아 VDBE.aOp에 추가
+  # int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2, const char *p3, int lbl){
   def addOp(self, op: int, p1: int, p2: int, p3: str, lbl: int=0) -> int:
     # (TODO) lbl 활용 부분 구현해야함
     self.aOp.append(VdbeOp(op, p1, p2, p3))
     self.nOp+=1
+
+    if lbl<0 and (-lbl)<=len(self.aLabel):
+      self.aLabel[-1-lbl] = self.nOp
+      for j in range(self.nOp):
+        if self.aOp[j].p2 == lbl:
+          self.aOp[j].p2 = self.nOp
+
     return 0
-  # int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2, const char *p3, int lbl){
-  #   (중략)
-  #   if( lbl<0 && (-lbl)<=p->nLabel ){
-  #     p->aLabel[-1-lbl] = i;
-  #     for(j=0; j<i; j++){
-  #       if( p->aOp[j].p2==lbl ) p->aOp[j].p2 = i;
-  #     }
-  #   }
-  #   return i;
-  # }
 
   """
   ** Resolve label "x" to be the address of the next instruction to
@@ -496,11 +494,11 @@ class Vdbe:
         del self.aStack[-1]
 
         if pOp.opcode == OP_Eq: c = (nos==tos)
-        elif pOp.opcode == Op_Ne: c = (nos!=tos)
-        elif pOp.opcode == Op_Lt: c = (nos<tos)
-        elif pOp.opcode == Op_Le: c = (nos<=tos)
-        elif pOp.opcode == Op_Gt: c = (nos>tos)
-        elif pOp.opcode == Op_Ge: c = (nos>=tos)
+        elif pOp.opcode == OP_Ne: c = (nos!=tos)
+        elif pOp.opcode == OP_Lt: c = (nos<tos)
+        elif pOp.opcode == OP_Le: c = (nos<=tos)
+        elif pOp.opcode == OP_Gt: c = (nos>tos)
+        elif pOp.opcode == OP_Ge: c = (nos>=tos)
 
         if c: pc = pOp.p2-1
 
