@@ -73,8 +73,10 @@ class Vdbe:
   # int sqliteVdbeAddOp(Vdbe *p, int op, int p1, int p2, const char *p3, int lbl){
   def addOp(self, op: int, p1: int, p2: int, p3: str, lbl: int=0) -> int:
     # (TODO) lbl 활용 부분 구현해야함
+    if p2<0 and (-1-p2)<len(self.aLabel) and self.aLabel[-1-p2]>=0:
+      p2 = self.aLabel[-1-p2]
+
     self.aOp.append(VdbeOp(op, p1, p2, p3))
-    self.nOp+=1
 
     if lbl<0 and (-lbl)<=len(self.aLabel):
       self.aLabel[-1-lbl] = self.nOp
@@ -82,6 +84,7 @@ class Vdbe:
         if self.aOp[j].p2 == lbl:
           self.aOp[j].p2 = self.nOp
 
+    self.nOp+=1
     return 0
 
   """
@@ -169,8 +172,8 @@ class Vdbe:
   """
   # int sqliteVdbeMakeLabel(Vdbe *p)
   def makeLabel(self) -> int:
-    if len(self.aLabel)==0:
-      return 0
+    # if len(self.aLabel)==0:
+    #   return 0
     self.aLabel.append(-1)
     return -len(self.aLabel)
 
