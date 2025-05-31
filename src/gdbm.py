@@ -11,7 +11,7 @@ def gdbm_store(dbf=0, key='', data='', mode=0):
     db[key]=data
     with open(os.path.abspath(dbf.name), "w", encoding='utf-8') as f:
         for key in db:
-            f.write(str(key)+", "+', '.join(db[key])+'\n')
+            f.write(str(key)+","+','.join(db[key])+'\n')
     del db
     return
 
