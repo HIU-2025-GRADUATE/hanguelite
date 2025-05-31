@@ -136,10 +136,11 @@ def endTable(parse: Parse, createQuery: str):
 """
     Add a new column to the table currently being constructed.
 """
-def addColumn(parse: Parse, columnName: str):
+def addColumn(parse: Parse, columnName: Token):
     table: Table = parse.pNewTable
     if not table:
         return
 
-    column: Column = Column(columnName)
+    column: Column = Column(columnName.z)
     table.aCol.append(column)
+    table.nCol += 1
