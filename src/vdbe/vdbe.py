@@ -496,11 +496,11 @@ class Vdbe:
         del self.aStack[-1]
 
         if pOp.opcode == OP_Eq: c = (nos==tos)
-        elif pOp.opcode == Op_Ne: c = (nos!=tos)
-        elif pOp.opcode == Op_Lt: c = (nos<tos)
-        elif pOp.opcode == Op_Le: c = (nos<=tos)
-        elif pOp.opcode == Op_Gt: c = (nos>tos)
-        elif pOp.opcode == Op_Ge: c = (nos>=tos)
+        elif pOp.opcode == OP_Ne: c = (nos!=tos)
+        elif pOp.opcode == OP_Lt: c = (nos<tos)
+        elif pOp.opcode == OP_Le: c = (nos<=tos)
+        elif pOp.opcode == OP_Gt: c = (nos>tos)
+        elif pOp.opcode == OP_Ge: c = (nos>=tos)
 
         if c: pc = pOp.p2-1
 
