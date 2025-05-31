@@ -174,7 +174,7 @@ class Vdbe:
     if len(self.aLabel)==0:
       return 0
     self.aLabel.append(-1)
-    return -(1+len(self.aLabel))
+    return -len(self.aLabel)
 
   """
   ** Convert the given stack entity into a string if it isn't one
