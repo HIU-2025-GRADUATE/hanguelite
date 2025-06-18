@@ -106,7 +106,7 @@ def p_selcollist(p):
     p[0] = p[1]
 
 def p_sclp_comma(p):
-    """sclp : selcollist COMMA"""
+    """sclp : selcollist TK_COMMA"""
     p[0] = p[1]
 
 def p_sclp_empty(p):
