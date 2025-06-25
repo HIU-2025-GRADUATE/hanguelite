@@ -85,11 +85,14 @@ def endTable(parse: Parse, createQuery: str):
 
     # Add the table to the in-memory representation of the database
     if table and not parse.explain:
+        print("table is added in memory representation")
         h = hashNoCase(table.zName, 0) % N_HASH
         table.hash = parse.db.apTblHash[h]
         parse.db.apTblHash[h] = table
         parse.pNewTable = None
         parse.db.nTable += 1
+        print(parse.db.apTblHash)
+        print(table.zName)
 
     # If not initializing, then create the table on disk.
     if not parse.initFlag:

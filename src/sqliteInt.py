@@ -186,10 +186,11 @@ class sqlite:
         vdbe.addOpList(len(initProg), initProg)
         # OP_Open 에서 파일 없다는 에러 남.
         # 마스터 테이블 파일은 최초에 그냥 존재한다는 가정이 깔려있는 듯 함. (마스터 테이블 CREATE 구문도 실행은 하는데 디스크에 파일 저장은 안함)
-        rc = vdbe.exec() # 여기에서 실행시 에러
+        rc = vdbe.exec(xCallback=self.openCb) # 여기에서 실행시 에러
 
         # TODO : TEST
         rc = SQLITE_OK # TEST
+        self.file_format = 2
         # TODO : TEST
 
         if rc == SQLITE_OK and self.file_format < 2 and self.nTable > 0:
