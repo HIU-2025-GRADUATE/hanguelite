@@ -49,12 +49,12 @@ def startTable(parse: Parse, pName: Token):
     table: Table = db.findTable(pName.z)
 
     if table:
-        parse.zErrMsg = "table %s already exists" % pName
+        parse.zErrMsg = "table %s already exists" % pName.z
         parse.nErr += 1
         return
 
     if db.findIndex(pName.z):
-        parse.zErrMsg = "there is already an index named %s" % pName
+        parse.zErrMsg = "there is already an index named %s" % pName.z
         parse.nErr += 1
         return
 
@@ -77,13 +77,6 @@ def endTable(parse: Parse, createQuery: str):
 
     if parse.nErr != 0:
         return
-
-    ### Create Qeury 는 파이썬으로 처리시 여기에서 바로 알 수 없음
-    ### 일단 비워두고 시작
-    if createQuery is None:
-        createQuery = ""
-    #################
-    #################
 
     table: Table = parse.pNewTable
 
