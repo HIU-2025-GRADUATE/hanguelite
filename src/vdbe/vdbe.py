@@ -467,18 +467,18 @@ class Vdbe:
         self.azColName[pOp.p1] = pOp.p3
 
       elif pOp.opcode == OP_Callback:
-        popCount = pOp.p1
-        if len(self.aStack) < popCount:
+        argc = pOp.p1
+        if len(self.aStack) < argc:
           raise Exception("[OP_Callback] not enough stack")
 
         args = []
-        for _ in range(popCount):
+        for _ in range(argc):
           args.append(self.aStack.pop())
 
         if xCallback != None:
           print("call callback")
           print("args:", args)
-          xCallback(popCount, args, [])
+          xCallback(argc, args, [])
 
 
       elif pOp.opcode == OP_Concat:
