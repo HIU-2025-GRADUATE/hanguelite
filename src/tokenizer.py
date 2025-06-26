@@ -43,13 +43,11 @@ def t_ID(t):
 
 def t_FLOAT(t):
     r'[0-9]+\.[0-9]+'
-    t.value = float(t.value)
     t.type = 'TK_FLOAT'
     return t
 
 def t_INTEGER(t):
     r'[0-9]+'
-    t.value = int(t.value)
     t.type = 'TK_INTEGER'
     return t
 
