@@ -229,7 +229,7 @@ class Expr:
     iAgg: int
     pSelect: 'Select'
 
-    def __init__(self, op : int, pLeft : 'Expr', pRight : 'Expr', token : Token):
+    def __init__(self, op : int, pLeft : 'Expr', pRight : 'Expr', token : Token, opStr : str = None):
         self.op = op
         self.pLeft = pLeft
         self.pRight = pRight
@@ -241,9 +241,8 @@ class Expr:
         self.pSelect = None
 
         if pLeft and pRight:
-            self.span.z = pLeft.span.z
-            #TODO 포인터 계산 처리 방법 고안
-            # self.span.n = len(pRight.span.z) + (get_char_offset(pRight.span.z) - get_char_offset(pLeft.span.z))
+            self.span.z = pLeft.span.z + " " +  opStr + " " + pRight.span.z
+            self.span.n = len(self.span.z)
         else:
             self.span = self.token
 
