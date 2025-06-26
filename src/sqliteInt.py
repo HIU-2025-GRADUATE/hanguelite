@@ -241,8 +241,7 @@ class Expr:
         self.pSelect = None
 
         if pLeft and pRight:
-            self.span.z = pLeft.span.z + " " +  opStr + " " + pRight.span.z
-            self.span.n = len(self.span.z)
+            self.span = Token(pLeft.span.z + " " +  opStr + " " + pRight.span.z)
         else:
             self.span = self.token
 
