@@ -85,18 +85,16 @@ def endTable(parse: Parse, createQuery: str):
 
     # Add the table to the in-memory representation of the database
     if table and not parse.explain:
-        print("table is added in memory representation")
+        print(f"table '{table.zName}' is added in memory representation")
         h = hashNoCase(table.zName, 0) % N_HASH
         table.hash = parse.db.apTblHash[h]
         parse.db.apTblHash[h] = table
         parse.pNewTable = None
         parse.db.nTable += 1
-        print(parse.db.apTblHash)
-        print(table.zName)
 
     # If not initializing, then create the table on disk.
     if not parse.initFlag:
-        addTableOps: [VdbeOp] = [
+        addTableOps = [
             VdbeOp( OP_Open,         0, 1, MASTER_NAME ),
             VdbeOp( OP_New,          0, 0 ),
             VdbeOp( OP_String,       0, 0, "table" ),
@@ -113,7 +111,7 @@ def endTable(parse: Parse, createQuery: str):
 
         vdbe.addOpList(len(addTableOps), addTableOps)
 
-        addVersionOps: [VdbeOp] = [
+        addVersionOps = [
             VdbeOp( OP_New,          0, 0 ),
             VdbeOp( OP_String,       0, 0, "meta" ),
             VdbeOp( OP_String,       0, 0, "" ),
@@ -137,6 +135,6 @@ def addColumn(parse: Parse, columnName: Token):
     if not table:
         return
 
-    column: Column = Column(columnName.z)
+    column = Column(columnName.z)
     table.aCol.append(column)
     table.nCol += 1
