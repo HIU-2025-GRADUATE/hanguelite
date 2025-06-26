@@ -130,7 +130,7 @@ class DbbeCursor:
         if not writeable:
             self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile)+".csv", "r+")
         else:
-            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile)+".csv", "w+")
+            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile)+".csv", "a+")
 
         # pFile 객체 변수를 세탕하고 pBe.pOpen에 대입
         self.pFile.writeable = writeable
