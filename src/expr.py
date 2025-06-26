@@ -33,15 +33,9 @@ def exprResolveIds(pParse : Parse, pTabList : IdList, pExpr : Expr):
                     pExpr.iTable = i + pParse.nTab
                     pExpr.iColumn = j
         if cnt == 0:
-            # sqliteSetNString(pParse, "zErrMsg", "no such column: ", -1,
-            #                  pExpr.token.z, pExpr.token.n, 0)
-            pParse.nErr += 1
-            return 1
+            raise ValueError(f"no such column: {pExpr.token.z}")
         elif cnt > 1:
-            # sqliteSetNString(pParse, "zErrMsg", "ambiguous column name: ", -1,
-            #                  pExpr.token.z, pExpr.token.n, 0)
-            pParse.nErr += 1
-            return 1
+            raise ValueError(f"ambiguous column name: {pExpr.token.z}")
         pExpr.op = TK_COLUMN
 
     elif pExpr.op == TK_DOT:
