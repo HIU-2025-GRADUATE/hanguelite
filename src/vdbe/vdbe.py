@@ -466,7 +466,6 @@ class Vdbe:
       elif pOp.opcode == OP_ColumnName:
         self.azColName[pOp.p1] = pOp.p3
 
-      # (TODO) 나중에 callback 함수 만들어야함 -> 외부에서 할당하는 함수임
       elif pOp.opcode == OP_Callback:
         popCount = pOp.p1
         if len(self.aStack) < popCount:
