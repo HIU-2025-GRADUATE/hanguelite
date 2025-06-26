@@ -115,6 +115,59 @@ def p_seltablist(p):
     p[1].idListAppend(p[2])
     p[0] = p[1]
 
+"""
+    INSERT
+"""
+def p_command_insert_value(p):
+    """cmd : TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP"""
+    pass
+
+def p_command_insert_from_select(p):
+    """cmd : TK_INSERT TK_INTO id inscollist_opt select"""
+    pass
+
+def p_ins_col_list_opt_empty(p):
+    """inscollist_opt : """
+
+def p_ins_col_list_opt(p):
+    """inscollist_opt : TK_LP inscollist TK_RP"""
+
+def p_ins_col_list(p):
+    """inscollist : inscollist TK_COMMA id"""
+
+def p_ins_col_list_one(p):
+    """inscollist : id"""
+
+def p_item_list(p):
+    """itemlist : itemlist TK_COMMA item"""
+
+def p_item_list_one(p):
+    """itemlist : item"""
+
+def p_item_int(p):
+    """item : TK_INT"""
+
+def p_item_plus_int(p):
+    """item : TK_PLUS TK_INT"""
+
+def p_item_minus_int(p):
+    """item : TK_MINUS TK_INT"""
+
+# def p_item_float(p):
+#     """item : TK_FLOAT"""
+#
+# def p_item_plus_float(p):
+#     """item : TK_PLUS TK_FLOAT"""
+#
+# def p_item_minus_float(p):
+#     """item : TK_MINUS TK_FLOAT"""
+
+def p_item_str(p):
+    """item : TK_STRING"""
+
+def p_item_null(p):
+    """item : TK_NULL"""
+
 
 def p_id(p):
     """id : TK_ID"""
