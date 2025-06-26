@@ -217,6 +217,9 @@ class Token:
         self.z = token
         self.n = len(token)
 
+    def __str__(self):
+        return self.z
+
 
 class Expr:
     op: int

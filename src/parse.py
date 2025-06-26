@@ -40,20 +40,20 @@ def p_create_table(p):
 
     startTable(pParse, p[3])
 
-    p[0] = " ".join([p[1], p[2], p[3].z])
+    p[0] = " ".join(map(str, p[1:]))
     createQuery = p[0]
 
 def p_create_table_args(p):
     """create_table_args : TK_LP columnlist TK_RP"""  # constraint 는 아직 고려 안함
     global createQuery
 
-    p[0] = " ".join([p[1], p[2], p[3]])
+    p[0] = " ".join(p[1:])
     createQuery += p[0]
     endTable(pParse, createQuery)
 
 def p_columnlist_multiple(p):
     """columnlist : columnlist TK_COMMA column"""
-    p[0] = " ".join([p[1], p[2], p[3]])
+    p[0] = " ".join(p[1:])
 
 def p_columnlist_single(p):
     """columnlist : column"""
@@ -61,16 +61,16 @@ def p_columnlist_single(p):
 
 def p_column(p):
     """column : columnid type"""  # constraint 는 아직 고려 안함
-    p[0] = p[1] + " " + p[2]
+    p[0] = " ".join(map(str, p[1:]))
 
 def p_columnid(p):
     """columnid : id"""
     addColumn(pParse, p[1])
-    p[0] = p[1].z
+    p[0] = p[1]
 
 def p_type(p):
     """type : typename"""
-    p[0] = p[1].z
+    p[0] = p[1]
 
 def p_typename(p):
     """typename : id"""
@@ -78,7 +78,7 @@ def p_typename(p):
 
 def p_id_from_string(p):
     """id : TK_STRING"""
-    p[0] = p[1].z
+    p[0] = p[1]
 
 """
     SELECT
