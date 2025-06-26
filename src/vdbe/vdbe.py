@@ -476,8 +476,7 @@ class Vdbe:
           args.append(self.aStack.pop())
 
         if xCallback != None:
-          print("call callback")
-          print("args:", args)
+          print(f"call callback with args: {args}")
           xCallback(argc, args, [])
 
 
