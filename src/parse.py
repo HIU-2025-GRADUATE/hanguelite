@@ -116,7 +116,7 @@ def p_seltablist(p):
     p[0] = p[1]
 
 def p_where_opt_empty(p):
-    """where_opt : """
+    """where_opt :"""
     p[0] = None  
 
 def p_where_opt_expr(p):
@@ -125,39 +125,39 @@ def p_where_opt_expr(p):
 
 def p_expr_and(p):
     """expr : expr TK_AND expr"""
-    p[0] = Expr(TK_AND, p[1], p[3], None)
+    p[0] = Expr(TK_AND, p[1], p[3], None, p[2])
 
 def p_expr_or(p):
     """expr : expr TK_OR expr"""
-    p[0] = Expr(TK_OR, p[1], p[3], None)
+    p[0] = Expr(TK_OR, p[1], p[3], None, p[2])
 
 def p_expr_lt(p):
     """expr : expr TK_LT expr"""
-    p[0] = Expr(TK_LT, p[1], p[3], None)
+    p[0] = Expr(TK_LT, p[1], p[3], None, p[2])
 
 def p_expr_gt(p):
     """expr : expr TK_GT expr"""
-    p[0] = Expr(TK_GT, p[1], p[3], None)
+    p[0] = Expr(TK_GT, p[1], p[3], None, p[2])
 
 def p_expr_le(p):
     """expr : expr TK_LE expr"""
-    p[0] = Expr(TK_LE, p[1], p[3], None)
+    p[0] = Expr(TK_LE, p[1], p[3], None, p[2])
 
 def p_expr_ge(p):
     """expr : expr TK_GE expr"""
-    p[0] = Expr(TK_GE, p[1], p[3], None)
+    p[0] = Expr(TK_GE, p[1], p[3], None, p[2])
 
 def p_expr_ne(p):
     """expr : expr TK_NE expr"""
-    p[0] = Expr(TK_NE, p[1], p[3], None)
+    p[0] = Expr(TK_NE, p[1], p[3], None, p[2])
 
 def p_expr_eq(p):
     """expr : expr TK_EQ expr"""
-    p[0] = Expr(TK_EQ, p[1], p[3], None)
+    p[0] = Expr(TK_EQ, p[1], p[3], None, p[2])
 
 def p_expr_like(p):
     """expr : expr TK_LIKE expr"""
-    p[0] = Expr(TK_LIKE, p[1], p[3], None)
+    p[0] = Expr(TK_LIKE, p[1], p[3], None, p[2])
 
 def p_expr_integer(p):
     """expr : TK_INTEGER"""
