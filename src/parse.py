@@ -89,9 +89,9 @@ def p_select(p):
     p[0] = p[1]
 
 def p_oneselect(p):
-    """oneselect : TK_SELECT selcollist from"""
+    """oneselect : TK_SELECT selcollist from where_opt"""
     # Create a new SELECT structure using the parsed select list and from clause.
-    p[0] = Select(p[2], p[3], None, None, None, None, 0)
+    p[0] = Select(p[2], p[3], p[4], None, None, None, 0)
 
 def p_selcollist_star(p):
     """selcollist : TK_STAR"""
@@ -115,6 +115,61 @@ def p_seltablist(p):
     p[1].idListAppend(p[2])
     p[0] = p[1]
 
+def p_where_opt_empty(p):
+    """where_opt : """
+    p[0] = None  
+
+def p_where_opt_expr(p):
+    """where_opt : TK_WHERE expr"""
+    p[0] = p[2]  
+
+def p_expr_and(p):
+    """expr : expr TK_AND expr"""
+    p[0] = Expr(TK_AND, p[1], p[3], None)
+
+def p_expr_or(p):
+    """expr : expr TK_OR expr"""
+    p[0] = Expr(TK_OR, p[1], p[3], None)
+
+def p_expr_lt(p):
+    """expr : expr TK_LT expr"""
+    p[0] = Expr(TK_LT, p[1], p[3], None)
+
+def p_expr_gt(p):
+    """expr : expr TK_GT expr"""
+    p[0] = Expr(TK_GT, p[1], p[3], None)
+
+def p_expr_le(p):
+    """expr : expr TK_LE expr"""
+    p[0] = Expr(TK_LE, p[1], p[3], None)
+
+def p_expr_ge(p):
+    """expr : expr TK_GE expr"""
+    p[0] = Expr(TK_GE, p[1], p[3], None)
+
+def p_expr_ne(p):
+    """expr : expr TK_NE expr"""
+    p[0] = Expr(TK_NE, p[1], p[3], None)
+
+def p_expr_eq(p):
+    """expr : expr TK_EQ expr"""
+    p[0] = Expr(TK_EQ, p[1], p[3], None)
+
+def p_expr_like(p):
+    """expr : expr TK_LIKE expr"""
+    p[0] = Expr(TK_LIKE, p[1], p[3], None)
+
+def p_expr_integer(p):
+    """expr : TK_INTEGER"""
+    p[0] = Expr(TK_INTEGER, None, None, Token(p[1]))
+
+def p_expr_float(p):
+    """expr : TK_FLOAT"""
+    p[0] = Expr(TK_FLOAT, None, None, Token(p[1]))
+
+def p_expr_string(p):
+    """expr : TK_STRING"""
+    p[0] = Expr(TK_STRING, None, None, Token(p[1]))
 
 def p_id(p):
     """id : TK_ID"""
