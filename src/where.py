@@ -1,5 +1,5 @@
 from src.sqliteInt import *
-
+from src.expr import *
 
 class ExprInfo:
         p : Expr
@@ -161,17 +161,17 @@ def whereBegin(pParse : Parse, pTabList : IdList, pWhere : Expr, pushKey : int):
 
         loopMask |= 1 << idx
 
-        # for j in range(nExpr):
-        #     if aExpr[j].p is None:
-        #         continue
-        #     if ((aExpr[j].prereqRight & loopMask) != aExpr[j].prereqRight or
-        #         (aExpr[j].prereqLeft & loopMask) != aExpr[j].prereqLeft):
-        #         continue
-        #     if haveKey:
-        #         sqliteVdbeAddOp(v, OP_Fetch, base + idx, 0, 0, 0)
-        #         haveKey = False
-        #     sqliteExprIfFalse(pParse, aExpr[j].p, cont)
-        #     aExpr[j].p = None
+        for j in range(nExpr):
+            if aExpr[j].p is None:
+                continue
+            if ((aExpr[j].prereqRight & loopMask) != aExpr[j].prereqRight or
+                (aExpr[j].prereqLeft & loopMask) != aExpr[j].prereqLeft):
+                continue
+            if haveKey:
+                v.addOp(OP_Fetch, base + idx, 0, 0, 0)
+                haveKey = False
+            exprIfFalse(pParse, aExpr[j].p, cont)
+            aExpr[j].p = None
 
         brk = cont
 
