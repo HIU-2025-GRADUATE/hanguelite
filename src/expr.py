@@ -75,60 +75,139 @@ def exprResolveIds(pParse : Parse, pTabList : IdList, pExpr : Expr):
         pExpr.pLeft = None
         pExpr.pRight = None
         pExpr.op = TK_COLUMN
-
-    # elif pExpr.op == TK_IN:
-    #     v = sqliteGetVdbe(pParse)
-    #     if v is None:
-    #         return 1
-    #     if sqliteExprResolveIds(pParse, pTabList, pExpr.pLeft):
-    #         return 1
-    #     if pExpr.pSelect:
-    #         sqliteVdbeAddOp(v, OP_Open, pExpr.iTable, 1, 0, 0)
-    #         sqliteSelect(pParse, pExpr.pSelect, SRT_Set, pExpr.iTable)
-    #     elif pExpr.pList:
-    #         for e in pExpr.pList.a:
-    #             if not isConstant(e.pExpr):
-    #                 sqliteSetString(pParse, "zErrMsg",
-    #                                 "right-hand side of IN operator must be constant", 0)
-    #                 pParse.nErr += 1
-    #                 return 1
-    #             if sqliteExprCheck(pParse, e.pExpr, 0, 0):
-    #                 return 1
-    #         iSet = pExpr.iTable = pParse.nSet
-    #         pParse.nSet += 1
-    #         for e in pExpr.pList.a:
-    #             pE2 = e.pExpr
-    #             if pE2.op in (TK_FLOAT, TK_INTEGER, TK_STRING):
-    #                 addr = sqliteVdbeAddOp(v, OP_SetInsert, iSet, 0, 0, 0)
-    #                 sqliteVdbeChangeP3(v, addr, pE2.token.z, pE2.token.n)
-    #                 sqliteVdbeDequoteP3(v, addr)
-    #             else:
-    #                 sqliteExprCode(pParse, pE2)
-    #                 sqliteVdbeAddOp(v, OP_SetInsert, iSet, 0, 0, 0)
-
-    # elif pExpr.op == TK_SELECT:
-    #     pExpr.iColumn = pParse.nMem
-    #     pParse.nMem += 1
-    #     if sqliteSelect(pParse, pExpr.pSelect, SRT_Mem, pExpr.iColumn):
-    #         return 1
-
-    # else:
-    #     if pExpr.pLeft and sqliteExprResolveIds(pParse, pTabList, pExpr.pLeft):
-    #         return 1
-    #     if pExpr.pRight and sqliteExprResolveIds(pParse, pTabList, pExpr.pRight):
-    #         return 1
-    #     if pExpr.pList:
-    #         for e in pExpr.pList.a:
-    #             if sqliteExprResolveIds(pParse, pTabList, e.pExpr):
-    #                 return 1
+    else:
+        if pExpr.pLeft and exprResolveIds(pParse, pTabList, pExpr.pLeft):
+            return 1
+        if pExpr.pRight and exprResolveIds(pParse, pTabList, pExpr.pRight):
+            return 1
+        if pExpr.pList:
+            for e in pExpr.pList.a:
+                if exprResolveIds(pParse, pTabList, e.pExpr):
+                    return 1
 
     return 0
 
-def exprCode(pParse : Parse, pExpr : Expr): #TODO : 추후에 제대로 함수 구현 필수
+def exprCode(pParse : Parse, pExpr : Expr): 
     v = pParse.pVdbe
+    op = 0
 
-    if pParse.useAgg:
-        v.addOp(OP_AggGet, 0, pExpr.iAgg, 0, 0)
+    if pExpr.op == TK_AND:    
+        op = OP_And
+    elif pExpr.op == TK_OR:     
+        op = OP_Or
+    elif pExpr.op == TK_LT:     
+        op = OP_Lt
+    elif pExpr.op == TK_LE:     
+        op = OP_Le
+    elif pExpr.op == TK_GT:     
+        op = OP_Gt
+    elif pExpr.op == TK_GE:     
+        op = OP_Ge
+    elif pExpr.op == TK_NE:     
+        op = OP_Ne
+    elif pExpr.op == TK_EQ:     
+        op = OP_Eq
+    elif pExpr.op == TK_LIKE:   
+        op = OP_Like
+
+    if pExpr.op == TK_COLUMN:
+        if pParse.useAgg:
+            v.addOp(OP_AggGet, 0, pExpr.iAgg, 0, 0)
+        else:
+            v.addOp(OP_Field, pExpr.iTable, pExpr.iColumn, 0, 0)
+
+    elif pExpr.op == TK_INTEGER:
+        val = int(pExpr.token.z)
+        v.addOp(OP_Integer, val, 0, 0, 0)
+
+    elif pExpr.op == TK_FLOAT:
+        addr = v.addOp(OP_String, 0, 0, pExpr.token.z, 0)
+
+    elif pExpr.op == TK_STRING:
+        addr = v.addOp(OP_String, 0, 0, pExpr.token.z, 0)
+        v.dequoteP3(addr)
+
+    elif pExpr.op in (TK_AND, TK_OR, TK_STAR):
+        exprCode(pParse, pExpr.pLeft)
+        exprCode(pParse, pExpr.pRight)
+        v.addOp(op, 0, 0, 0, 0)
+
+    elif pExpr.op in (TK_LT, TK_LE, TK_GT, TK_GE, TK_NE, TK_EQ, TK_LIKE):
+        v.addOp(OP_Integer, 1, 0, 0, 0)
+        exprCode(pParse, pExpr.pLeft)
+        exprCode(pParse, pExpr.pRight)
+        dest = v.currentAddr() + 2
+        v.addOp(op, 0, dest, 0, 0)
+        v.addOp(OP_AddImm, -1, 0, 0, 0)
+
+    elif pExpr.op == TK_SELECT:
+        v.addOp(OP_MemLoad, pExpr.iColumn, 0, 0, 0)
+
+
+def exprIfTrue(pParse : Parse, pExpr : Expr, dest : int):
+    v = pParse.pVdbe
+    op = 0
+
+    if pExpr.op == TK_LT:        op = OP_Lt
+    elif pExpr.op == TK_LE:      op = OP_Le
+    elif pExpr.op == TK_GT:      op = OP_Gt
+    elif pExpr.op == TK_GE:      op = OP_Ge
+    elif pExpr.op == TK_NE:      op = OP_Ne
+    elif pExpr.op == TK_EQ:      op = OP_Eq
+    elif pExpr.op == TK_LIKE:    op = OP_Like
+
+    if pExpr.op == TK_AND:
+        d2 = v.makeLabel()
+        exprIfFalse(pParse, pExpr.pLeft, d2)
+        exprIfTrue(pParse, pExpr.pRight, dest)
+        v.resolveLabel(d2)
+
+    elif pExpr.op == TK_OR:
+        exprIfTrue(pParse, pExpr.pLeft, dest)
+        exprIfTrue(pParse, pExpr.pRight, dest)
+
+    elif pExpr.op in (TK_LT, TK_LE, TK_GT, TK_GE, TK_NE, TK_EQ, TK_LIKE):
+        exprCode(pParse, pExpr.pLeft)
+        exprCode(pParse, pExpr.pRight)
+        v.addOp(op, 0, dest, 0, 0)
+
     else:
-        v.addOp(OP_Field, pExpr.iTable, pExpr.iColumn, 0, 0)
-      
+        exprCode(pParse, pExpr)
+        v.addOp(OP_If, 0, dest, 0, 0)
+
+def exprIfFalse(pParse : Parse, pExpr : Expr, dest : int):
+    v = pParse.pVdbe
+    op = 0
+
+    if pExpr.op == TK_LT:       op = OP_Ge
+    elif pExpr.op == TK_LE:     op = OP_Gt
+    elif pExpr.op == TK_GT:     op = OP_Le
+    elif pExpr.op == TK_GE:     op = OP_Lt
+    elif pExpr.op == TK_NE:     op = OP_Eq
+    elif pExpr.op == TK_EQ:     op = OP_Ne
+    elif pExpr.op == TK_LIKE:   op = OP_Like
+
+    if pExpr.op == TK_AND:
+        exprIfFalse(pParse, pExpr.pLeft, dest)
+        exprIfFalse(pParse, pExpr.pRight, dest)
+
+    elif pExpr.op == TK_OR:
+        d2 = v.makeLabel()
+        exprIfTrue(pParse, pExpr.pLeft, d2)
+        exprIfFalse(pParse, pExpr.pRight, dest)
+        v.resolveLabel(d2)
+
+    elif pExpr.op in (TK_LT, TK_LE, TK_GT, TK_GE, TK_NE, TK_EQ):
+        exprCode(pParse, pExpr.pLeft)
+        exprCode(pParse, pExpr.pRight)
+        v.addOp(op, 0, dest, 0, 0)
+
+    elif pExpr.op == TK_LIKE:
+        exprCode(pParse, pExpr.pLeft)
+        exprCode(pParse, pExpr.pRight)
+        v.addOp(op, 1, dest, 0, 0)
+
+    else:
+        exprCode(pParse, pExpr)
+        v.addOp(OP_Not, 0, 0, 0, 0)
+        v.addOp(OP_If, 0, dest, 0, 0)
