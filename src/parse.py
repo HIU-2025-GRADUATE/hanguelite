@@ -9,6 +9,13 @@ from src.tokenizer import tokens
 pParse: Parse = None
 createQuery: str = ""
 
+precedence = (
+    ('left', 'TK_OR'),
+    ('left', 'TK_AND'),
+    ('left', 'TK_EQ', 'TK_NE', 'TK_LIKE'),
+    ('left', 'TK_GT', 'TK_GE', 'TK_LT', 'TK_LE'),
+)
+
 def set_parse_object(parse_obj):
     global pParse
     pParse = parse_obj
