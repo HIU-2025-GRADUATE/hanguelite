@@ -2,4 +2,4 @@
 .idea/**
 .DS_store
 src/parser.out
-**/__pycache__/**
+__pycache__/
