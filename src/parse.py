@@ -7,6 +7,7 @@ from src.tokenizer import tokens
 # sqliteSelectNew, sqliteIdListAppend 등의 함수가 이미 구현되어 있다고 가정
 
 pParse: Parse = None
+createQuery: str = ""
 
 def set_parse_object(parse_obj):
     global pParse
@@ -35,44 +36,49 @@ def p_command_create(p):
 
 def p_create_table(p):
     """create_table : TK_CREATE TK_TABLE id"""  #
+    global createQuery
 
-    # test
-    pParse.zErrMsg = f"create table named : {p[3].z}"
     startTable(pParse, p[3])
+
+    p[0] = " ".join(map(str, p[1:]))
+    createQuery = p[0]
 
 def p_create_table_args(p):
     """create_table_args : TK_LP columnlist TK_RP"""  # constraint 는 아직 고려 안함
-    # p[0] = " ".join(p[1:])
-    endTable(pParse, p[0])
+    global createQuery
+
+    p[0] = " ".join(p[1:])
+    createQuery += p[0]
+    endTable(pParse, createQuery)
 
 def p_columnlist_multiple(p):
     """columnlist : columnlist TK_COMMA column"""
-    # p[0] = " ".join(p[1:])
+    p[0] = " ".join(p[1:])
 
 def p_columnlist_single(p):
     """columnlist : column"""
-    # p[0] = p[1]
+    p[0] = p[1]
 
 def p_column(p):
     """column : columnid type"""  # constraint 는 아직 고려 안함
-    # p[0] = p[1] + " " + p[2]
+    p[0] = " ".join(map(str, p[1:]))
 
 def p_columnid(p):
     """columnid : id"""
     addColumn(pParse, p[1])
-    # p[0] = p[1]
+    p[0] = p[1]
 
 def p_type(p):
     """type : typename"""
-    # p[0] = p[1]
+    p[0] = p[1]
 
 def p_typename(p):
     """typename : id"""
-    # p[0] = p[1]
+    p[0] = p[1]
 
 def p_id_from_string(p):
     """id : TK_STRING"""
-    # p[0] = p[1]
+    p[0] = p[1]
 
 """
     SELECT
@@ -96,6 +102,21 @@ def p_oneselect(p):
 def p_selcollist_star(p):
     """selcollist : TK_STAR"""
     # When a '*' is encountered, it is represented by 0.
+    p[0] = None
+
+def p_selcollist(p):
+    """selcollist : sclp expr"""
+    if p[1] is None:
+        p[1] = ExprList()
+    p[1].exprListAppend(p[2], None)
+    p[0] = p[1]
+
+def p_sclp_comma(p):
+    """sclp : selcollist TK_COMMA"""
+    p[0] = p[1]
+
+def p_sclp_empty(p):
+    """sclp :"""
     p[0] = None
 
 def p_from(p):
@@ -170,6 +191,10 @@ def p_expr_float(p):
 def p_expr_string(p):
     """expr : TK_STRING"""
     p[0] = Expr(TK_STRING, None, None, Token(p[1]))
+
+def p_expr_id(p):
+    "expr : TK_ID"
+    p[0] = Expr(TK_ID, None, None, Token(p[1]))
 
 def p_id(p):
     """id : TK_ID"""
