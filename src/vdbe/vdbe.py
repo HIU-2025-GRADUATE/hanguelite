@@ -86,7 +86,7 @@ class Vdbe:
           self.aOp[j].p2 = self.nOp
 
     self.nOp+=1
-    return 0
+    return self.nOp - 1
 
   """
   ** Resolve label "x" to be the address of the next instruction to
@@ -128,8 +128,14 @@ class Vdbe:
   """
   # 입력받은 addr번째 inst의 p3에서 Quotation Mark (")를 제거
   def dequoteP3(self, addr: int):
-    if addr<0 or addr>self.nOp: return
-    self.aOp[addr-1] = self.aOp[addr-1].replace('"','')
+    if addr < 0 or addr >= self.nOp: 
+      return
+    
+    s = self.aOp[addr].p3
+    if len(s) < 2 or s[0] not in ("'", '"') or s[-1] != s[0]:
+        return
+    
+    self.aOp[addr].p3 = s[1:-1].replace(s[0]*2, s[0])
 
   """
   ** On the P3 argument of the given instruction, change all
