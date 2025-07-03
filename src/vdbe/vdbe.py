@@ -2,6 +2,7 @@ from src.dbbe import *
 from .vdbeOp import VdbeOp
 from src.vdbe.vdbeOp import *
 from src.vdbe.cursor import *
+from src.util import *
 
 #  Allowed values for Stack.flags
 STK_Null = 0x0001     # Value is NULL */
@@ -513,7 +514,19 @@ class Vdbe:
         if c: pc = pOp.p2-1
 
       elif pOp.opcode == OP_Like:
-        pass
+        if len(self.aStack) < 2:
+          raise RuntimeError("Not Enough Stack Element")
+        
+        tos = str(self.aStack[-1])
+        del self.aStack[-1]
+        nos = str(self.aStack[-1])
+        del self.aStack[-1]
+
+        res = likeCompare(tos, nos)
+        if pOp.p1:
+          res = not res
+        if res:
+          pc = pOp.p2 - 1
 
       elif pOp.opcode == OP_Glob:
         pass
