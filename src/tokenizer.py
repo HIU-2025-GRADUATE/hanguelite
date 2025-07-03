@@ -35,7 +35,6 @@ t_TK_EQ         = r'='
 t_TK_LT         = r'<'
 t_TK_GT         = r'>'
 
-# 식별자 처리: 예약어와 일반 ID 구분
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
     t.type = reserved.get(t.value.upper(), 'TK_ID')
@@ -51,10 +50,13 @@ def t_INTEGER(t):
     t.type = 'TK_INTEGER'
     return t
 
-# def t_STRING(t):
-#     r'[a-zA-Z]+'
-#     t.type = reserved.get(t.value.upper(), 'TK_STRING')
-#     return t
+def t_STRING(t):
+    r'(\'([^\']|\'\')*\')|(\"([^\"]|\"\")*\")'
+    value = t.value[1:-1]
+    value = value.replace(t.value[0]*2, t.value[0])
+    t.value = value
+    t.type = 'TK_STRING'
+    return t
 
 # 에러 처리
 def t_error(t):
