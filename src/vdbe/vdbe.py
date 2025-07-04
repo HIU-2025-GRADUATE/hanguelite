@@ -216,6 +216,8 @@ class Vdbe:
   #   p->aStack[i].flags &= ~(STK_Str|STK_Dyn);
   # }
 
+  # (TODO) 이하 Integerify, Readlify 부분은 문자열을 정수나 실수로 변환하는 함수이지만
+  # 파이썬에서는 float, int 함수로 대체 가능하기 때문에,,, 생략
   # /*
   # ** Convert the given stack entity into a integer if it isn't one
   # ** already.
@@ -649,13 +651,21 @@ class Vdbe:
           self.aCsr[i].pCursor.closeCursor()
           #self.aCsr[i].pCursor = 0
 
+      # 스택의 top 에서 원소를 하나 꺼낸 후, 이 값을 key 로 하는 record를
+      # p1 커서에서 읽어옴 (fetch)
+      # p1 커서에 key/data 쌍은 미리 존재함으로 간주
       elif pOp.opcode == OP_Fetch:
-        # i = pOp.p1
-        # if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
-        pass
+        i = pOp.p1
+        key = self.aStack[-1]
+        del self.aStack[-1]
+        if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          self.aCsr[i].fetch(key)
+          self.nFetch += 1
 
+      # 이 vdbe에서 실행된 OP_Fetch의 횟수를 스택에 push
+      # SQLite만 알아듣는 inst로 만들어서 테스트를 목적으로 만들었음
       elif pOp.opcode == OP_Fcnt:
-        pass
+        self.aStack.append(self.nFetch)
 
       elif pOp.opcode in [OP_Distinct, OP_NotFound, OP_Found]:
         pass
