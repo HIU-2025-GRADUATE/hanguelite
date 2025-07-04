@@ -416,11 +416,12 @@ class Vdbe:
   def exec(self, xCallback=0, pArg=0, pzErrMsg: str=0, pBusyArg=0, xBusy=0) -> int:
     # program counter
     pc = 0
+    showHeader = True
     while pc < self.nOp:
       # pc가 가리키는 명령어 실행
       pOp = self.aOp[pc]
-      #print(pOp.opcode, pOp.p1, pOp.p2, pOp.p3)
-      #print(self.aStack)
+      # print(pOp.opcode, pOp.p1, pOp.p2, pOp.p3)
+      # print(self.aStack)
 
       # 특정 위치로 이동
       if pOp.opcode == OP_Goto:
@@ -469,15 +470,38 @@ class Vdbe:
       # (TEST) 동작 확인을 위해 스택에서 p1개 원소를 꺼내 print로 작성
       # (TODO) 나중에 callback 함수 만들어야함
       elif pOp.opcode == OP_Callback:
+        if showHeader:
+          print(', '.join(self.azColName))
+          showHeader = False
         print(', '.join(self.aStack[-pOp.p1:]))
         for _ in range(pOp.p1):
           del self.aStack[-1]
 
       elif pOp.opcode == OP_Concat:
-        pass
+        nField = pOp.p1
+        zSep = pOp.p3
+        res = ''
+        for _ in range(nField):
+          res += self.aStack[-1]
+          del self.aStack[-1]
+          if not zSep == 0:
+            res += zSep
+        self.aStack.append(res)
 
-      elif pOp.opcode in [OP_Add, OP_Subtract,OP_Multiply, OP_Divide]:
-        pass
+      elif pOp.opcode in [OP_Add, OP_Subtract, OP_Multiply, OP_Divide]:
+        a = self.aStack[-1]
+        del self.aStack[-1]
+        b = self.aStack[-1]
+        del self.aStack[-1]
+        if pOp.opcode == OP_Add:
+          b += a
+        elif pOp.opcode == OP_Subtract:
+          b -= a
+        elif pOp.opcode == OP_Multiply:
+          b *= a
+        elif pOp.opcode == OP_Divide:
+          b /= a
+        self.aStack.append(b)
 
       elif pOp.opcode == OP_Max:
         pass
@@ -517,20 +541,40 @@ class Vdbe:
       elif pOp.opcode == OP_Negative:
         pass
 
+      # /* Opcode: Not * * *
+      # **
+      # ** Interpret the top of the stack as a boolean value.  Replace it
+      # ** with its complement.
+      # */
+      # (TODO) 여기를 논리 구조상 Not으로 처리했는데 bitwise Not으로 바꿔야하나?
       elif pOp.opcode == OP_Not:
-        pass
+        self.aStack[-1] = not self.aStack[-1]
 
       elif pOp.opcode == OP_Noop:
         pass
 
       elif pOp.opcode == OP_If:
-        pass
+        c = self.aStack[-1]
+        del self.aStack[-1]
 
+        if type(c) is str:
+          c = len(c)>0
+        if c:
+          pc = pOp.p2 - 1
+
+      # (TODO) 일단 None 값으로 추가하였음 원본은 STK_Null 값 사용
       elif pOp.opcode == OP_IsNull:
-        pass
+        c = self.aStack[-1]
+        del self.aStack[-1]
+        if c is None:
+          pc = pOp.p2 - 1
 
+      # (TODO) 일단 None 값으로 추가하였음 원본은 STK_Null 값 사용
       elif pOp.opcode == OP_NotNull:
-        pass
+        c = self.aStack[-1]
+        del self.aStack[-1]
+        if c is not None:
+          pc = pOp.p2 - 1
 
       # 스택의 top에서 p1개의 원소를 꺼내 Record로 만듬
       # (TODO) 원래는 헤더 + 데이터 구조로 이루어져 있는데
@@ -573,6 +617,8 @@ class Vdbe:
           #self.aCsr[i].pCursor = 0
 
       elif pOp.opcode == OP_Fetch:
+        # i = pOp.p1
+        # if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
         pass
 
       elif pOp.opcode == OP_Fcnt:
