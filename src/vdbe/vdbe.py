@@ -504,10 +504,24 @@ class Vdbe:
         self.aStack.append(b)
 
       elif pOp.opcode == OP_Max:
-        pass
+        tos = self.aStack[-1]
+        del self.aStack[-1]
+        nos = self.aStack[-1]
+        del self.aStack[-1]
+        if tos>nos:
+          self.aStack.append(tos)
+        else:
+          self.aStack.append(nos)
 
       elif pOp.opcode == OP_Min:
-        pass
+        tos = self.aStack[-1]
+        del self.aStack[-1]
+        nos = self.aStack[-1]
+        del self.aStack[-1]
+        if tos<nos:
+          self.aStack.append(tos)
+        else:
+          self.aStack.append(nos)
 
       elif pOp.opcode == OP_AddImm:
         pass
