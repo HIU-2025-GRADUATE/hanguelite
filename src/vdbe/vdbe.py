@@ -555,8 +555,18 @@ class Vdbe:
       elif pOp.opcode == OP_Glob:
         pass
 
+      # 스택에서 원소 두개를 pop하여 두 원소로 논리 연산을 수행
+      # 수행 결과를 스택에 push
       elif pOp.opcode in [OP_And, OP_Or]:
-        pass
+        tos = self.aStack[-1]
+        del self.aStack[-1]
+        nos = self.aStack[-1]
+        del self.aStack[-1]
+        
+        if pOp.opcode == OP_And:
+          self.aStack.append(tos and nos)
+        else:
+          self.aStack.append(tos or nos)
 
       elif pOp.opcode == OP_Negative:
         pass
