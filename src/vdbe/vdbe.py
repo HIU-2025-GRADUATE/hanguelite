@@ -488,6 +488,9 @@ class Vdbe:
             res += zSep
         self.aStack.append(res)
 
+      # 스택의 탑 원소를 a, 그 다음 원소를 b라고 했을 때
+      # a와 b를 pop한 후에 b 값에 a 값을 연산한 결과를 push
+      # Subtract 인 경우 b-a 값을 저장
       elif pOp.opcode in [OP_Add, OP_Subtract, OP_Multiply, OP_Divide]:
         a = self.aStack[-1]
         del self.aStack[-1]
@@ -503,6 +506,7 @@ class Vdbe:
           b /= a
         self.aStack.append(b)
 
+      # 스택의 탑에서 원소 두 개를 꺼내 그중 큰 것을 push
       elif pOp.opcode == OP_Max:
         tos = self.aStack[-1]
         del self.aStack[-1]
@@ -513,6 +517,7 @@ class Vdbe:
         else:
           self.aStack.append(nos)
 
+      # 스택의 탑에서 원소 두 개를 꺼내 그중 작은 것을 push
       elif pOp.opcode == OP_Min:
         tos = self.aStack[-1]
         del self.aStack[-1]
@@ -523,6 +528,7 @@ class Vdbe:
         else:
           self.aStack.append(nos)
 
+      # 스택의 top 원소에 p1을 더함
       elif pOp.opcode == OP_AddImm:
         self.aStack[-1]+=pOp.p1
 
