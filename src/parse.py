@@ -12,6 +12,7 @@ createQuery: str = ""
 precedence = (
     ('left', 'TK_OR'),
     ('left', 'TK_AND'),
+    ('right', 'TK_NOT'),
     ('left', 'TK_EQ', 'TK_NE', 'TK_LIKE'),
     ('left', 'TK_GT', 'TK_GE', 'TK_LT', 'TK_LE'),
 )
@@ -200,13 +201,26 @@ def p_expr_string(p):
     p[0] = Expr(TK_STRING, None, None, Token(p[1]))
 
 def p_expr_id(p):
-    "expr : TK_ID"
+    """expr : TK_ID"""
     p[0] = Expr(TK_ID, None, None, Token(p[1]))
 
 def p_id(p):
     """id : TK_ID"""
     # For a simple identifier, return its string.
     p[0] = Token(p[1])
+
+def p_expr_not(p):
+    """expr : TK_NOT expr"""
+    e = Expr(TK_NOT, p[2], None, None)
+    e.span = Token(p[1] + " " + p[2].span.z)
+    p[0] = e
+
+def p_expr_not_like(p):
+    """expr : expr TK_NOT TK_LIKE expr"""
+    e1 = Expr(TK_LIKE, p[1], p[4], None, p[2] + " " + p[3])
+    e2 = Expr(TK_NOT, e1, None, None)
+    e2.span = Token(p[1].span.z + " " + p[2] + " " + p[3] + " " + p[4].span.z)
+    p[0] = e2
 
 def p_error(p):
     if p:

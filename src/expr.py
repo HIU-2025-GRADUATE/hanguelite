@@ -102,6 +102,8 @@ def exprCode(pParse : Parse, pExpr : Expr):
         op = OP_Eq
     elif pExpr.op == TK_LIKE:   
         op = OP_Like
+    elif pExpr.op == TK_NOT:   
+        op = OP_Not        
 
     if pExpr.op == TK_COLUMN:
         if pParse.useAgg:
@@ -133,6 +135,10 @@ def exprCode(pParse : Parse, pExpr : Expr):
         v.addOp(op, 0, dest, 0, 0)
         v.addOp(OP_AddImm, -1, 0, 0, 0)
 
+    elif pExpr.op == TK_NOT:
+        exprCode(pParse, pExpr.pLeft)
+        v.addOp(op,0,0,0,0)
+
     elif pExpr.op == TK_SELECT:
         v.addOp(OP_MemLoad, pExpr.iColumn, 0, 0, 0)
 
@@ -141,13 +147,20 @@ def exprIfTrue(pParse : Parse, pExpr : Expr, dest : int):
     v = pParse.pVdbe
     op = 0
 
-    if pExpr.op == TK_LT:        op = OP_Lt
-    elif pExpr.op == TK_LE:      op = OP_Le
-    elif pExpr.op == TK_GT:      op = OP_Gt
-    elif pExpr.op == TK_GE:      op = OP_Ge
-    elif pExpr.op == TK_NE:      op = OP_Ne
-    elif pExpr.op == TK_EQ:      op = OP_Eq
-    elif pExpr.op == TK_LIKE:    op = OP_Like
+    if pExpr.op == TK_LT:        
+        op = OP_Lt
+    elif pExpr.op == TK_LE:      
+        op = OP_Le
+    elif pExpr.op == TK_GT:      
+        op = OP_Gt
+    elif pExpr.op == TK_GE:      
+        op = OP_Ge
+    elif pExpr.op == TK_NE:      
+        op = OP_Ne
+    elif pExpr.op == TK_EQ:      
+        op = OP_Eq
+    elif pExpr.op == TK_LIKE:    
+        op = OP_Like
 
     if pExpr.op == TK_AND:
         d2 = v.makeLabel()
@@ -158,6 +171,9 @@ def exprIfTrue(pParse : Parse, pExpr : Expr, dest : int):
     elif pExpr.op == TK_OR:
         exprIfTrue(pParse, pExpr.pLeft, dest)
         exprIfTrue(pParse, pExpr.pRight, dest)
+
+    elif pExpr.op == TK_NOT:
+        exprIfFalse(pParse, pExpr.pLeft, dest)
 
     elif pExpr.op in (TK_LT, TK_LE, TK_GT, TK_GE, TK_NE, TK_EQ, TK_LIKE):
         exprCode(pParse, pExpr.pLeft)
@@ -172,13 +188,20 @@ def exprIfFalse(pParse : Parse, pExpr : Expr, dest : int):
     v = pParse.pVdbe
     op = 0
 
-    if pExpr.op == TK_LT:       op = OP_Ge
-    elif pExpr.op == TK_LE:     op = OP_Gt
-    elif pExpr.op == TK_GT:     op = OP_Le
-    elif pExpr.op == TK_GE:     op = OP_Lt
-    elif pExpr.op == TK_NE:     op = OP_Eq
-    elif pExpr.op == TK_EQ:     op = OP_Ne
-    elif pExpr.op == TK_LIKE:   op = OP_Like
+    if pExpr.op == TK_LT:       
+        op = OP_Ge
+    elif pExpr.op == TK_LE:     
+        op = OP_Gt
+    elif pExpr.op == TK_GT:     
+        op = OP_Le
+    elif pExpr.op == TK_GE:     
+        op = OP_Lt
+    elif pExpr.op == TK_NE:     
+        op = OP_Eq
+    elif pExpr.op == TK_EQ:     
+        op = OP_Ne
+    elif pExpr.op == TK_LIKE:   
+        op = OP_Like
 
     if pExpr.op == TK_AND:
         exprIfFalse(pParse, pExpr.pLeft, dest)
@@ -189,6 +212,9 @@ def exprIfFalse(pParse : Parse, pExpr : Expr, dest : int):
         exprIfTrue(pParse, pExpr.pLeft, d2)
         exprIfFalse(pParse, pExpr.pRight, dest)
         v.resolveLabel(d2)
+
+    elif pExpr.op == TK_NOT:
+        exprIfTrue(pParse, pExpr.pLeft, dest)
 
     elif pExpr.op in (TK_LT, TK_LE, TK_GT, TK_GE, TK_NE, TK_EQ):
         exprCode(pParse, pExpr.pLeft)
