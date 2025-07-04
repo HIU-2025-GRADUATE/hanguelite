@@ -568,8 +568,11 @@ class Vdbe:
         else:
           self.aStack.append(tos or nos)
 
+      # 스택의 top 원소를 숫자 값으로 간주하여 덧셈 역원을 push
       elif pOp.opcode == OP_Negative:
-        pass
+        tos = self.aStack[-1]
+        del self.aStack[-1]
+        self.aStack.append(-tos)
 
       # /* Opcode: Not * * *
       # **
