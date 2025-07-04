@@ -524,7 +524,7 @@ class Vdbe:
           self.aStack.append(nos)
 
       elif pOp.opcode == OP_AddImm:
-        pass
+        self.aStack[-1]+=pOp.p1
 
       # 스택의 top에서 원소 두개를 꺼내서 비교 연산 -> true이면 Goto p2
       # NOS (comp) TOS
