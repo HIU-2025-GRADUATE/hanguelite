@@ -223,6 +223,8 @@ class Vdbe:
   #   p->aStack[i].flags &= ~(STK_Str|STK_Dyn);
   # }
 
+  # (TODO) 이하 Integerify, Readlify 부분은 문자열을 정수나 실수로 변환하는 함수이지만
+  # 파이썬에서는 float, int 함수로 대체 가능하기 때문에,,, 생략
   # /*
   # ** Convert the given stack entity into a integer if it isn't one
   # ** already.
@@ -423,11 +425,12 @@ class Vdbe:
   def exec(self, xCallback: callable=None, pArg=0, pzErrMsg: str=0, pBusyArg=0, xBusy=0) -> int:
     # program counter
     pc = 0
+    showHeader = True
     while pc < self.nOp:
       # pc가 가리키는 명령어 실행
       pOp = self.aOp[pc]
-      #print(pOp.opcode, pOp.p1, pOp.p2, pOp.p3)
-      #print(self.aStack)
+      # print(pOp.opcode, pOp.p1, pOp.p2, pOp.p3)
+      # print(self.aStack)
 
       # 특정 위치로 이동
       if pOp.opcode == OP_Goto:
@@ -486,21 +489,60 @@ class Vdbe:
           print(f"call callback with args: {args}")
           xCallback(argc, args, [])
 
-
       elif pOp.opcode == OP_Concat:
-        pass
+        nField = pOp.p1
+        zSep = pOp.p3
+        res = ''
+        for _ in range(nField):
+          res += self.aStack[-1]
+          del self.aStack[-1]
+          if not zSep == 0:
+            res += zSep
+        self.aStack.append(res)
 
-      elif pOp.opcode in [OP_Add, OP_Subtract,OP_Multiply, OP_Divide]:
-        pass
+      # 스택의 탑 원소를 a, 그 다음 원소를 b라고 했을 때
+      # a와 b를 pop한 후에 b 값에 a 값을 연산한 결과를 push
+      # Subtract 인 경우 b-a 값을 저장
+      elif pOp.opcode in [OP_Add, OP_Subtract, OP_Multiply, OP_Divide]:
+        a = self.aStack[-1]
+        del self.aStack[-1]
+        b = self.aStack[-1]
+        del self.aStack[-1]
+        if pOp.opcode == OP_Add:
+          b += a
+        elif pOp.opcode == OP_Subtract:
+          b -= a
+        elif pOp.opcode == OP_Multiply:
+          b *= a
+        elif pOp.opcode == OP_Divide:
+          b /= a
+        self.aStack.append(b)
 
+      # 스택의 탑에서 원소 두 개를 꺼내 그중 큰 것을 push
       elif pOp.opcode == OP_Max:
-        pass
+        tos = self.aStack[-1]
+        del self.aStack[-1]
+        nos = self.aStack[-1]
+        del self.aStack[-1]
+        if tos>nos:
+          self.aStack.append(tos)
+        else:
+          self.aStack.append(nos)
 
+      # 스택의 탑에서 원소 두 개를 꺼내 그중 작은 것을 push
       elif pOp.opcode == OP_Min:
-        pass
+        tos = self.aStack[-1]
+        del self.aStack[-1]
+        nos = self.aStack[-1]
+        del self.aStack[-1]
+        if tos<nos:
+          self.aStack.append(tos)
+        else:
+          self.aStack.append(nos)
 
+      # 스택의 top 원소에 p1을 더함
       elif pOp.opcode == OP_AddImm:
-        pass
+        self.aStack[-1]+=pOp.p1
 
       # 스택의 top에서 원소 두개를 꺼내서 비교 연산 -> true이면 Goto p2
       # NOS (comp) TOS
@@ -537,26 +579,64 @@ class Vdbe:
       elif pOp.opcode == OP_Glob:
         pass
 
+      # 스택에서 원소 두개를 pop하여 두 원소로 논리 연산을 수행
+      # 수행 결과를 스택에 push
       elif pOp.opcode in [OP_And, OP_Or]:
-        pass
+        tos = self.aStack[-1]
+        del self.aStack[-1]
+        nos = self.aStack[-1]
+        del self.aStack[-1]
+        
+        if pOp.opcode == OP_And:
+          self.aStack.append(tos and nos)
+        else:
+          self.aStack.append(tos or nos)
 
+      # 스택의 top 원소를 숫자 값으로 간주하여 덧셈 역원을 push
       elif pOp.opcode == OP_Negative:
-        pass
+        tos = self.aStack[-1]
+        del self.aStack[-1]
+        self.aStack.append(-tos)
 
+      # /* Opcode: Not * * *
+      # **
+      # ** Interpret the top of the stack as a boolean value.  Replace it
+      # ** with its complement.
+      # */
+      # (TODO) 여기를 논리 구조상 Not으로 처리했는데 bitwise Not으로 바꿔야하나?
       elif pOp.opcode == OP_Not:
-        pass
+        if type(self.aStack[-1]) == str:
+          try:
+            self.aStack[-1] = int(self.aStack[-1])
+          except:
+            self.aStack[-1] = 0
+        self.aStack[-1] = not self.aStack[-1]
 
       elif pOp.opcode == OP_Noop:
         pass
 
       elif pOp.opcode == OP_If:
-        pass
+        c = self.aStack[-1]
+        del self.aStack[-1]
 
+        if type(c) is str:
+          c = len(c)>0
+        if c:
+          pc = pOp.p2 - 1
+
+      # (TODO) 일단 None 값으로 추가하였음 원본은 STK_Null 값 사용
       elif pOp.opcode == OP_IsNull:
-        pass
+        c = self.aStack[-1]
+        del self.aStack[-1]
+        if c is None:
+          pc = pOp.p2 - 1
 
+      # (TODO) 일단 None 값으로 추가하였음 원본은 STK_Null 값 사용
       elif pOp.opcode == OP_NotNull:
-        pass
+        c = self.aStack[-1]
+        del self.aStack[-1]
+        if c is not None:
+          pc = pOp.p2 - 1
 
       # 스택의 top에서 p1개의 원소를 꺼내 Record로 만듬
       # (TODO) 원래는 헤더 + 데이터 구조로 이루어져 있는데
@@ -598,11 +678,21 @@ class Vdbe:
           self.aCsr[i].pCursor.closeCursor()
           #self.aCsr[i].pCursor = 0
 
+      # 스택의 top 에서 원소를 하나 꺼낸 후, 이 값을 key 로 하는 record를
+      # p1 커서에서 읽어옴 (fetch)
+      # p1 커서에 key/data 쌍은 미리 존재함으로 간주
       elif pOp.opcode == OP_Fetch:
-        pass
+        i = pOp.p1
+        key = self.aStack[-1]
+        del self.aStack[-1]
+        if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          self.aCsr[i].fetch(key)
+          self.nFetch += 1
 
+      # 이 vdbe에서 실행된 OP_Fetch의 횟수를 스택에 push
+      # SQLite만 알아듣는 inst로 만들어서 테스트를 목적으로 만들었음
       elif pOp.opcode == OP_Fcnt:
-        pass
+        self.aStack.append(self.nFetch)
 
       elif pOp.opcode in [OP_Distinct, OP_NotFound, OP_Found]:
         pass
