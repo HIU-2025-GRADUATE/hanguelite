@@ -190,7 +190,12 @@ class DbbeCursor:
             self.readPending = False
         if offset<0 or offset>=len(self.data): return ''
         return self.data[offset]
-
+    
+    def fetch(self, key):
+        self.key = key
+        self.data = gdbm_fetch(self.pFile.dbf, key)
+        # (TODO) 원본 코드에서는 pCursr->data.dptr!=0 으로 돼있음
+        return (self.data!=None)
 
 if __name__ == "__main__":
     pCursor = DbbeCursor()
