@@ -583,7 +583,12 @@ class Vdbe:
       # */
       # (TODO) 여기를 논리 구조상 Not으로 처리했는데 bitwise Not으로 바꿔야하나?
       elif pOp.opcode == OP_Not:
-        self.aStack[-1] = not self.aStack[-1]
+        if type(self.aStack[-1]) == str:
+          try:
+            self.aStack[-1] = int(self.aStack[-1])
+          except:
+            self.aStack[-1] = 0
+        self.aStack[-1] = ~self.aStack[-1]
 
       elif pOp.opcode == OP_Noop:
         pass
