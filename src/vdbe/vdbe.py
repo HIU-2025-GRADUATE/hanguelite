@@ -415,7 +415,7 @@ class Vdbe:
   ** and this routine returns SQLITE_BUSY.
   */
   """
-  def exec(self, xCallback=0, pArg=0, pzErrMsg: str=0, pBusyArg=0, xBusy=0) -> int:
+  def exec(self, xCallback: callable=None, pArg=0, pzErrMsg: str=0, pBusyArg=0, xBusy=0) -> int:
     # program counter
     pc = 0
     showHeader = True
@@ -469,15 +469,18 @@ class Vdbe:
       elif pOp.opcode == OP_ColumnName:
         self.azColName[pOp.p1] = pOp.p3
 
-      # (TEST) 동작 확인을 위해 스택에서 p1개 원소를 꺼내 print로 작성
-      # (TODO) 나중에 callback 함수 만들어야함
       elif pOp.opcode == OP_Callback:
-        if showHeader:
-          print(', '.join(self.azColName))
-          showHeader = False
-        print(', '.join(self.aStack[-pOp.p1:]))
-        for _ in range(pOp.p1):
-          del self.aStack[-1]
+        argc = pOp.p1
+        if len(self.aStack) < argc:
+          raise Exception("[OP_Callback] not enough stack")
+
+        args = []
+        for _ in range(argc):
+          args.append(self.aStack.pop())
+
+        if xCallback != None:
+          print(f"call callback with args: {args}")
+          xCallback(argc, args, [])
 
       elif pOp.opcode == OP_Concat:
         nField = pOp.p1
@@ -588,7 +591,7 @@ class Vdbe:
             self.aStack[-1] = int(self.aStack[-1])
           except:
             self.aStack[-1] = 0
-        self.aStack[-1] = ~self.aStack[-1]
+        self.aStack[-1] = not self.aStack[-1]
 
       elif pOp.opcode == OP_Noop:
         pass

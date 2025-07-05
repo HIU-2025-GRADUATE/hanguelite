@@ -49,12 +49,12 @@ def startTable(parse: Parse, pName: Token):
     table: Table = db.findTable(pName.z)
 
     if table:
-        parse.zErrMsg = "table %s already exists" % pName
+        parse.zErrMsg = "table %s already exists" % pName.z
         parse.nErr += 1
         return
 
     if db.findIndex(pName.z):
-        parse.zErrMsg = "there is already an index named %s" % pName
+        parse.zErrMsg = "there is already an index named %s" % pName.z
         parse.nErr += 1
         return
 
@@ -78,13 +78,6 @@ def endTable(parse: Parse, createQuery: str):
     if parse.nErr != 0:
         return
 
-    ### Create Qeury 는 파이썬으로 처리시 여기에서 바로 알 수 없음
-    ### 일단 비워두고 시작
-    if createQuery is None:
-        createQuery = ""
-    #################
-    #################
-
     table: Table = parse.pNewTable
 
     # True to insert a meta records into the file
@@ -92,6 +85,7 @@ def endTable(parse: Parse, createQuery: str):
 
     # Add the table to the in-memory representation of the database
     if table and not parse.explain:
+        print(f"table '{table.zName}' is added in memory representation")
         h = hashNoCase(table.zName, 0) % N_HASH
         table.hash = parse.db.apTblHash[h]
         parse.db.apTblHash[h] = table
@@ -100,7 +94,7 @@ def endTable(parse: Parse, createQuery: str):
 
     # If not initializing, then create the table on disk.
     if not parse.initFlag:
-        addTableOps: [VdbeOp] = [
+        addTableOps = [
             VdbeOp( OP_Open,         0, 1, MASTER_NAME ),
             VdbeOp( OP_New,          0, 0 ),
             VdbeOp( OP_String,       0, 0, "table" ),
@@ -117,7 +111,7 @@ def endTable(parse: Parse, createQuery: str):
 
         vdbe.addOpList(len(addTableOps), addTableOps)
 
-        addVersionOps: [VdbeOp] = [
+        addVersionOps = [
             VdbeOp( OP_New,          0, 0 ),
             VdbeOp( OP_String,       0, 0, "meta" ),
             VdbeOp( OP_String,       0, 0, "" ),
@@ -141,6 +135,6 @@ def addColumn(parse: Parse, columnName: Token):
     if not table:
         return
 
-    column: Column = Column(columnName.z)
+    column = Column(columnName.z)
     table.aCol.append(column)
     table.nCol += 1
