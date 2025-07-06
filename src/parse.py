@@ -1,5 +1,6 @@
 from ply import yacc
 from src.select import *
+from src.insert import *
 from src.tokenizer import tokens
 
 # 전역 파서 컨텍스트 등 (예: pParse, SRT_Callback 등)
@@ -141,10 +142,13 @@ def p_seltablist(p):
 """
 def p_command_insert_value(p):
     """cmd : TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP"""
+    targetTable, itemList, colList = str(p[3]), p[7], p[4]
+    insert(pParse, targetTable, itemList, 0, colList)
     pass
 
 def p_command_insert_from_select(p):
     """cmd : TK_INSERT TK_INTO id inscollist_opt select"""
+    insert(pParse, p[3], 0, p[5], p[4])
     pass
 
 def p_ins_col_list_opt_empty(p):
@@ -161,18 +165,27 @@ def p_ins_col_list_one(p):
 
 def p_item_list(p):
     """itemlist : itemlist TK_COMMA item"""
+    exprList: ExprList = p[1]
+    exprList.exprListAppend(p[3], None)
+    p[0] = exprList
 
 def p_item_list_one(p):
     """itemlist : item"""
+    exprList = ExprList()
+    exprList.exprListAppend(p[1], None)
+    p[0] = exprList
 
 def p_item_int(p):
     """item : TK_INT"""
+    p[0] = Expr(TK_INT, None, None, Token(str(p[1])))
 
 def p_item_plus_int(p):
     """item : TK_PLUS TK_INT"""
+    p[0] = Expr(TK_INT, None, None, Token(p[1]+str(p[2])))
 
 def p_item_minus_int(p):
     """item : TK_MINUS TK_INT"""
+    p[0] = Expr(TK_INT, None, None, Token(p[1]+str(p[2])))
 
 # def p_item_float(p):
 #     """item : TK_FLOAT"""
@@ -185,9 +198,11 @@ def p_item_minus_int(p):
 
 def p_item_str(p):
     """item : TK_STRING"""
+    p[0] = p[1]
 
 def p_item_null(p):
     """item : TK_NULL"""
+    p[0] = None
 
 def p_expr_id(p):
     "expr : TK_ID"
