@@ -4,18 +4,10 @@ from io import TextIOWrapper
 GDBM_REPLACE = 0
 GDBM_INSERT = 1
 
-def gdbm_store(dbf: TextIOWrapper = 0, key='', data='', mode=0):
-    # dbf.seek(0)
-    # db = {l[0]:l[1:] for l in csv.reader(dbf)}
-    # if mode == GDBM_INSERT and key in db:
-    #     return "ERROR"
-    # db[key]=data
-    dbf.write(str(key) + "," + ",".join(map(str, data)) + '\n')
+def gdbm_store(dbf: TextIOWrapper, key, data: list, mode=GDBM_REPLACE):
+    record = [key] + data
+    dbf.write(",".join(map(str, record)) + '\n')
     dbf.flush()
-    # with open(os.path.abspath(dbf.name), "a+", encoding='utf-8') as f:
-    #     for key in db:
-    #         f.write(str(key)+","+','.join(map(str, db[key]))+'\n')
-    # del db
 
 def gdbm_open(filePath, mode):
     return open(filePath, mode, encoding='utf-8')
