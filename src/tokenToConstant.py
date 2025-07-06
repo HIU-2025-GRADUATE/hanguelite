@@ -7,3 +7,4 @@ TK_COLUMN = 6
 TK_AND = 7
 TK_EQ = 8
 TK_IN = 9
+TK_INT = 10

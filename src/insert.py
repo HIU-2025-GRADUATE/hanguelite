@@ -77,6 +77,7 @@ def insert(parse: Parse, tableName: str, exprList: ExprList, select: Select, tar
                     break
 
         # 기본값 세팅
+        print(srcTable)
         if targetColumns and j == targetColumns.nId:
             zDflt = table.aCol[j].zDflt
             if not zDflt: # 기본값이 없는 경우
