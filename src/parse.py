@@ -147,7 +147,7 @@ def p_command_insert_value(p):
 
 def p_command_insert_from_select(p):
     """cmd : TK_INSERT TK_INTO id inscollist_opt select"""
-    targetTable, select_info, colList = str(p[3]), p[7], p[4]
+    targetTable, select_info, colList = str(p[3]), p[5], p[4]
     insert(pParse, targetTable, 0, select_info, colList)
 
 def p_ins_col_list_opt_empty(p):
