@@ -143,13 +143,12 @@ def p_seltablist(p):
 def p_command_insert_value(p):
     """cmd : TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP"""
     targetTable, itemList, colList = str(p[3]), p[7], p[4]
-    insert(pParse, targetTable, itemList, 0, colList)
-    pass
+    insert(pParse, targetTable, itemList, None, colList)
 
 def p_command_insert_from_select(p):
     """cmd : TK_INSERT TK_INTO id inscollist_opt select"""
-    insert(pParse, str(p[3]), 0, p[5], p[4])
-    pass
+    targetTable, select_info, colList = str(p[3]), p[7], p[4]
+    insert(pParse, targetTable, 0, select_info, colList)
 
 def p_ins_col_list_opt_empty(p):
     """inscollist_opt : """
