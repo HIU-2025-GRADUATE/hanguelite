@@ -1,2 +1,3 @@
-fdb01aada7fc3447,table,student,student,create table student( int sid )
-37e480c85965ae4b,meta,,,file format 2
+340eb814178c069e,table,student,student,create table student( sid int )
+6412478a01d6a344,meta,,,file format 2
+4e294fdef00f6d74,table,student2,student2,create table student2( int sid )
