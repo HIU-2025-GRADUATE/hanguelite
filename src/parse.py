@@ -153,15 +153,23 @@ def p_command_insert_from_select(p):
 
 def p_ins_col_list_opt_empty(p):
     """inscollist_opt : """
+    p[0] = None
 
 def p_ins_col_list_opt(p):
     """inscollist_opt : TK_LP inscollist TK_RP"""
+    p[0] = p[2]
 
 def p_ins_col_list(p):
     """inscollist : inscollist TK_COMMA id"""
+    idList: IdList = p[1]
+    idList.idListAppend(p[3])
+    p[0] = idList
 
 def p_ins_col_list_one(p):
     """inscollist : id"""
+    idList = IdList()
+    idList.idListAppend(p[1])
+    p[0] = idList
 
 def p_item_list(p):
     """itemlist : itemlist TK_COMMA item"""
