@@ -177,15 +177,15 @@ def p_item_list_one(p):
 
 def p_item_int(p):
     """item : TK_INT"""
-    p[0] = Expr(TK_INT, None, None, Token(str(p[1])))
+    p[0] = Expr(TK_INTEGER, None, None, Token(str(p[1])))
 
 def p_item_plus_int(p):
     """item : TK_PLUS TK_INT"""
-    p[0] = Expr(TK_INT, None, None, Token(p[1]+str(p[2])))
+    p[0] = Expr(TK_INTEGER, None, None, Token(p[1]+str(p[2])))
 
 def p_item_minus_int(p):
     """item : TK_MINUS TK_INT"""
-    p[0] = Expr(TK_INT, None, None, Token(p[1]+str(p[2])))
+    p[0] = Expr(TK_INTEGER, None, None, Token(p[1]+str(p[2])))
 
 # def p_item_float(p):
 #     """item : TK_FLOAT"""
@@ -198,11 +198,11 @@ def p_item_minus_int(p):
 
 def p_item_str(p):
     """item : TK_STRING"""
-    p[0] = p[1]
+    p[0] = Expr(TK_STRING, None, None, Token(p[1]))
 
 def p_item_null(p):
     """item : TK_NULL"""
-    p[0] = None
+    p[0] = Expr(TK_NULL, None, None, None)
 
 def p_expr_id(p):
     "expr : TK_ID"

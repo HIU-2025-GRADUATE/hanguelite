@@ -10,12 +10,13 @@ reserved = {
     'INSERT' : 'TK_INSERT',
     'INTO' : 'TK_INTO',
     'VALUES' : 'TK_VALUES',
+    'NULL': 'TK_NULL',
 }
 
 # 토큰 이름 목록: parse.y에서 사용되는 토큰들과 SQLite의 tokenize.c에 있는 키워드들
 tokens = (
     'TK_STAR', 'TK_ID', 'TK_DOT', 'TK_COLUMN', 'TK_IGNORE',
-    'TK_STRING', 'TK_LP', 'TK_RP', 'TK_COMMA', 'TK_PLUS', 'TK_MINUS', 'TK_NULL', 'TK_INT'
+    'TK_STRING', 'TK_LP', 'TK_RP', 'TK_COMMA', 'TK_PLUS', 'TK_MINUS', 'TK_INT'
 ) + tuple(reserved.values())
 
 # 정규표현식 규칙
@@ -27,7 +28,6 @@ t_TK_RP         = r'\)'
 t_TK_COMMA      = r','
 t_TK_PLUS       = r'\+'
 t_TK_MINUS      = r'-'
-t_TK_NULL       = r'null'
 
 t_ignore        = ' \t'
 
