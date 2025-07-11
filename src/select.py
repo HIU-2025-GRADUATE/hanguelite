@@ -158,9 +158,9 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     #     for i in range(pOrderBy.nExpr):
     #         sqliteExprResolveInSelect(pParse, pOrderBy.a[i].pExpr)
 
-    # if pGroupBy:
-    #     for i in range(pGroupBy.nExpr):
-    #         sqliteExprResolveInSelect(pParse, pGroupBy.a[i].pExpr)
+    if pGroupBy:
+        for i in range(pGroupBy.nExpr):
+            exprResolveInSelect(pParse, pGroupBy.a[i].pExpr)
 
     # if pHaving:
     #     sqliteExprResolveInSelect(pParse, pHaving)
@@ -185,13 +185,13 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     #         if sqliteExprCheck(pParse, pE, isAgg, None):
     #             return 1
 
-    # if pGroupBy:
-    #     for i in range(pGroupBy.nExpr):
-    #         pE = pGroupBy.a[i].pExpr
-    #         if sqliteExprResolveIds(pParse, pTabList, pE):
-    #             return 1
-    #         if sqliteExprCheck(pParse, pE, isAgg, None):
-    #             return 1
+    if pGroupBy:
+        for i in range(pGroupBy.nExpr):
+            pE = pGroupBy.a[i].pExpr
+            if exprResolveIds(pParse, pTabList, pE):
+                return 1
+            # if sqliteExprCheck(pParse, pE, isAgg, None):
+            #     return 1
 
     # if pHaving:
     #     if not pGroupBy:
