@@ -1,5 +1,6 @@
 from ply import yacc
 from src.select import *
+from src.insert import *
 from src.tokenizer import tokens
 
 # 전역 파서 컨텍스트 등 (예: pParse, SRT_Callback 등)
@@ -8,6 +9,14 @@ from src.tokenizer import tokens
 
 pParse: Parse = None
 createQuery: str = ""
+
+precedence = (
+    ('left', 'TK_OR'),
+    ('left', 'TK_AND'),
+    ('right', 'TK_NOT'),
+    ('left', 'TK_EQ', 'TK_NE', 'TK_LIKE'),
+    ('left', 'TK_GT', 'TK_GE', 'TK_LT', 'TK_LE'),
+)
 
 def set_parse_object(parse_obj):
     global pParse
@@ -81,6 +90,80 @@ def p_id_from_string(p):
     p[0] = p[1]
 
 """
+    INSERT
+"""
+def p_command_insert_value(p):
+    """cmd : TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP"""
+    targetTable, itemList, colList = str(p[3]), p[7], p[4]
+    insert(pParse, targetTable, itemList, None, colList)
+
+def p_command_insert_from_select(p):
+    """cmd : TK_INSERT TK_INTO id inscollist_opt select"""
+    targetTable, select_info, colList = str(p[3]), p[5], p[4]
+    insert(pParse, targetTable, 0, select_info, colList)
+
+def p_ins_col_list_opt_empty(p):
+    """inscollist_opt : """
+    p[0] = None
+
+def p_ins_col_list_opt(p):
+    """inscollist_opt : TK_LP inscollist TK_RP"""
+    p[0] = p[2]
+
+def p_ins_col_list(p):
+    """inscollist : inscollist TK_COMMA id"""
+    idList: IdList = p[1]
+    idList.idListAppend(p[3])
+    p[0] = idList
+
+def p_ins_col_list_one(p):
+    """inscollist : id"""
+    idList = IdList()
+    idList.idListAppend(p[1])
+    p[0] = idList
+
+def p_item_list(p):
+    """itemlist : itemlist TK_COMMA item"""
+    exprList: ExprList = p[1]
+    exprList.exprListAppend(p[3], None)
+    p[0] = exprList
+
+def p_item_list_one(p):
+    """itemlist : item"""
+    exprList = ExprList()
+    exprList.exprListAppend(p[1], None)
+    p[0] = exprList
+
+def p_item_int(p):
+    """item : TK_INTEGER"""
+    p[0] = Expr(TK_INTEGER, None, None, Token(str(p[1])))
+
+def p_item_plus_int(p):
+    """item : TK_PLUS TK_INTEGER"""
+    p[0] = Expr(TK_INTEGER, None, None, Token(p[1]+str(p[2])))
+
+def p_item_minus_int(p):
+    """item : TK_MINUS TK_INTEGER"""
+    p[0] = Expr(TK_INTEGER, None, None, Token(p[1]+str(p[2])))
+
+# def p_item_float(p):
+#     """item : TK_FLOAT"""
+#
+# def p_item_plus_float(p):
+#     """item : TK_PLUS TK_FLOAT"""
+#
+# def p_item_minus_float(p):
+#     """item : TK_MINUS TK_FLOAT"""
+
+def p_item_str(p):
+    """item : TK_STRING"""
+    p[0] = Expr(TK_STRING, None, None, Token(p[1]))
+
+def p_item_null(p):
+    """item : TK_NULL"""
+    p[0] = Expr(TK_NULL, None, None, None)
+
+"""
     SELECT
 """
 def p_cmd(p):
@@ -95,9 +178,9 @@ def p_select(p):
     p[0] = p[1]
 
 def p_oneselect(p):
-    """oneselect : TK_SELECT selcollist from"""
+    """oneselect : TK_SELECT selcollist from where_opt"""
     # Create a new SELECT structure using the parsed select list and from clause.
-    p[0] = Select(p[2], p[3], None, None, None, None, 0)
+    p[0] = Select(p[2], p[3], p[4], None, None, None, 0)
 
 def p_selcollist_star(p):
     """selcollist : TK_STAR"""
@@ -136,14 +219,83 @@ def p_seltablist(p):
     p[1].idListAppend(p[2])
     p[0] = p[1]
 
+def p_where_opt_empty(p):
+    """where_opt :"""
+    p[0] = None  
+
+def p_where_opt_expr(p):
+    """where_opt : TK_WHERE expr"""
+    p[0] = p[2]  
+
+def p_expr_and(p):
+    """expr : expr TK_AND expr"""
+    p[0] = Expr(TK_AND, p[1], p[3], None, p[2])
+
+def p_expr_or(p):
+    """expr : expr TK_OR expr"""
+    p[0] = Expr(TK_OR, p[1], p[3], None, p[2])
+
+def p_expr_lt(p):
+    """expr : expr TK_LT expr"""
+    p[0] = Expr(TK_LT, p[1], p[3], None, p[2])
+
+def p_expr_gt(p):
+    """expr : expr TK_GT expr"""
+    p[0] = Expr(TK_GT, p[1], p[3], None, p[2])
+
+def p_expr_le(p):
+    """expr : expr TK_LE expr"""
+    p[0] = Expr(TK_LE, p[1], p[3], None, p[2])
+
+def p_expr_ge(p):
+    """expr : expr TK_GE expr"""
+    p[0] = Expr(TK_GE, p[1], p[3], None, p[2])
+
+def p_expr_ne(p):
+    """expr : expr TK_NE expr"""
+    p[0] = Expr(TK_NE, p[1], p[3], None, p[2])
+
+def p_expr_eq(p):
+    """expr : expr TK_EQ expr"""
+    p[0] = Expr(TK_EQ, p[1], p[3], None, p[2])
+
+def p_expr_like(p):
+    """expr : expr TK_LIKE expr"""
+    p[0] = Expr(TK_LIKE, p[1], p[3], None, p[2])
+
+def p_expr_integer(p):
+    """expr : TK_INTEGER"""
+    p[0] = Expr(TK_INTEGER, None, None, Token(p[1]))
+
+def p_expr_float(p):
+    """expr : TK_FLOAT"""
+    p[0] = Expr(TK_FLOAT, None, None, Token(p[1]))
+
+def p_expr_string(p):
+    """expr : TK_STRING"""
+    p[0] = Expr(TK_STRING, None, None, Token(p[1]))
+
 def p_expr_id(p):
-    "expr : TK_ID"
+    """expr : TK_ID"""
     p[0] = Expr(TK_ID, None, None, Token(p[1]))
 
 def p_id(p):
     """id : TK_ID"""
     # For a simple identifier, return its string.
     p[0] = Token(p[1])
+
+def p_expr_not(p):
+    """expr : TK_NOT expr"""
+    e = Expr(TK_NOT, p[2], None, None)
+    e.span = Token(p[1] + " " + p[2].span.z)
+    p[0] = e
+
+def p_expr_not_like(p):
+    """expr : expr TK_NOT TK_LIKE expr"""
+    e1 = Expr(TK_LIKE, p[1], p[4], None, p[2] + " " + p[3])
+    e2 = Expr(TK_NOT, e1, None, None)
+    e2.span = Token(p[1].span.z + " " + p[2] + " " + p[3] + " " + p[4].span.z)
+    p[0] = e2
 
 def p_error(p):
     if p:

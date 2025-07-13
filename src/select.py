@@ -97,9 +97,8 @@ def generateColumnNames(pParse : Parse, pTabList : IdList, pEList : ExprList):
 
 def selectInnerLoop(pParse : Parse, pEList : ExprList, srcTab : int, nColumn : int, pOrderBy : ExprList, 
                     distinct : int, eDest : int, iParm : int, iContinue : int, iBreak : int):
-    v = pParse.pVdbe  # 포인터 참조 -> 점(.)으로 변경
+    v = pParse.pVdbe  
 
-    # Pull the requested columns.
     if pEList:
         for i in range(pEList.nExpr):
             exprCode(pParse, pEList.a[i].pExpr)
@@ -116,7 +115,6 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     isAgg = 0
     distinct = -1
 
-    # SELECT 문 내부 파트 추출
     pTabList = p.pSrc
     pWhere = p.pWhere
     pOrderBy = p.pOrderBy
@@ -151,8 +149,8 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     for i in range(pEList.nExpr):
         exprResolveInSelect(pParse, pEList.a[i].pExpr)
 
-    # if pWhere:
-    #     sqliteExprResolveInSelect(pParse, pWhere)
+    if pWhere:
+        exprResolveInSelect(pParse, pWhere)
 
     # if pOrderBy:
     #     for i in range(pOrderBy.nExpr):
@@ -171,9 +169,9 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
         # if sqliteExprCheck(pParse, pEList.a[i].pExpr, 1, isAgg):
         #     return 1
 
-    # if pWhere:
-    #     if sqliteExprResolveIds(pParse, pTabList, pWhere):
-    #         return 1
+    if pWhere:
+        if exprResolveIds(pParse, pTabList, pWhere):
+            return 1
     #     if sqliteExprCheck(pParse, pWhere, 0, None):
     #         return 1
 
@@ -253,75 +251,8 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
         if selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
                            pWInfo.iContinue, pWInfo.iBreak):
             return 1
-    # else:
-    #     doFocus = 0
-    #     if pGroupBy:
-    #         for i in range(pGroupBy.nExpr):
-    #             sqliteExprCode(pParse, pGroupBy.a[i].pExpr)
-    #         sqliteVdbeAddOp(v, OP_MakeKey, pGroupBy.nExpr, 0, None, None)
-    #         doFocus = 1
-    #     else:
-    #         for i in range(pParse.nAgg):
-    #             if not pParse.aAgg[i].isAgg:
-    #                 doFocus = 1
-    #                 break
-    #         if doFocus:
-    #             sqliteVdbeAddOp(v, OP_String, 0, 0, "", None)
-
-    #     if doFocus:
-    #         lbl1 = sqliteVdbeMakeLabel(v)
-    #         sqliteVdbeAddOp(v, OP_AggFocus, 0, lbl1, None, None)
-    #         for i in range(pParse.nAgg):
-    #             if pParse.aAgg[i].isAgg:
-    #                 continue
-    #             sqliteExprCode(pParse, pParse.aAgg[i].pExpr)
-    #             sqliteVdbeAddOp(v, OP_AggSet, 0, i, None, None)
-    #         sqliteVdbeResolveLabel(v, lbl1)
-
-    #     for i in range(pParse.nAgg):
-    #         if not pParse.aAgg[i].isAgg:
-    #             continue
-    #         pE = pParse.aAgg[i].pExpr
-    #         if pE is None:
-    #             sqliteVdbeAddOp(v, OP_AggIncr, 1, i, None, None)
-    #             continue
-    #         assert pE.op == TK_AGG_FUNCTION
-    #         assert pE.pList and pE.pList.nExpr == 1
-    #         sqliteExprCode(pParse, pE.pList.a[0].pExpr)
-    #         sqliteVdbeAddOp(v, OP_AggGet, 0, i, None, None)
-
-    #         if pE.iColumn == FN_Min:
-    #             op = OP_Min
-    #         elif pE.iColumn == FN_Max:
-    #             op = OP_Max
-    #         elif pE.iColumn in [FN_Avg, FN_Sum]:
-    #             op = OP_Add
-
-    #         sqliteVdbeAddOp(v, op, 0, 0, None, None)
-    #         sqliteVdbeAddOp(v, OP_AggSet, 0, i, None, None)
 
     whereEnd(pWInfo)
 
-    # if isAgg:
-    #     endagg = sqliteVdbeMakeLabel(v)
-    #     startagg = sqliteVdbeAddOp(v, OP_AggNext, 0, endagg, None, None)
-    #     pParse.useAgg = 1
-    #     if pHaving:
-    #         sqliteExprIfFalse(pParse, pHaving, startagg)
-    #     if selectInnerLoop(pParse, pEList, None, None, pOrderBy, distinct,
-    #                        eDest, iParm, startagg, endagg):
-    #         return 1
-    #     sqliteVdbeAddOp(v, OP_Goto, 0, startagg, None, None)
-    #     sqliteVdbeAddOp(v, OP_Noop, 0, 0, None, endagg)
-    #     pParse.useAgg = 0
-
-    # if pOrderBy:
-    #     generateSortTail(v, pEList.nExpr)
-
     pParse.nTab = base
     return 0
-
-
-
-#sqliteVdbeCreate
-#sqliteVdbeAddOp

@@ -2,6 +2,7 @@ from src.dbbe import *
 from .vdbeOp import VdbeOp
 from src.vdbe.vdbeOp import *
 from src.vdbe.cursor import *
+from src.util import *
 
 #  Allowed values for Stack.flags
 STK_Null = 0x0001     # Value is NULL */
@@ -85,7 +86,7 @@ class Vdbe:
           self.aOp[j].p2 = self.nOp
 
     self.nOp+=1
-    return 0
+    return self.nOp - 1
 
   """
   ** Resolve label "x" to be the address of the next instruction to
@@ -127,8 +128,14 @@ class Vdbe:
   """
   # 입력받은 addr번째 inst의 p3에서 Quotation Mark (")를 제거
   def dequoteP3(self, addr: int):
-    if addr<0 or addr>self.nOp: return
-    self.aOp[addr-1] = self.aOp[addr-1].replace('"','')
+    if addr < 0 or addr >= self.nOp: 
+      return
+    
+    s = self.aOp[addr].p3
+    if len(s) < 2 or s[0] not in ("'", '"') or s[-1] != s[0]:
+        return
+    
+    self.aOp[addr].p3 = s[1:-1].replace(s[0]*2, s[0])
 
   """
   ** On the P3 argument of the given instruction, change all
@@ -555,7 +562,19 @@ class Vdbe:
         if c: pc = pOp.p2-1
 
       elif pOp.opcode == OP_Like:
-        pass
+        if len(self.aStack) < 2:
+          raise RuntimeError("Not Enough Stack Element")
+        
+        tos = str(self.aStack[-1])
+        del self.aStack[-1]
+        nos = str(self.aStack[-1])
+        del self.aStack[-1]
+
+        res = likeCompare(tos, nos)
+        if pOp.p1:
+          res = not res
+        if res:
+          pc = pOp.p2 - 1
 
       elif pOp.opcode == OP_Glob:
         pass
