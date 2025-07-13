@@ -120,8 +120,15 @@ def exprResolveIds(pParse : Parse, pTabList : IdList, pExpr : Expr):
 def exprCode(pParse : Parse, pExpr : Expr): #TODO : 추후에 제대로 함수 구현 필수
     v = pParse.pVdbe
 
-    if pParse.useAgg:
-        v.addOp(OP_AggGet, 0, pExpr.iAgg, 0, 0)
-    else:
-        v.addOp(OP_Field, pExpr.iTable, pExpr.iColumn, 0, 0)
+    if pExpr.op == TK_INTEGER:
+        v.addOp(OP_Integer, int(pExpr.token.z), 0, 0, 0)
+    elif pExpr.op == TK_STRING:
+        v.addOp(OP_String, 0, 0, pExpr.token.z, 0)
+    elif pExpr.op == TK_NULL:
+        v.addOp(OP_Null, 0, 0, 0, 0)
+    else: # TODO : TK_COLUMN 으로 지정
+        if pParse.useAgg:
+            v.addOp(OP_AggGet, 0, pExpr.iAgg, 0, 0)
+        else:
+            v.addOp(OP_Field, pExpr.iTable, pExpr.iColumn, 0, 0)
       

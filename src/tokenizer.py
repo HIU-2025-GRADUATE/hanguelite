@@ -7,12 +7,16 @@ reserved = {
     'IN' : 'TK_IN',
     'CREATE' : 'TK_CREATE',
     'TABLE' : 'TK_TABLE',
+    'INSERT' : 'TK_INSERT',
+    'INTO' : 'TK_INTO',
+    'VALUES' : 'TK_VALUES',
+    'NULL': 'TK_NULL',
 }
 
 # 토큰 이름 목록: parse.y에서 사용되는 토큰들과 SQLite의 tokenize.c에 있는 키워드들
 tokens = (
     'TK_STAR', 'TK_ID', 'TK_DOT', 'TK_COLUMN', 'TK_IGNORE',
-    'TK_STRING', 'TK_LP', 'TK_RP', 'TK_COMMA',
+    'TK_STRING', 'TK_LP', 'TK_RP', 'TK_COMMA', 'TK_PLUS', 'TK_MINUS', 'TK_INT'
 ) + tuple(reserved.values())
 
 # 정규표현식 규칙
@@ -22,6 +26,8 @@ t_TK_IGNORE     = r' \t\n'
 t_TK_LP         = r'\('
 t_TK_RP         = r'\)'
 t_TK_COMMA      = r','
+t_TK_PLUS       = r'\+'
+t_TK_MINUS      = r'-'
 
 t_ignore        = ' \t'
 
@@ -31,9 +37,22 @@ def t_ID(t):
     t.type = reserved.get(t.value.upper(), 'TK_ID')
     return t
 
-# def t_STRING(t):
-#     r'[a-zA-Z]+'
-#     t.type = reserved.get(t.value.upper(), 'TK_STRING')
+def t_STRING(t):
+    # TODO : ' ' 형태도 문자열로 인식하도록 수정
+    r'["][a-zA-Z]+["]'
+    t.type = 'TK_STRING'
+    return t
+
+def t_INT(t):
+    r'\d+'
+    t.value = int(t.value)
+    t.type = 'TK_INT'
+    return t
+
+# def t_FLOAT(t):
+#     r'\d+'
+#     t.value = float(t.value)
+#     t.type = 'TK_FLOAT'
 #     return t
 
 # 에러 처리
