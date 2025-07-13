@@ -11,7 +11,11 @@ reserved = {
     'AND' : 'TK_AND',
     'OR' : 'TK_OR',
     'LIKE' : 'TK_LIKE',
-    'NOT' : 'TK_NOT'
+    'NOT' : 'TK_NOT',
+    'INSERT' : 'TK_INSERT',
+    'INTO' : 'TK_INTO',
+    'VALUES' : 'TK_VALUES',
+    'NULL': 'TK_NULL',
 }
 
 # 토큰 이름 목록: parse.y에서 사용되는 토큰들과 SQLite의 tokenize.c에 있는 키워드들
@@ -19,7 +23,7 @@ tokens = (
     'TK_STAR', 'TK_ID', 'TK_DOT', 'TK_COLUMN', 'TK_IGNORE',
     'TK_STRING', 'TK_LP', 'TK_RP', 'TK_COMMA', 'TK_INTEGER', 
     'TK_FLOAT', 'TK_LT', 'TK_GT', 'TK_LE', 'TK_GE', 'TK_NE', 
-    'TK_EQ'
+    'TK_EQ', 'TK_PLUS', 'TK_MINUS'
 ) + tuple(reserved.values())
 
 # 정규표현식 규칙
@@ -35,6 +39,8 @@ t_TK_NE         = r'<>'
 t_TK_EQ         = r'='
 t_TK_LT         = r'<'
 t_TK_GT         = r'>'
+t_TK_PLUS       = r'\+'
+t_TK_MINUS      = r'-'
 
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'

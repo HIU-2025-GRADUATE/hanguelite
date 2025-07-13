@@ -1,5 +1,6 @@
 from ply import yacc
 from src.select import *
+from src.insert import *
 from src.tokenizer import tokens
 
 # 전역 파서 컨텍스트 등 (예: pParse, SRT_Callback 등)
@@ -87,6 +88,80 @@ def p_typename(p):
 def p_id_from_string(p):
     """id : TK_STRING"""
     p[0] = p[1]
+
+"""
+    INSERT
+"""
+def p_command_insert_value(p):
+    """cmd : TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP"""
+    targetTable, itemList, colList = str(p[3]), p[7], p[4]
+    insert(pParse, targetTable, itemList, None, colList)
+
+def p_command_insert_from_select(p):
+    """cmd : TK_INSERT TK_INTO id inscollist_opt select"""
+    targetTable, select_info, colList = str(p[3]), p[5], p[4]
+    insert(pParse, targetTable, 0, select_info, colList)
+
+def p_ins_col_list_opt_empty(p):
+    """inscollist_opt : """
+    p[0] = None
+
+def p_ins_col_list_opt(p):
+    """inscollist_opt : TK_LP inscollist TK_RP"""
+    p[0] = p[2]
+
+def p_ins_col_list(p):
+    """inscollist : inscollist TK_COMMA id"""
+    idList: IdList = p[1]
+    idList.idListAppend(p[3])
+    p[0] = idList
+
+def p_ins_col_list_one(p):
+    """inscollist : id"""
+    idList = IdList()
+    idList.idListAppend(p[1])
+    p[0] = idList
+
+def p_item_list(p):
+    """itemlist : itemlist TK_COMMA item"""
+    exprList: ExprList = p[1]
+    exprList.exprListAppend(p[3], None)
+    p[0] = exprList
+
+def p_item_list_one(p):
+    """itemlist : item"""
+    exprList = ExprList()
+    exprList.exprListAppend(p[1], None)
+    p[0] = exprList
+
+def p_item_int(p):
+    """item : TK_INTEGER"""
+    p[0] = Expr(TK_INTEGER, None, None, Token(str(p[1])))
+
+def p_item_plus_int(p):
+    """item : TK_PLUS TK_INTEGER"""
+    p[0] = Expr(TK_INTEGER, None, None, Token(p[1]+str(p[2])))
+
+def p_item_minus_int(p):
+    """item : TK_MINUS TK_INTEGER"""
+    p[0] = Expr(TK_INTEGER, None, None, Token(p[1]+str(p[2])))
+
+# def p_item_float(p):
+#     """item : TK_FLOAT"""
+#
+# def p_item_plus_float(p):
+#     """item : TK_PLUS TK_FLOAT"""
+#
+# def p_item_minus_float(p):
+#     """item : TK_MINUS TK_FLOAT"""
+
+def p_item_str(p):
+    """item : TK_STRING"""
+    p[0] = Expr(TK_STRING, None, None, Token(p[1]))
+
+def p_item_null(p):
+    """item : TK_NULL"""
+    p[0] = Expr(TK_NULL, None, None, None)
 
 """
     SELECT

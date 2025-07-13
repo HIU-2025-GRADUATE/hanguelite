@@ -122,6 +122,9 @@ def exprCode(pParse : Parse, pExpr : Expr):
         addr = v.addOp(OP_String, 0, 0, pExpr.token.z, 0)
         v.dequoteP3(addr)
 
+    elif pExpr.op == TK_NULL:
+        v.addOp(OP_Null, 0, 0, 0, 0)
+
     elif pExpr.op in (TK_AND, TK_OR, TK_STAR):
         exprCode(pParse, pExpr.pLeft)
         exprCode(pParse, pExpr.pRight)
@@ -137,11 +140,10 @@ def exprCode(pParse : Parse, pExpr : Expr):
 
     elif pExpr.op == TK_NOT:
         exprCode(pParse, pExpr.pLeft)
-        v.addOp(op,0,0,0,0)
+        v.addOp(op, 0, 0, 0, 0)
 
     elif pExpr.op == TK_SELECT:
         v.addOp(OP_MemLoad, pExpr.iColumn, 0, 0, 0)
-
 
 def exprIfTrue(pParse : Parse, pExpr : Expr, dest : int):
     v = pParse.pVdbe

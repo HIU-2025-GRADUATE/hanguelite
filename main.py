@@ -17,11 +17,15 @@ def main():
     while True:
         try:
             s = input('sql > ')
+            if not s:
+                continue
         except EOFError:
             break
 
-        if s:
+        try:
             execute_sql(db, s)
+        except Exception as e:
+            print(e)
 
 if __name__ == '__main__':
     main()
