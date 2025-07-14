@@ -233,12 +233,12 @@ class Expr:
     iAgg: int
     pSelect: 'Select'
 
-    def __init__(self, op : int, pLeft : 'Expr', pRight : 'Expr', token : Token, opStr : str = None):
+    def __init__(self, op : int, pLeft : 'Expr', pRight : 'Expr', token : Token, opStr : str = None, pList : 'ExprList' = None):
         self.op = op
         self.pLeft = pLeft
         self.pRight = pRight
         self.token = token or Token("")
-        self.pList = None
+        self.pList = pList
         self.iTable = 0
         self.iColumn = 0
         self.iAgg = 0
