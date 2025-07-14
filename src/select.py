@@ -112,7 +112,7 @@ def selectInnerLoop(pParse : Parse, pEList : ExprList, srcTab : int, nColumn : i
     return 0
     
 def select(pParse : Parse, p : Select, eDest : int, iParm : int):
-    isAgg = 0
+    isAgg = [0]
     distinct = -1
 
     pTabList = p.pSrc
@@ -166,8 +166,8 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     for i in range(pEList.nExpr):
         if exprResolveIds(pParse, pTabList, pEList.a[i].pExpr):
             return 1
-        # if sqliteExprCheck(pParse, pEList.a[i].pExpr, 1, isAgg):
-        #     return 1
+        if exprCheck(pParse, pEList.a[i].pExpr, 1, isAgg):
+            return 1
 
     if pWhere:
         if exprResolveIds(pParse, pTabList, pWhere):
@@ -201,21 +201,21 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     #     if sqliteExprCheck(pParse, pHaving, isAgg, None):
     #         return 1
 
-    # if isAgg:
-    #     assert pParse.nAgg == 0 and pParse.iAggCount < 0
-    #     for i in range(pEList.nExpr):
-    #         if sqliteExprAnalyzeAggregates(pParse, pEList.a[i].pExpr):
-    #             return 1
-    #     if pGroupBy:
-    #         for i in range(pGroupBy.nExpr):
-    #             if sqliteExprAnalyzeAggregates(pParse, pGroupBy.a[i].pExpr):
-    #                 return 1
-    #     if pHaving and sqliteExprAnalyzeAggregates(pParse, pHaving):
-    #         return 1
-    #     if pOrderBy:
-    #         for i in range(pOrderBy.nExpr):
-    #             if sqliteExprAnalyzeAggregates(pParse, pOrderBy.a[i].pExpr):
-    #                 return 1
+    if isAgg[0] == 1:
+        assert pParse.nAgg == 0 and pParse.iAggCount < 0
+        for i in range(pEList.nExpr):
+            if exprAnalyzeAggregates(pParse, pEList.a[i].pExpr):
+                return 1
+        if pGroupBy:
+            for i in range(pGroupBy.nExpr):
+                if exprAnalyzeAggregates(pParse, pGroupBy.a[i].pExpr):
+                    return 1
+        # if pHaving and exprAnalyzeAggregates(pParse, pHaving):
+        #     return 1
+        # if pOrderBy:
+        #     for i in range(pOrderBy.nExpr):
+        #         if exprAnalyzeAggregates(pParse, pOrderBy.a[i].pExpr):
+        #             return 1
 
     v = pParse.pVdbe
 
@@ -233,8 +233,8 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     if eDest == SRT_Callback:
         generateColumnNames(pParse, pTabList, pEList)
 
-    # if isAgg:
-    #     sqliteVdbeAddOp(v, OP_AggReset, 0, pParse.nAgg, None, None)
+    if isAgg[0] == 1:
+        v.addOp(OP_AggReset, 0, pParse.nAgg, None, 0)
 
     # if eDest == SRT_Mem:
     #     sqliteVdbeAddOp(v, OP_Null, 0, 0, None, None)
@@ -247,12 +247,76 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     if pWInfo is None:
         return 1
 
-    if not isAgg:
+    if isAgg[0] == 0:
         if selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
                            pWInfo.iContinue, pWInfo.iBreak):
             return 1
+        
+    else:
+        if pGroupBy:
+            for i in range(pGroupBy.nExpr):
+                exprCode(pParse, pGroupBy.a[i].pExpr)
+            v.addOp(OP_MakeKey, pGroupBy.nExpr, 0, None, 0)
+            doFocus = True
+        else:
+            doFocus = False
+            for i in range(pParse.nAgg):
+                if not pParse.aAgg[i].isAgg:
+                    doFocus = True
+                    break
+            if doFocus:
+                v.addOp(OP_String, 0, 0, "", 0)
 
+        if doFocus:
+            lbl1 = v.makeLabel()
+            v.addOp(OP_AggFocus, 0, lbl1, None, 0)
+            for i in range(pParse.nAgg):
+                if pParse.aAgg[i].isAgg:
+                    continue
+                exprCode(pParse, pParse.aAgg[i].pExpr)
+                v.addOp(OP_AggSet, 0, i, None, 0)
+            v.resolveLabel(lbl1)
+
+        for i in range(pParse.nAgg):
+            if not pParse.aAgg[i].isAgg:
+                continue
+            pE = pParse.aAgg[i].pExpr
+            if pE is None:
+                v.addOp(OP_AggIncr, 1, i, None, 0)
+                continue
+            assert pE.op == TK_AGG_FUNCTION
+            assert pE.pList is not None and pE.pList.nExpr == 1
+
+            exprCode(pParse, pE.pList.a[0].pExpr)
+            v.addOp(OP_AggGet, 0, i, None, 0)
+
+            if pE.iColumn == FN_Min:
+                op = OP_Min
+            elif pE.iColumn == FN_Max:
+                op = OP_Max
+            elif pE.iColumn in (FN_Avg, FN_Sum):
+                op = OP_Add
+
+            v.addOp(op, 0, 0, None, 0)
+            v.addOp(OP_AggSet, 0, i, None, 0)
+    
     whereEnd(pWInfo)
+
+    if isAgg[0] == 1:
+        endagg = v.makeLabel()
+        startagg = v.addOp(OP_AggNext, 0, endagg, None, 0)
+        pParse.useAgg = 1
+
+        # if pHaving:
+        #     exprIfFalse(pParse, pHaving, startagg)
+
+        if selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
+                        startagg, endagg):
+            return 1
+
+        v.addOp(OP_Goto, 0, startagg, None, 0)
+        v.addOp(OP_Noop, 0, 0, None, endagg)
+        pParse.useAgg = 0
 
     pParse.nTab = base
     return 0
