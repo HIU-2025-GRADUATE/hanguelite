@@ -297,7 +297,7 @@ def p_expr_not_like(p):
     e2.span = Token(p[1].span.z + " " + p[2] + " " + p[3] + " " + p[4].span.z)
     p[0] = e2
 
-def p_expr_function_call(p):
+def p_expr_function(p):
     """expr : TK_ID TK_LP exprlist TK_RP"""
     e = Expr(op=TK_FUNCTION, pLeft=None, pRight=None, token=Token(p[1]), pList=p[3])
     result = ','.join(item.pExpr.span.z for item in p[3].a if item.pExpr and item.pExpr.span)
