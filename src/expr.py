@@ -232,3 +232,88 @@ def exprIfFalse(pParse : Parse, pExpr : Expr, dest : int):
         exprCode(pParse, pExpr)
         v.addOp(OP_Not, 0, 0, 0, 0)
         v.addOp(OP_If, 0, dest, 0, 0)
+
+def exprCheck(pParse: Parse, pExpr: Expr, allowAgg: int, pIsAgg: list[int]):
+    nErr = 0
+    if pExpr is None:
+        return 0
+
+    if pExpr.op == TK_FUNCTION:
+        id = funcId(pExpr.token)
+        n = pExpr.pList.nExpr if pExpr.pList else 0
+        noSuchFunc = False
+        tooManyArgs = False
+        tooFewArgs = False
+        isAgg = False
+
+        pExpr.iColumn = id
+
+        if id == FN_Unknown:
+            noSuchFunc = True
+        elif id == FN_Count:
+            noSuchFunc = not allowAgg
+            tooManyArgs = n > 1
+            isAgg = True
+        elif id in (FN_Max, FN_Min):
+            tooFewArgs = n < 1 if allowAgg else n < 2
+            isAgg = (n == 1)
+        elif id in (FN_Avg, FN_Sum):
+            noSuchFunc = not allowAgg
+            tooManyArgs = n > 1
+            tooFewArgs = n < 1
+            isAgg = True
+        elif id == FN_Fcnt:
+            n = 0
+        
+
+        if noSuchFunc:
+            pParse.zErrMsg = f"no such function: {pExpr.token.z}"
+            pParse.nErr += 1
+            nErr += 1
+        elif tooManyArgs:
+            pParse.zErrMsg = f"too many arguments to function {pExpr.token.z}()"
+            pParse.nErr += 1
+            nErr += 1
+        elif tooFewArgs:
+            pParse.zErrMsg = f"too few arguments to function {pExpr.token.z}()"
+            pParse.nErr += 1
+            nErr += 1
+
+        if isAgg:
+            pExpr.op = TK_AGG_FUNCTION
+            if pIsAgg is not None:
+                pIsAgg[0] = 1  
+
+        if pExpr.pList and nErr == 0:
+            for i in range(n):
+                nErr = exprCheck(pParse, pExpr.pList.a[i].pExpr, allowAgg and not isAgg, pIsAgg)
+                if nErr != 0:
+                    break 
+    
+    else:
+        if pExpr.pLeft:
+            nErr = exprCheck(pParse, pExpr.pLeft, allowAgg, pIsAgg)
+
+        if nErr == 0 and pExpr.pRight:
+            nErr = exprCheck(pParse, pExpr.pRight, allowAgg, pIsAgg)
+            
+        if nErr == 0 and pExpr.pList:
+            for elem in pExpr.pList.a:
+                nErr = exprCheck(pParse, elem.pExpr, allowAgg, pIsAgg)
+                if nErr != 0:
+                    break
+
+    return nErr
+
+def funcId(pToken: Token):
+    funcMap = {
+        "count": FN_Count,
+        "min": FN_Min,
+        "max": FN_Max,
+        "sum": FN_Sum,
+        "avg": FN_Avg,
+        "fcnt": FN_Fcnt,
+    }
+
+    tokenStr = pToken.z.lower()
+    return funcMap.get(tokenStr, FN_Unknown)
