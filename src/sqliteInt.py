@@ -9,6 +9,13 @@ SRT_Set      = 3
 SRT_Union    = 5  
 SRT_Except   = 6  
 SRT_Table    = 7  
+FN_Unknown   = 0
+FN_Count     = 1
+FN_Min       = 2
+FN_Max       = 3
+FN_Sum       = 4
+FN_Avg       = 5
+FN_Fcnt      = 6
 
 """
     The number of entries in the in-memory hash array holding the database schema.
