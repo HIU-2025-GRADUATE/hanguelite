@@ -488,6 +488,9 @@ class Vdbe:
         if xCallback != None:
           print(f"call callback with args: {args}")
           xCallback(argc, args, [])
+        else:
+          print("### CALLBACK DEBUGGING ###")
+          print(args)
 
       elif pOp.opcode == OP_Concat:
         nField = pOp.p1

@@ -128,9 +128,9 @@ class DbbeCursor:
         # writeable==False 면 읽기 전용
         # (ForTest) csv 파일을 읽도록 만들었음
         if not writeable:
-            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile)+".csv", "r+")
+            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile), "c")
         else:
-            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile)+".csv", "a+")
+            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile), "c")
 
         # pFile 객체 변수를 세탕하고 pBe.pOpen에 대입
         self.pFile.writeable = writeable
