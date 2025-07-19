@@ -507,10 +507,8 @@ class Vdbe:
       # a와 b를 pop한 후에 b 값에 a 값을 연산한 결과를 push
       # Subtract 인 경우 b-a 값을 저장
       elif pOp.opcode in [OP_Add, OP_Subtract, OP_Multiply, OP_Divide]:
-        a = self.aStack[-1]
-        del self.aStack[-1]
-        b = self.aStack[-1]
-        del self.aStack[-1]
+        a = self.aStack.pop()
+        b = self.aStack.pop()
         if pOp.opcode == OP_Add:
           b += a
         elif pOp.opcode == OP_Subtract:
@@ -523,10 +521,8 @@ class Vdbe:
 
       # 스택의 탑에서 원소 두 개를 꺼내 그중 큰 것을 push
       elif pOp.opcode == OP_Max:
-        tos = self.aStack[-1]
-        del self.aStack[-1]
-        nos = self.aStack[-1]
-        del self.aStack[-1]
+        tos = self.aStack.pop()
+        nos = self.aStack.pop()
         if tos>nos:
           self.aStack.append(tos)
         else:
@@ -534,10 +530,8 @@ class Vdbe:
 
       # 스택의 탑에서 원소 두 개를 꺼내 그중 작은 것을 push
       elif pOp.opcode == OP_Min:
-        tos = self.aStack[-1]
-        del self.aStack[-1]
-        nos = self.aStack[-1]
-        del self.aStack[-1]
+        tos = self.aStack.pop()
+        nos = self.aStack.pop()
         if tos<nos:
           self.aStack.append(tos)
         else:
@@ -550,10 +544,8 @@ class Vdbe:
       # 스택의 top에서 원소 두개를 꺼내서 비교 연산 -> true이면 Goto p2
       # NOS (comp) TOS
       elif pOp.opcode in [OP_Eq, OP_Ne, OP_Lt, OP_Le, OP_Gt, OP_Ge]:
-        tos = self.aStack[-1]
-        del self.aStack[-1]
-        nos = self.aStack[-1]
-        del self.aStack[-1]
+        tos = self.aStack.pop()
+        nos = self.aStack.pop()
 
         if pOp.opcode == OP_Eq: c = (nos==tos)
         elif pOp.opcode == OP_Ne: c = (nos!=tos)
@@ -585,10 +577,8 @@ class Vdbe:
       # 스택에서 원소 두개를 pop하여 두 원소로 논리 연산을 수행
       # 수행 결과를 스택에 push
       elif pOp.opcode in [OP_And, OP_Or]:
-        tos = self.aStack[-1]
-        del self.aStack[-1]
-        nos = self.aStack[-1]
-        del self.aStack[-1]
+        tos = self.aStack.pop()
+        nos = self.aStack.pop()
         
         if pOp.opcode == OP_And:
           self.aStack.append(tos and nos)
@@ -597,8 +587,7 @@ class Vdbe:
 
       # 스택의 top 원소를 숫자 값으로 간주하여 덧셈 역원을 push
       elif pOp.opcode == OP_Negative:
-        tos = self.aStack[-1]
-        del self.aStack[-1]
+        tos = self.aStack.pop()
         self.aStack.append(-tos)
 
       # /* Opcode: Not * * *
@@ -619,8 +608,7 @@ class Vdbe:
         pass
 
       elif pOp.opcode == OP_If:
-        c = self.aStack[-1]
-        del self.aStack[-1]
+        c = self.aStack.pop()
 
         if type(c) is str:
           c = len(c)>0
@@ -629,15 +617,13 @@ class Vdbe:
 
       # (TODO) 일단 None 값으로 추가하였음 원본은 STK_Null 값 사용
       elif pOp.opcode == OP_IsNull:
-        c = self.aStack[-1]
-        del self.aStack[-1]
+        c = self.aStack.pop()
         if c is None:
           pc = pOp.p2 - 1
 
       # (TODO) 일단 None 값으로 추가하였음 원본은 STK_Null 값 사용
       elif pOp.opcode == OP_NotNull:
-        c = self.aStack[-1]
-        del self.aStack[-1]
+        c = self.aStack.pop()
         if c is not None:
           pc = pOp.p2 - 1
 
@@ -686,8 +672,7 @@ class Vdbe:
       # p1 커서에 key/data 쌍은 미리 존재함으로 간주
       elif pOp.opcode == OP_Fetch:
         i = pOp.p1
-        key = self.aStack[-1]
-        del self.aStack[-1]
+        key = self.aStack.pop()
         if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
           self.aCsr[i].fetch(key)
           self.nFetch += 1
