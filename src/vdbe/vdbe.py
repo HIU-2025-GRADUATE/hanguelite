@@ -572,6 +572,7 @@ class Vdbe:
           pc = pOp.p2 - 1
 
       elif pOp.opcode == OP_Glob:
+
         pass
 
       # 스택에서 원소 두개를 pop하여 두 원소로 논리 연산을 수행
@@ -682,8 +683,26 @@ class Vdbe:
       elif pOp.opcode == OP_Fcnt:
         self.aStack.append(self.nFetch)
 
+      # p1 커서에 스택 top의 값을 키로 가지는 레코드가 존재하는지 검사
+      # OP_Distinct : 존재하지 않으면 goto p2, 스택의 top을 pop하지 않음
+      # OP_Found : 존재하면 goto p2, 스택의 top을 pop
+      # OP_NotFound : 존재하지 않으면 goto p2, 스택의 top을 pop
       elif pOp.opcode in [OP_Distinct, OP_NotFound, OP_Found]:
-        pass
+        i = pOp.p1
+        tos = self.aStack[-1]
+        alreadyExists = 0
+        if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          alreadyExists = self.aCsr[i].pCursor.test(str(tos))
+        
+        if pOp.opcode == OP_Found:
+          if alreadyExists:
+            pc = pOp.p2 - 1
+        else:
+          if not alreadyExists:
+            pc = pOp.p2 - 1
+
+        if pOp.opcode != OP_Distinct:
+          del self.aStack[-1]
 
       # p1번째 커서와 연관된 키를 생성 (이전에 사용된적 없는 정수값)
       # 생성 후, 스택에 push

@@ -196,6 +196,9 @@ class DbbeCursor:
         self.data = gdbm_fetch(self.pFile.dbf, key)
         # (TODO) 원본 코드에서는 pCursr->data.dptr!=0 으로 돼있음
         return (self.data!=None)
+    
+    def test(self, key):
+        return gdbm_exists(self.pFile.dbf, key)
 
 if __name__ == "__main__":
     pCursor = DbbeCursor()
