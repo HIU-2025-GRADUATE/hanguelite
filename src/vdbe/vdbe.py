@@ -745,7 +745,14 @@ class Vdbe:
           z = self.aCsr[pOp.p1].pCursor.readData(pOp.p2)
         self.aStack.append(z)
 
+      # 스택에 최근 사용한 키의 앞에서 4 byte 만큼을 push
+      # (TODO) c언어에서는 int 크기를 맞춘거 같은데
+      # 여기서도 앞에 8글자로 제한해서 작성하였음 -> 바꿔도 상관없을듯...
       elif pOp.opcode == OP_Key:
+        i = pOp.p1
+        if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          z = self.aCsr[i].pCursor.readKey()[:8]
+          self.aStack.append(z)
         pass
 
       elif pOp.opcode == OP_Rewind:
