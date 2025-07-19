@@ -719,7 +719,13 @@ class Vdbe:
         self.aStack = self.aStack[:-2]
         pass
 
+      # 스택의 top을 key로 하는 레코드를 p1 번째 커서의 db 파일에서 삭제
+      # 사용된 스택의 top은 pop
       elif pOp.opcode == OP_Delete:
+        tos = self.aStack.pop()
+        i = pOp.p1
+        if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          self.aCsr[i].pCursor.delete(tos)
         pass
 
       elif pOp.opcode == OP_KeyAsData:

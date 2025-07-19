@@ -59,6 +59,11 @@ def gdbm_nextKey(dbf, key):
     # if idx+1 < len(keys): return keys[idx+1]
     # else: return None
 
+def gdbm_delete(dbf, key):
+    if not key in dbf.keys():
+        return
+    del dbf[key]
+
 if __name__ == "__main__":
     path = '/'.join(os.path.abspath(__file__).split("\\")[:-1])+'/'
     dbf = gdbm_open(path+'student', "c")

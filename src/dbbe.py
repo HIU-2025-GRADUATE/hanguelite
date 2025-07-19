@@ -199,6 +199,14 @@ class DbbeCursor:
     
     def test(self, key):
         return gdbm_exists(self.pFile.dbf, key)
+    
+    # src/dbbe.c
+    # int sqliteDbbeDelete(DbbeCursor *pCursr, int nKey, char *pKey)
+    def delete(self, key):
+        self.key = None
+        self.data = None
+        rc = gdbm_delete(self.pFile.dbf, key)
+        return rc
 
 if __name__ == "__main__":
     pCursor = DbbeCursor()
