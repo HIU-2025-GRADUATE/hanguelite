@@ -571,8 +571,21 @@ class Vdbe:
         if res:
           pc = pOp.p2 - 1
 
+      # 스택에서 tos는 글로브 패턴, nos는 패턴과 비교할 문자열
+      # 비교 결과가 패턴과 일치하면 goto p2, 아니면 pass
+      # 만약 p1!=0 이면 NOT GLOB로 동작, 두 값이 다르면 jump
+      # * : 0개 이상 문자와 일치
+      # ? : 단일 문자와 일치
+      # [...] : 문자 범위 / [^...] : 범위 내에 없는 문자와 일치
+      # 글로브 패턴은 대소문자를 구분함
       elif pOp.opcode == OP_Glob:
-
+        tos = self.aStack.pop()
+        nos = self.aStack.pop()
+        c = globCompare(str(tos), str(nos))
+        if pOp.p1:
+          c = not c
+        if c:
+          pc = pOp.p2-1
         pass
 
       # 스택에서 원소 두개를 pop하여 두 원소로 논리 연산을 수행
