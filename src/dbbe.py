@@ -183,13 +183,19 @@ class DbbeCursor:
     def rewind(self):
         self.needRewind = 1
 
-    # (TODO) readKey 파트 만들어야됌
     def readData(self, offset):
         if self.readPending and self.pFile and self.pFile.dbf:
             self.data = gdbm_fetch(self.pFile.dbf, self.key)
             self.readPending = False
         if offset<0 or offset>=len(self.data): return ''
         return self.data[offset]
+    
+    # src/dbbe.c
+    # char *sqliteDbbeReadKey(DbbeCursor *pCursr, int offset)
+    # 파이썬에서 구현 시 offset이 필요없어서 default를 0으로 세팅
+    def readKey(self, offset=0):
+        # if offset<0 or offset>=len(self.data): return ''
+        return self.key
     
     def fetch(self, key):
         self.key = key

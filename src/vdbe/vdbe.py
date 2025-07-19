@@ -728,13 +728,21 @@ class Vdbe:
           self.aCsr[i].pCursor.delete(tos)
         pass
 
+      # p1 커서에 key-as-data 모드를 p2로 설정 (0=Off / 1=On)
+      # key-as-data 모드에서 OP_Field 명령어는 데이터 대신 key를 가져옴
       elif pOp.opcode == OP_KeyAsData:
-        pass
+        i = pOp.p1
+        if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          self.aCsr[i].keyAsData = pOp.p2
 
-      # p1 커서의 dbf 에서 p2 번째 필드 값을 읽어옴
+      # p1 커서의 최근에 가져온 데이터에서 p2 번째 필드 값을 읽어옴
+      # 만약 조회하는 커서의 KeyAsData 값이 1 이라면 데이터 대신 키 값을 읽어옴
       elif pOp.opcode == OP_Field:
         if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
-        z = self.aCsr[pOp.p1].pCursor.readData(pOp.p2)
+        if self.aCsr[pOp.p1].keyAsData:
+          z = self.aCsr[pOp.p1].pCursor.readKey()
+        else:
+          z = self.aCsr[pOp.p1].pCursor.readData(pOp.p2)
         self.aStack.append(z)
 
       elif pOp.opcode == OP_Key:
