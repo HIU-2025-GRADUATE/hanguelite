@@ -488,6 +488,9 @@ class Vdbe:
         if xCallback != None:
           print(f"call callback with args: {args}")
           xCallback(argc, args, [])
+        else:
+          print("### CALLBACK DEBUGGING ###")
+          print(args)
 
       elif pOp.opcode == OP_Concat:
         nField = pOp.p1
@@ -504,10 +507,8 @@ class Vdbe:
       # a와 b를 pop한 후에 b 값에 a 값을 연산한 결과를 push
       # Subtract 인 경우 b-a 값을 저장
       elif pOp.opcode in [OP_Add, OP_Subtract, OP_Multiply, OP_Divide]:
-        a = self.aStack[-1]
-        del self.aStack[-1]
-        b = self.aStack[-1]
-        del self.aStack[-1]
+        a = self.aStack.pop()
+        b = self.aStack.pop()
         if pOp.opcode == OP_Add:
           b += a
         elif pOp.opcode == OP_Subtract:
@@ -520,10 +521,8 @@ class Vdbe:
 
       # 스택의 탑에서 원소 두 개를 꺼내 그중 큰 것을 push
       elif pOp.opcode == OP_Max:
-        tos = self.aStack[-1]
-        del self.aStack[-1]
-        nos = self.aStack[-1]
-        del self.aStack[-1]
+        tos = self.aStack.pop()
+        nos = self.aStack.pop()
         if tos>nos:
           self.aStack.append(tos)
         else:
@@ -531,10 +530,8 @@ class Vdbe:
 
       # 스택의 탑에서 원소 두 개를 꺼내 그중 작은 것을 push
       elif pOp.opcode == OP_Min:
-        tos = self.aStack[-1]
-        del self.aStack[-1]
-        nos = self.aStack[-1]
-        del self.aStack[-1]
+        tos = self.aStack.pop()
+        nos = self.aStack.pop()
         if tos<nos:
           self.aStack.append(tos)
         else:
@@ -547,10 +544,8 @@ class Vdbe:
       # 스택의 top에서 원소 두개를 꺼내서 비교 연산 -> true이면 Goto p2
       # NOS (comp) TOS
       elif pOp.opcode in [OP_Eq, OP_Ne, OP_Lt, OP_Le, OP_Gt, OP_Ge]:
-        tos = self.aStack[-1]
-        del self.aStack[-1]
-        nos = self.aStack[-1]
-        del self.aStack[-1]
+        tos = self.aStack.pop()
+        nos = self.aStack.pop()
 
         if pOp.opcode == OP_Eq: c = (nos==tos)
         elif pOp.opcode == OP_Ne: c = (nos!=tos)
@@ -576,16 +571,28 @@ class Vdbe:
         if res:
           pc = pOp.p2 - 1
 
+      # 스택에서 tos는 글로브 패턴, nos는 패턴과 비교할 문자열
+      # 비교 결과가 패턴과 일치하면 goto p2, 아니면 pass
+      # 만약 p1!=0 이면 NOT GLOB로 동작, 두 값이 다르면 jump
+      # * : 0개 이상 문자와 일치
+      # ? : 단일 문자와 일치
+      # [...] : 문자 범위 / [^...] : 범위 내에 없는 문자와 일치
+      # 글로브 패턴은 대소문자를 구분함
       elif pOp.opcode == OP_Glob:
+        tos = self.aStack.pop()
+        nos = self.aStack.pop()
+        c = globCompare(str(tos), str(nos))
+        if pOp.p1:
+          c = not c
+        if c:
+          pc = pOp.p2-1
         pass
 
       # 스택에서 원소 두개를 pop하여 두 원소로 논리 연산을 수행
       # 수행 결과를 스택에 push
       elif pOp.opcode in [OP_And, OP_Or]:
-        tos = self.aStack[-1]
-        del self.aStack[-1]
-        nos = self.aStack[-1]
-        del self.aStack[-1]
+        tos = self.aStack.pop()
+        nos = self.aStack.pop()
         
         if pOp.opcode == OP_And:
           self.aStack.append(tos and nos)
@@ -594,8 +601,7 @@ class Vdbe:
 
       # 스택의 top 원소를 숫자 값으로 간주하여 덧셈 역원을 push
       elif pOp.opcode == OP_Negative:
-        tos = self.aStack[-1]
-        del self.aStack[-1]
+        tos = self.aStack.pop()
         self.aStack.append(-tos)
 
       # /* Opcode: Not * * *
@@ -616,8 +622,7 @@ class Vdbe:
         pass
 
       elif pOp.opcode == OP_If:
-        c = self.aStack[-1]
-        del self.aStack[-1]
+        c = self.aStack.pop()
 
         if type(c) is str:
           c = len(c)>0
@@ -626,15 +631,13 @@ class Vdbe:
 
       # (TODO) 일단 None 값으로 추가하였음 원본은 STK_Null 값 사용
       elif pOp.opcode == OP_IsNull:
-        c = self.aStack[-1]
-        del self.aStack[-1]
+        c = self.aStack.pop()
         if c is None:
           pc = pOp.p2 - 1
 
       # (TODO) 일단 None 값으로 추가하였음 원본은 STK_Null 값 사용
       elif pOp.opcode == OP_NotNull:
-        c = self.aStack[-1]
-        del self.aStack[-1]
+        c = self.aStack.pop()
         if c is not None:
           pc = pOp.p2 - 1
 
@@ -683,8 +686,7 @@ class Vdbe:
       # p1 커서에 key/data 쌍은 미리 존재함으로 간주
       elif pOp.opcode == OP_Fetch:
         i = pOp.p1
-        key = self.aStack[-1]
-        del self.aStack[-1]
+        key = self.aStack.pop()
         if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
           self.aCsr[i].fetch(key)
           self.nFetch += 1
@@ -694,8 +696,26 @@ class Vdbe:
       elif pOp.opcode == OP_Fcnt:
         self.aStack.append(self.nFetch)
 
+      # p1 커서에 스택 top의 값을 키로 가지는 레코드가 존재하는지 검사
+      # OP_Distinct : 존재하지 않으면 goto p2, 스택의 top을 pop하지 않음
+      # OP_Found : 존재하면 goto p2, 스택의 top을 pop
+      # OP_NotFound : 존재하지 않으면 goto p2, 스택의 top을 pop
       elif pOp.opcode in [OP_Distinct, OP_NotFound, OP_Found]:
-        pass
+        i = pOp.p1
+        tos = self.aStack[-1]
+        alreadyExists = 0
+        if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          alreadyExists = self.aCsr[i].pCursor.test(str(tos))
+        
+        if pOp.opcode == OP_Found:
+          if alreadyExists:
+            pc = pOp.p2 - 1
+        else:
+          if not alreadyExists:
+            pc = pOp.p2 - 1
+
+        if pOp.opcode != OP_Distinct:
+          del self.aStack[-1]
 
       # p1번째 커서와 연관된 키를 생성 (이전에 사용된적 없는 정수값)
       # 생성 후, 스택에 push
@@ -712,19 +732,40 @@ class Vdbe:
         self.aStack = self.aStack[:-2]
         pass
 
+      # 스택의 top을 key로 하는 레코드를 p1 번째 커서의 db 파일에서 삭제
+      # 사용된 스택의 top은 pop
       elif pOp.opcode == OP_Delete:
+        tos = self.aStack.pop()
+        i = pOp.p1
+        if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          self.aCsr[i].pCursor.delete(tos)
         pass
 
+      # p1 커서에 key-as-data 모드를 p2로 설정 (0=Off / 1=On)
+      # key-as-data 모드에서 OP_Field 명령어는 데이터 대신 key를 가져옴
       elif pOp.opcode == OP_KeyAsData:
-        pass
+        i = pOp.p1
+        if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          self.aCsr[i].keyAsData = pOp.p2
 
-      # p1 커서의 dbf 에서 p2 번째 필드 값을 읽어옴
+      # p1 커서의 최근에 가져온 데이터에서 p2 번째 필드 값을 읽어옴
+      # 만약 조회하는 커서의 KeyAsData 값이 1 이라면 데이터 대신 키 값을 읽어옴
       elif pOp.opcode == OP_Field:
         if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
-        z = self.aCsr[pOp.p1].pCursor.readData(pOp.p2)
+        if self.aCsr[pOp.p1].keyAsData:
+          z = self.aCsr[pOp.p1].pCursor.readKey()
+        else:
+          z = self.aCsr[pOp.p1].pCursor.readData(pOp.p2)
         self.aStack.append(z)
 
+      # 스택에 최근 사용한 키의 앞에서 4 byte 만큼을 push
+      # (TODO) c언어에서는 int 크기를 맞춘거 같은데
+      # 여기서도 앞에 8글자로 제한해서 작성하였음 -> 바꿔도 상관없을듯...
       elif pOp.opcode == OP_Key:
+        i = pOp.p1
+        if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          z = self.aCsr[i].pCursor.readKey()[:8]
+          self.aStack.append(z)
         pass
 
       elif pOp.opcode == OP_Rewind:

@@ -128,9 +128,9 @@ class DbbeCursor:
         # writeable==False 면 읽기 전용
         # (ForTest) csv 파일을 읽도록 만들었음
         if not writeable:
-            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile)+".csv", "r+")
+            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile), "r")
         else:
-            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile)+".csv", "a+")
+            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile), "c")
 
         # pFile 객체 변수를 세탕하고 pBe.pOpen에 대입
         self.pFile.writeable = writeable
@@ -183,7 +183,6 @@ class DbbeCursor:
     def rewind(self):
         self.needRewind = 1
 
-    # (TODO) readKey 파트 만들어야됌
     def readData(self, offset):
         if self.readPending and self.pFile and self.pFile.dbf:
             self.data = gdbm_fetch(self.pFile.dbf, self.key)
@@ -191,11 +190,29 @@ class DbbeCursor:
         if offset<0 or offset>=len(self.data): return ''
         return self.data[offset]
     
+    # src/dbbe.c
+    # char *sqliteDbbeReadKey(DbbeCursor *pCursr, int offset)
+    # 파이썬에서 구현 시 offset이 필요없어서 default를 0으로 세팅
+    def readKey(self, offset=0):
+        # if offset<0 or offset>=len(self.data): return ''
+        return self.key
+    
     def fetch(self, key):
         self.key = key
         self.data = gdbm_fetch(self.pFile.dbf, key)
         # (TODO) 원본 코드에서는 pCursr->data.dptr!=0 으로 돼있음
         return (self.data!=None)
+    
+    def test(self, key):
+        return gdbm_exists(self.pFile.dbf, key)
+    
+    # src/dbbe.c
+    # int sqliteDbbeDelete(DbbeCursor *pCursr, int nKey, char *pKey)
+    def delete(self, key):
+        self.key = None
+        self.data = None
+        rc = gdbm_delete(self.pFile.dbf, key)
+        return rc
 
 if __name__ == "__main__":
     pCursor = DbbeCursor()

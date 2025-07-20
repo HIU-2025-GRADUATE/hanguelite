@@ -178,9 +178,9 @@ def p_select(p):
     p[0] = p[1]
 
 def p_oneselect(p):
-    """oneselect : TK_SELECT selcollist from where_opt"""
+    """oneselect : TK_SELECT selcollist from where_opt groupby_opt"""
     # Create a new SELECT structure using the parsed select list and from clause.
-    p[0] = Select(p[2], p[3], p[4], None, None, None, 0)
+    p[0] = Select(p[2], p[3], p[4], p[5], None, None, 0)
 
 def p_selcollist_star(p):
     """selcollist : TK_STAR"""
@@ -226,6 +226,33 @@ def p_where_opt_empty(p):
 def p_where_opt_expr(p):
     """where_opt : TK_WHERE expr"""
     p[0] = p[2]  
+
+def p_groupby_opt_empty(p):
+    """groupby_opt :"""
+    p[0] = None  
+
+def p_groupby_opt(p):
+    """groupby_opt : TK_GROUP TK_BY exprlist"""
+    p[0] = p[3] 
+
+def p_exprlist_comma(p):
+    """exprlist : exprlist TK_COMMA expritem"""
+    p[1].exprListAppend(p[3], None)
+    p[0] = p[1]
+
+def p_exprlist(p):
+    """exprlist : expritem"""
+    exprList = ExprList()
+    exprList.exprListAppend(p[1], None)
+    p[0] = exprList
+
+def p_expritem(p):
+    """expritem : expr"""
+    p[0] = p[1]
+
+def p_expritem_empty(p):
+    """expritem :"""
+    p[0] = None
 
 def p_expr_and(p):
     """expr : expr TK_AND expr"""
