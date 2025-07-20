@@ -404,7 +404,7 @@ def exprAnalyzeAggregates(pParse: Parse, pExpr: Expr):
 
 def appendAggInfo(pParse: Parse):
     try:
-        pParse.aAgg = []
+        pParse.aAgg = pParse.aAgg if pParse.aAgg else []
         pParse.aAgg.append(AggExpr())  # 새 항목 추가
         index = len(pParse.aAgg) - 1
         pParse.nAgg += 1

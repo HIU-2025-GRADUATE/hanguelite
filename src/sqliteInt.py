@@ -415,7 +415,7 @@ class Parse:
         self.useAgg = 0
 
     def infoReset(self):
-        self.aAgg = 0
+        self.aAgg = None
         self.nAgg = 0
         self.iAggCount = -1
         self.useAgg = 0
