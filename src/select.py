@@ -11,18 +11,7 @@ def fillInColumnList(pParse : Parse, p : Select):
     if pTabList.a[i].pTab:
       return 0
     
-    # ================================= #
-    # select * from tableA 쿼리가 정상 동작하도록 하는 코드
-    # newTab = Table("tableA")
-    # newTab.nCol = 6
-    # newTab.aCol.append(Column("rowid"))
-    # newTab.aCol.append(Column("학번"))
-    # newTab.aCol.append(Column("이름"))
-    # newTab.aCol.append(Column("학년"))
-    # newTab.aCol.append(Column("전공"))
-    # newTab.aCol.append(Column("전화번호"))
-    # ================================= #
-    pTabList.a[i].pTab = findTable(pParse.db, pTabList.a[i].zName);  # build.c 파일에 구현된 함수
+    pTabList.a[i].pTab = findTable(pParse.db, pTabList.a[i].zName);  
     if pTabList.a[i].pTab == None: 
     #   sqliteSetString(&pParse.zErrMsg, "no such table: ", .a[i].zName, 0);
       pParse.nErr += 1
@@ -156,9 +145,9 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     #     for i in range(pOrderBy.nExpr):
     #         sqliteExprResolveInSelect(pParse, pOrderBy.a[i].pExpr)
 
-    # if pGroupBy:
-    #     for i in range(pGroupBy.nExpr):
-    #         sqliteExprResolveInSelect(pParse, pGroupBy.a[i].pExpr)
+    if pGroupBy:
+        for i in range(pGroupBy.nExpr):
+            exprResolveInSelect(pParse, pGroupBy.a[i].pExpr)
 
     # if pHaving:
     #     sqliteExprResolveInSelect(pParse, pHaving)
@@ -183,13 +172,13 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     #         if sqliteExprCheck(pParse, pE, isAgg, None):
     #             return 1
 
-    # if pGroupBy:
-    #     for i in range(pGroupBy.nExpr):
-    #         pE = pGroupBy.a[i].pExpr
-    #         if sqliteExprResolveIds(pParse, pTabList, pE):
-    #             return 1
-    #         if sqliteExprCheck(pParse, pE, isAgg, None):
-    #             return 1
+    if pGroupBy:
+        for i in range(pGroupBy.nExpr):
+            pE = pGroupBy.a[i].pExpr
+            if exprResolveIds(pParse, pTabList, pE):
+                return 1
+            # if sqliteExprCheck(pParse, pE, isAgg, None):
+            #     return 1
 
     # if pHaving:
     #     if not pGroupBy:
