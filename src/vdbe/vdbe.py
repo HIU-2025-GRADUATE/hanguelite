@@ -11,6 +11,74 @@ STK_Int = 0x0004      # Value is an integer */
 STK_Real = 0x0008     # Value is a real number */
 STK_Dyn = 0x0010      # Need to call sqliteFree() on zStack[*] */
 
+class AggElem:
+  def __init__(self, zKey: str, nMem: int):
+      self.zKey: str = zKey
+      self.pHash: AggElem = None  
+      self.pNext: AggElem = None  
+      self.aMem: list = [None] * nMem
+
+class Agg:
+  def __init__(self):
+    self.nMem: int = 0
+    self.pCurrent: AggElem = None
+    self.nElem: int = 0
+    self.nHash: int = 0
+    self.apHash: list[AggElem] = []
+    self.pFirst: AggElem = None
+  
+  def reset(self):
+    self.nMem = 0
+    self.pCurrent = None
+    self.nElem = 0
+    self.nHash = 0
+    self.apHash.clear()
+    self.pFirst = None
+
+  def enhash(self, pElem: AggElem):
+    h = hashNoCase(pElem.zKey, 0) % self.nHash
+    pElem.pHash = self.apHash[h]
+    self.apHash[h] = pElem
+
+  def rehash(self, nHash: int):
+    if self.nHash == nHash:
+      return
+    self.apHash = [None]*nHash
+    self.nHash = nHash
+    pElem = self.pFirst
+    while pElem:
+      self.enhash(pElem)
+      pElem = pElem.pNext
+
+  def insert(self, zKey: str):
+    if self.nHash <= self.nElem * 2:
+      self.rehash(self.nElem*2 + 19)
+    if self.nHash == 0: 
+      return 1
+    
+    pElem = AggElem(zKey, self.nMem)
+    self.enhash(pElem)
+
+    pElem.pNext = self.pFirst
+    self.pFirst = pElem
+    self.pCurrent = pElem
+    self.nElem += 1
+
+    return 0
+  
+  def aggInFocus(self):
+    if self.pCurrent:
+      return self.pCurrent
+    
+    pFocus = self.pFirst
+    if pFocus:
+      self.pCurrent = pFocus
+    else:
+      self.insert("")
+      pFocus = self.pCurrent = self.pFirst
+
+    return pFocus
+    
 class Vdbe:
   """
   ** 기존의 createVdbe 함수가 Dbbe 를 인자로 받아서 VDBE 구조체 기반으로 메모리 할당해서 객체 만들고 포인터를 리턴하는 방식이었음.
@@ -60,7 +128,7 @@ class Vdbe:
     # int nLineAlloc;    # /* Number of spaces allocated for zLine */
     # int nMem;          # /* Number of memory locations currently allocated */
     # Mem *aMem;         # /* The memory locations */
-    # Agg agg;           # /* Aggregate information */
+    self.agg: Agg = Agg()# /* Aggregate information */
     # int nSet;          # /* Number of sets allocated */
     # Set *aSet;         # /* An array of sets */
     # OP_Fetch 명령어 실행 횟수
@@ -854,22 +922,62 @@ class Vdbe:
         pass
 
       elif pOp.opcode == OP_AggReset:
-        pass
+        self.agg.reset()
+        self.agg.nMem = pOp.p2
 
       elif pOp.opcode == OP_AggFocus:
-        pass
+        zKey = str(self.aStack.pop())
+        if self.agg.nHash <= 0:
+          pElem = None
+        else:
+          h = hashNoCase(zKey, len(zKey) - 1) % self.agg.nHash
+          pElem = self.agg.apHash[h]
+          while pElem:
+            if pElem.zKey == zKey:
+              break
+            pElem = pElem.pHash
 
-      elif pOp.opcode == OP_AggIncr:
-        pass
+        if pElem:
+          self.agg.pCurrent = pElem
+          pc = pOp.p2 - 1
+        else:
+          self.agg.insert(zKey)
+
+      elif pOp.opcode == OP_AggIncr:   # 정확한 구현인지 확인 필요. Mem을 안 써서 원본 코드와 완벽히 일치 X
+        pFocus = self.agg.aggInFocus()
+        i = pOp.p2
+
+        if 0 <= i < self.agg.nMem:
+          try:
+            val = int(pFocus.aMem[i])
+          except:
+            val = 0
+
+          pFocus.aMem[i] = val + pOp.p1
 
       elif pOp.opcode == OP_AggSet:
-        pass
-
+        pFocus = self.agg.aggInFocus()
+        if 0 <= pOp.p2 < self.agg.nMem:
+          pFocus.aMem[pOp.p2] = self.aStack.pop()
+          
       elif pOp.opcode == OP_AggGet:
-        pass
+        pFocus = self.agg.aggInFocus()
+        if 0 <= pOp.p2 < self.agg.nMem:
+          self.aStack.append(pFocus.aMem[pOp.p2])
 
       elif pOp.opcode == OP_AggNext:
-        pass
+        if self.agg.nHash:
+          self.agg.nHash = 0
+          self.agg.apHash = None
+          self.agg.pCurrent = self.agg.pFirst
+          
+        elif self.agg.pCurrent == self.agg.pFirst and self.agg.pCurrent:
+          pElem = self.agg.pCurrent
+          self.agg.pCurrent = self.agg.pFirst = pElem.pNext
+          self.agg.nElem -= 1
+        
+        if self.agg.pCurrent is None:
+          pc = pOp.p2 - 1
 
       elif pOp.opcode == OP_SetClear:
         pass
