@@ -1,3 +1,20 @@
+N_CHAR_CLASS = 5 
+
+_state_machine = [
+    # State 0: Beginning of word
+      1, 0, 2, 3, 1,
+    # State 1: Arbitrary text
+      1, 0, 2, 1, 1,
+    # State 2: Integer
+      1, 0, 2, 1, 4,
+    # State 3: Negative integer
+      1, 0, 3, 1, 5,
+    # State 4: Real number
+      1, 0, 4, 1, 1,
+    # State 5: Negative real num
+      1, 0, 5, 1, 1,
+]
+
 def hashNoCase(z : str, n : int):
     UpperToLower = [i for i in range(256)]
     for i in range(ord('A'), ord('Z') + 1):
@@ -114,3 +131,91 @@ def globCompare(pattern : str, target : str):
         j += 1
 
     return int(j == len(target))
+
+def _char_class(ch: str):
+    if ch == '\0':
+        return 1  
+    if ch.isspace():
+        return 1
+    if ch.isdigit():
+        return 2
+    if ch == '-':
+        return 3
+    if ch == '.':
+        return 4
+    return 0
+
+def _private_str_cmp(a_text: str, b_text: str, use_case: bool):
+    i = j = 0
+    cclass = 0
+    len_a, len_b = len(a_text), len(b_text)
+    ca = cb = '\0'
+    while True:
+        if i < len_a:
+            ca_orig = a_text[i]; i += 1
+        else:
+            ca_orig = '\0'
+        if j < len_b:
+            cb_orig = b_text[j]; j += 1
+        else:
+            cb_orig = '\0'
+
+        ca = ca_orig if use_case else ca_orig.lower()
+        cb = cb_orig if use_case else cb_orig.lower()
+
+        if ca != cb:
+            break
+
+        cls = _char_class(ca)
+        cclass = _state_machine[cclass * N_CHAR_CLASS + cls]
+
+        if ca == '\0':
+            break
+
+    if cclass in (0, 1) and ca.isdigit() and cb.isdigit():
+        cclass = 2
+
+    if cclass in (2, 3):
+
+        if ca.isdigit():
+            if cb.isdigit():
+        
+                acnt = 0
+                while i < len_a and a_text[i].isdigit():
+                    acnt += 1; i += 1
+                bcnt = 0
+                while j < len_b and b_text[j].isdigit():
+                    bcnt += 1; j += 1
+                result = acnt - bcnt
+                if result == 0:
+                    result = ord(ca) - ord(cb)
+            else:
+                result = 1
+        elif cb.isdigit():
+            result = -1
+        elif ca == '.':
+            result = 1
+        elif cb == '.':
+            result = -1
+        else:
+            result = ord(ca) - ord(cb)
+            cclass = 2
+        if cclass == 3:
+            result = -result
+
+    elif cclass in (0, 1, 4):
+        result = ord(ca) - ord(cb)
+
+    elif cclass == 5:
+        result = ord(cb) - ord(ca)
+
+    else:
+        result = ord(ca) - ord(cb)
+
+    return result
+
+def compare(a_text: str, b_text: str):
+    res = _private_str_cmp(a_text, b_text, use_case=False)
+    if res == 0:
+        res = _private_str_cmp(a_text, b_text, use_case=True)
+    return res
