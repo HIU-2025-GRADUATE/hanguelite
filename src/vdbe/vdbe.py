@@ -258,8 +258,18 @@ class Vdbe:
   **
   ** NULLs are converted into an empty string.
   """
-  def hardStringify(self, i: int) -> int:
-    pass
+  def hardStringify(self, i: int):
+    try:
+      self.aStack[i] = str(float(self.aStack[i]))
+      return
+    except:
+      try:
+        self.aStack[i] = str(int(self.aStack[i]))
+        return
+      except:
+        self.aStack[i] = ""
+        return
+      
   #define Stringify(P,I) ((P->aStack[I].flags & STK_Str)==0 ? hardStringify(P,I) : 0)
   # static int hardStringify(Vdbe *p, int i){
   #   char zBuf[30];
@@ -589,21 +599,58 @@ class Vdbe:
 
       # 스택의 탑에서 원소 두 개를 꺼내 그중 큰 것을 push
       elif pOp.opcode == OP_Max:
-        tos = self.aStack.pop()
-        nos = self.aStack.pop()
-        if tos>nos:
-          self.aStack.append(tos)
+        tosInd = len(self.aStack) - 1
+        tos = self.aStack[tosInd]
+        nos = self.aStack[tosInd - 1]
+        copy = False
+
+        if nos is None:
+          copy = True
+        
+        elif isinstance(tos, int) and isinstance(nos, int):
+          copy = nos < tos
+        
+        elif isinstance(tos, (int, float)) and isinstance(nos, (int, float)):
+          copy = float(tos) > float(nos)
+        
         else:
-          self.aStack.append(nos)
+          self.hardStringify(tosInd)
+          self.hardStringify(tosInd - 1)
+          copy = compare(self.aStack[tosInd], self.aStack[tosInd - 1]) > 0
+
+        if copy:
+          self.aStack[tosInd - 1] = self.aStack[tosInd]
+        
+        self.aStack.pop()
 
       # 스택의 탑에서 원소 두 개를 꺼내 그중 작은 것을 push
       elif pOp.opcode == OP_Min:
-        tos = self.aStack.pop()
-        nos = self.aStack.pop()
-        if tos<nos:
-          self.aStack.append(tos)
+        tosInd = len(self.aStack) - 1
+        tos = self.aStack[tosInd]
+        nos = self.aStack[tosInd - 1]
+        copy = False
+
+        if nos is None:
+          copy = True
+        
+        elif tos is None:
+          copy = False
+
+        elif isinstance(tos, int) and isinstance(nos, int):
+          copy = nos > tos
+        
+        elif isinstance(tos, (int, float)) and isinstance(nos, (int, float)):
+          copy = float(tos) < float(nos)
+        
         else:
-          self.aStack.append(nos)
+          self.hardStringify(tosInd)
+          self.hardStringify(tosInd - 1)
+          copy = compare(self.aStack[tosInd], self.aStack[tosInd - 1]) < 0
+
+        if copy:
+          self.aStack[tosInd - 1] = self.aStack[tosInd]
+        
+        self.aStack.pop()
 
       # 스택의 top 원소에 p1을 더함
       elif pOp.opcode == OP_AddImm:
@@ -722,13 +769,17 @@ class Vdbe:
       # P2가 0이면 원소를 삭제 (pop), 1이면 유지
       elif pOp.opcode == OP_MakeKey:
         # (TODO) 오류 출력 만들어야함
-        if len(self.aStack) < pOp.p1: return "Error"
+        nField = pOp.p1
+        if len(self.aStack) < nField: 
+          raise RuntimeError("Not Enough Stack Element")
         tmp = ""
-        idx = len(self.aStack)-pOp.p1
-        for _ in range(pOp.p1):
-          tmp += str(self.aStack[idx])
-          if pOp.p2: 
-            del self.aStack[idx]
+        start = len(self.aStack) - pOp.p1
+        "\t".join([str(self.aStack[i]) for i in range(start, len(self.aStack))])
+
+        if pOp.p2 == 0:
+          for _ in range(nField):
+            self.aStack.pop()
+        
         self.aStack.append(tmp)
 
       elif pOp.opcode == OP_Open:
