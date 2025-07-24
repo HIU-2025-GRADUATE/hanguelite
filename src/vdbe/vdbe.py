@@ -102,7 +102,7 @@ class Vdbe:
     # 문자열 스택
     self.zStack = list()
     # 열려있는 커서 리스트 (Cursor 객체 리스트)
-    self.aCsr = list()
+    self.aCsr : list[Cursor] = list()
     # self.aCsr의 길이
     self.nCursor = 0
     # 각 컬럼의 이름 리스트
@@ -772,9 +772,9 @@ class Vdbe:
         nField = pOp.p1
         if len(self.aStack) < nField: 
           raise RuntimeError("Not Enough Stack Element")
-        tmp = ""
+
         start = len(self.aStack) - pOp.p1
-        "\t".join([str(self.aStack[i]) for i in range(start, len(self.aStack))])
+        tmp = "\t".join([str(self.aStack[i]) if self.aStack[i] is not None else "" for i in range(start, len(self.aStack))])
 
         if pOp.p2 == 0:
           for _ in range(nField):
@@ -870,7 +870,7 @@ class Vdbe:
       # p1 커서의 최근에 가져온 데이터에서 p2 번째 필드 값을 읽어옴
       # 만약 조회하는 커서의 KeyAsData 값이 1 이라면 데이터 대신 키 값을 읽어옴
       elif pOp.opcode == OP_Field:
-        if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
+        if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1].pCursor==0: continue
         if self.aCsr[pOp.p1].keyAsData:
           z = self.aCsr[pOp.p1].pCursor.readKey()
         else:
@@ -981,7 +981,7 @@ class Vdbe:
         if self.agg.nHash <= 0:
           pElem = None
         else:
-          h = hashNoCase(zKey, len(zKey) - 1) % self.agg.nHash
+          h = hashNoCase(zKey, len(zKey)) % self.agg.nHash    #TODO GROUP BY 절에 다수의 COLUMN이 있는 경우에 대해 좀 더 보완해야 함
           pElem = self.agg.apHash[h]
           while pElem:
             if pElem.zKey == zKey:
