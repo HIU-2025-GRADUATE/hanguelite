@@ -12,5 +12,5 @@ from src.dbbe import DbbeCursor
 """
 class Cursor:
     pCursor = DbbeCursor()  # /* The cursor structure of the backend */
-    index: int           # /* The next index to extract */
-    keyAsData: int       # /* The OP_Field command works on key instead of data */
+    index: int = 0          # /* The next index to extract */
+    keyAsData: int = 0      # /* The OP_Field command works on key instead of data */
