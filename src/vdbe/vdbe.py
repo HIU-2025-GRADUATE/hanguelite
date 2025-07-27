@@ -331,17 +331,11 @@ class Vdbe:
   # ** Any prior string or integer representation is retained.
   # ** NULLs are converted into 0.0.
   # */
-  # #define Realify(P,I) if(((P)->aStack[(I)].flags&STK_Real)==0){ hardRealify(P,I); }
-  # static void hardRealify(Vdbe *p, int i){
-  #   if( p->aStack[i].flags & STK_Str ){
-  #     p->aStack[i].r = atof(p->zStack[i]);
-  #   }else if( p->aStack[i].flags & STK_Int ){
-  #     p->aStack[i].r = p->aStack[i].i;
-  #   }else{
-  #     p->aStack[i].r = 0.0;
-  #   }
-  #   p->aStack[i].flags |= STK_Real;
-  # }
+  def hardRealify(self, i : int):
+    try:
+      self.aStack[i] = float(self.aStack[i])
+    except:
+      self.aStack[i] = 0.0
 
   # /*
   # ** Pop the stack N times.  Free any memory associated with the
@@ -585,8 +579,20 @@ class Vdbe:
       # a와 b를 pop한 후에 b 값에 a 값을 연산한 결과를 push
       # Subtract 인 경우 b-a 값을 저장
       elif pOp.opcode in [OP_Add, OP_Subtract, OP_Multiply, OP_Divide]:
-        a = self.aStack.pop()
-        b = self.aStack.pop()
+        a = self.aStack[len(self.aStack) - 1]
+        b = self.aStack[len(self.aStack) - 2]
+        flag = isinstance(a, int) and isinstance(b, int)
+        
+        if not flag:
+          try:
+            a = int(a)
+            b = int(b)
+          except:
+            self.hardRealify(len(self.aStack) - 1)
+            self.hardRealify(len(self.aStack) - 2)
+            a = self.aStack[len(self.aStack) - 1]
+            b = self.aStack[len(self.aStack) - 2]
+
         if pOp.opcode == OP_Add:
           b += a
         elif pOp.opcode == OP_Subtract:
@@ -594,7 +600,13 @@ class Vdbe:
         elif pOp.opcode == OP_Multiply:
           b *= a
         elif pOp.opcode == OP_Divide:
-          b /= a
+          if a == 0 or a == 0.0:
+            b = None
+          else: 
+            b /= a
+        
+        self.aStack.pop()
+        self.aStack.pop()
         self.aStack.append(b)
 
       # 스택의 탑에서 원소 두 개를 꺼내 그중 큰 것을 push
