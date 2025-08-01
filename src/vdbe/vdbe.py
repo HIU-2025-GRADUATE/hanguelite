@@ -51,8 +51,10 @@ class Vdbe:
     # char **azColName;  # /* Becomes the 4th parameter to callbacks */
     # int nList;         # /* Number of slots in apList[] */
     # FILE **apList;     # /* An open file for each list */
+    self.apList = list()
     # int nSort;         # /* Number of slots in apSort[] */
     # Sorter **apSort;   # /* An open sorter list */
+    self.apSort = list()
     # FILE *pFile;       # /* At most one open file handler */
     # int nField;        # /* Number of file fields */
     # char **azField;    # /* Data for each file field */
@@ -831,20 +833,53 @@ class Vdbe:
       elif pOp.opcode == OP_Destroy:
         self.pBe.dropTable(pOp.p3)
 
+      # 정수 키를 저장할 temporary file 을 open
+      # p1 값을 이후 interaction 에서 해당 파일에 접근하기 위한 인덱스로 사용
+      # 이미 p1 인덱스에 파일이 열려있다면 닫고 새로운 파일을 생성
       elif pOp.opcode == OP_ListOpen:
-        pass
+        i = pOp.p1
+        if i >= len(self.apList):
+          for j in range(len(self.apList), i+1):
+            self.apList.append(0)
+        elif self.apList:
+          self.pBe.closeTempFile(self.apList, i)
+        
+        rc = self.pBe.openTempFile(self.apList, i)
 
+      # 스택의 top을 pop해서 p1 번째 임시 파일에 쓰기
+      # (TODO) 원본 코드는 int 크기를 기준으로 데이터를 구분하지만 여기선 \n 으로 작성
       elif pOp.opcode == OP_ListWrite:
-        pass
+        i = pOp.p1
+        if i < len(self.apList) and self.apList[i] != 0:
+          val = self.aStack.pop()
+          self.apList[i].write(str(val)+'\n')
 
+      # p1 임시 파일 객체의 커서를 처음으로 되돌림
       elif pOp.opcode == OP_ListRewind:
-        pass
+        i = pOp.p1
+        if i < len(self.apList) and self.apList[i] != 0:
+          self.apList.seek(0)
 
+      # p1 임시 파일에서 정수 값 하나를 읽어 스택에 push
+      # 만약 파일이 비어있다면 아무 동작하지 않고 p2로 jump
       elif pOp.opcode == OP_ListRead:
-        pass
+        i = pOp.p1
+        if i < 0 or i > len(self.apList) or self.apList[i] == 0:
+          # (TODO) continue 아니고 bad_instruction 오류로 수정해야함
+          continue
 
+        val = self.apList[i].readline()
+        if val == '':
+          pc = pOp.p2-1
+        else:
+          self.aStack.append(int(val))
+
+      # p1 번째 임시 파일을 닫고 내용을 삭제
       elif pOp.opcode == OP_ListClose:
-        pass
+        i = pOp.p1
+        if i < len(self.apList) and self.apList[i] != 0:
+          self.pBe.closeTempFile(self.apList, i)
+          self.apList[i] = 0
 
       elif pOp.opcode == OP_SortOpen:
         pass
