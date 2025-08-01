@@ -114,3 +114,146 @@ def globCompare(pattern : str, target : str):
         j += 1
 
     return int(j == len(target))
+
+# ** 현재 상태 번호(0~5)와 문자 클래스가 주어지면,
+# ** 이 배열을 통해 새로운 상태 번호를 계산합니다.
+_state_machine = [
+    # Text, Space, Digit, "-", "." 
+    [1,     0,     2,     3,   1],  # State 0: Beginning of word
+    [1,     0,     2,     1,   1],  # State 1: Arbitrary text
+    [1,     0,     2,     1,   4],  # State 2: Integer
+    [1,     0,     3,     1,   5],  # State 3: Negative integer
+    [1,     0,     4,     1,   1],  # State 4: Real number
+    [1,     0,     5,     1,   1],  # State 5: Negative real num
+]
+
+# 문자 하나를 0(Text), 1(Space), 2(Digit), 3('-'), 4('.') 클래스로 분류
+def _char_class(ch: str) -> int:
+    if ch.isspace():
+        return 1
+    if ch.isdigit():
+        return 2
+    if ch == '-':
+        return 3
+    if ch == '.':
+        return 4
+    return 0
+
+# /* 이 루틴은 두 문자열을 비교합니다.
+# ** useCase != 0일 때만 대소문자를 구분하며,
+# ** 숫자는 숫자 값의 크기 순으로 비교합니다.
+# static int privateStrCmp(const char *atext, const char *btext, int useCase)
+def privateStrCmp(atext: str, btext: str, useCase: bool) -> int:
+    i = j = 0
+    state = 0
+    ca = cb = ''
+    
+    while True:
+        raw_ca = atext[i] if i < len(atext) else '\0'
+        raw_cb = btext[j] if j < len(btext) else '\0'
+        i += 1
+        j += 1
+
+        if useCase:
+            ca, cb = raw_ca, raw_cb
+        else:
+            ca, cb = raw_ca.lower(), raw_cb.lower()
+
+        if ca != cb:
+            break
+        if ca == '\0':
+            break
+        cls = _char_class(ca)
+        state = _state_machine[state][cls]
+
+    if state in (0, 1) and ca.isdigit() and cb.isdigit():
+        state = 2
+
+    if state in (2, 3):
+        if ca.isdigit():
+            if cb.isdigit():
+                acnt = bcnt = 0
+                while i + acnt < len(atext) and atext[i + acnt].isdigit():
+                    acnt += 1
+                while j + bcnt < len(btext) and btext[j + bcnt].isdigit():
+                    bcnt += 1
+                result = acnt - bcnt
+                if result == 0:
+                    result = ord(ca) - ord(cb)
+            else:
+                result = 1
+        elif cb.isdigit():
+            result = -1
+        elif ca == '.':
+            result = 1
+        elif cb == '.':
+            result = -1
+        else:
+            result = ord(ca) - ord(cb)
+            state = 2
+        if state == 3:
+            result = -result
+
+    elif state in (0, 1, 4):
+        result = ord(ca) - ord(cb)
+
+    elif state == 5:
+        result = ord(cb) - ord(ca)
+
+    else:
+        result = ord(ca) - ord(cb)
+
+    return result
+
+
+# /* 이 비교 루틴은 SQL 식(예: name<'Hello' 또는 value<5)의
+# ** 비교 연산에 사용됩니다. 두 문자열을 비교하며,
+# ** 동일한 문자열일 경우에만 대소문자를 구분하여 순서를 결정합니다.
+# ** 숫자는 숫자 값의 크기 순으로 비교합니다.
+# int sqliteCompare(const char *atext, const char *btext)
+def compare(atext, btext) -> int:
+    result = privateStrCmp(atext, btext, 0)
+    if result == 0:
+        result = privateStrCmp(atext, btext, 1)
+    return result
+
+
+# ** 이 루틴은 정렬에 사용됩니다. 각 키는 하나 이상의 널로 종료된
+# ** 문자열 리스트입니다. 리스트는 연속된 두 개의 널 문자로 종료됩니다.
+# ** 예를 들어, 다음 텍스트는 세 개의 문자열을 가진 키입니다:
+# **
+# **            +one\000-two\000+three\000\000
+# **
+# ** 두 인수는 동일한 개수의 문자열을 가집니다. 이 루틴은 첫 번째 인수가
+# ** 두 번째 인수보다 작으면 음수, 같으면 0, 크면 양수를 반환합니다.
+# ** (결과는 a-b입니다).
+# **
+# ** 모든 문자열은 '+' 또는 '-' 문자로 시작합니다. 문자가 '-'이면
+# ** 반환값의 부호를 반전시킵니다. 이는 내림차순 정렬을 구현하기 위한 것입니다.
+# int sqliteSortCompare(const char *a, const char *b)
+def sortCompare(a, b) -> int:
+    res = 0
+    firstA = a[0]
+    while res == 0 and a and b:
+        lenA = a.find('\000')
+        lenB = b.find('\000')
+        res = compare(a[1:lenA], b[1:lenB])
+        if res == 0:
+            a = a[lenA+1:]
+            b = b[lenA+1:]
+
+    if firstA == '-':
+        res = -res
+    
+    return res
+
+if __name__ == "__main__":
+    tests = [
+        ("file1.txt", "file2.txt", False),
+        ("item10",    "item2",    False),
+        ("a-1.5",     "a-1.10",   False),
+        ("Hello",     "hello",    False),
+        ("Hello",     "hello",    True),
+    ]
+    for a, b, uc in tests:
+        print(a, b, uc, "->", privateStrCmp(a, b, uc))

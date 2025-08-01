@@ -2,6 +2,7 @@ from src.dbbe import *
 from .vdbeOp import VdbeOp
 from src.vdbe.vdbeOp import *
 from src.vdbe.cursor import *
+from src.vdbe.sorter import *
 from src.util import *
 
 #  Allowed values for Stack.flags
@@ -881,20 +882,86 @@ class Vdbe:
           self.pBe.closeTempFile(self.apList, i)
           self.apList[i] = 0
 
+      # p1 인덱스에 sorter 객체 생성
       elif pOp.opcode == OP_SortOpen:
-        pass
+        i = pOp.p1
+        if i >= len(self.apSort):
+          for j in range(len(self.apSort), i+1):
+            self.apSort.append(0)
 
+      # tos 값은 key, nos 값은 data 로 취급하여 둘 다 스택에서 pop
+      # 그 후 sorter에 집어넣음
       elif pOp.opcode == OP_SortPut:
-        pass
+        i = pOp.p1
+        key = str(self.aStack.pop())
+        data = str(self.aStack.pop())
+        if i < 0 or i >= len(self.apSort):
+          # (TODO) continue 아니고 bad_instruction 오류 발생해야함
+          continue
+        
+        pSorter = Sorter()
+        pSorter.pNext = self.apSort[i]
+        self.apSort[i] = pSorter
+        pSorter.nKey = len(key)
+        pSorter.zKey = key
+        pSorter.nData = len(data)
+        pSorter.pData = data
 
+      # 스택의 top에서부터 p1개 원소는 callback 인자로 사용
+      # 이 원소들을 하나의 레코드로 결합하여 Sorter에 저장 후 나중에 SortCallback에 전달
       elif pOp.opcode == OP_SortMakeRec:
-        pass
+        nField = pOp.p1
+        azArg = list()
+        for _ in range(nField):
+          val = self.aStack.pop()
+          azArg.insert(0, val)
+        self.aStack.append(azArg)
 
+      # 스택의 top부터 여러 개의 원소를 정렬 키(sort key)로 반환
+      # 소비될 원소의 개수는 문자열 p3의 문자 수와 동일함
+      # p3의 각 문자를 스택 원소에 하나씩 연결하는데
+      # 첫 번째 문자는 가장 낮은 원소에, 마지막 문자는 스택의 최상단 원소에 붙음
+      # 모든 스택 요소는 \000 문자로 구분되며, 연속된 \000 이 등장하면 종료
       elif pOp.opcode == OP_SortMakeKey:
-        pass
+        nField = len(pOp.p3)
+        zNewKey = ''
+        for i in range(nField):
+          j = len(self.aStack) - nField + i
+          zNewKey += str(pOp.p3[i]) + str(self.aStack[j])+'\000'
 
+        for _ in range(nField):
+          self.aStack.pop()
+        
+        self.aStack.append(zNewKey)
+
+      # merge sort로 sorter에 있는 모든 원소를 정렬
       elif pOp.opcode == OP_Sort:
-        pass
+        j = pOp.p1
+        # Number of buckets used for merge-sort.
+        NSORT = 30  
+        if j <len(self.apSort):
+          apSorter = list(NSORT)
+
+          while self.apSort[j]:
+            pElem = self.apSort[j]
+            self.apSort[j] = pElem.pNext
+            pElem.pNext = 0
+            for i in range(NSORT-1):
+              if apSorter[i] == 0:
+                apSorter[i] = pElem
+                break
+              else:
+                pElem = Merge(apSorter[i], pElem)
+                apSorter[i] = 0
+
+            if i >= NSORT-1:
+              apSorter[NSORT-1] = Merge(apSorter[NSORT-1], pElem)
+          
+          pElem = 0
+          for i in range(NSORT):
+            pElem = Merge(apSorter[i], pElem)
+
+          self.apSort[i] = pElem
 
       elif pOp.opcode == OP_SortNext:
         pass
