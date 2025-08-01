@@ -4,6 +4,7 @@ from src.vdbe.vdbeOp import *
 from src.vdbe.cursor import *
 from src.vdbe.sorter import *
 from src.util import *
+import sys
 
 #  Allowed values for Stack.flags
 STK_Null = 0x0001     # Value is NULL */
@@ -57,9 +58,13 @@ class Vdbe:
     # Sorter **apSort;   # /* An open sorter list */
     self.apSort = list()
     # FILE *pFile;       # /* At most one open file handler */
+    self.pFile = 0
     # int nField;        # /* Number of file fields */
+    self.nField = 0
     # char **azField;    # /* Data for each file field */
+    self.azField = 0
     # char *zLine;       # /* A single line from the input file */
+    self.zLine = ''
     # int nLineAlloc;    # /* Number of spaces allocated for zLine */
     # int nMem;          # /* Number of memory locations currently allocated */
     # Mem *aMem;         # /* The memory locations */
@@ -997,17 +1002,59 @@ class Vdbe:
             del pSorter
             pSorter - self.apSort[i]
 
+      # 이름이 p3인 파일을 읽기 모드로 open
+      # 만약 p3가 'stdin'이면 표준 입력을 받음
       elif pOp.opcode == OP_FileOpen:
-        pass
+        if self.pFile:
+          if self.pFile != sys.stdin:
+            self.pFile.close()
+          self.pFile = 0
 
+        if pOp.p3 == 'stdin':
+          self.pFile = sys.stdin
+        else:
+          self.pFile = open(pOp.p3, 'r')
+
+        if self.pFile == 0:
+          rc = SQLITE_ERROR
+          
+      # FileOpen으로 열었던 파일을 닫습니다
+      # 이전에 FileOpen을 하지 않았다면 no-op
       elif pOp.opcode == OP_FileClose:
-        pass
+        if self.pFile:
+          if self.pFile != sys.stdin:
+            self.pFile.close()
+          self.pFile = 0
 
+      # 열린 파일에서 한 줄의 입력을 받음, 만약 EOF에 도달했다면 p2로 jump
+      # 새로운 줄을 읽으면 p3를 구분자로 사용
+      # 입력 한 줄에 p1 개의 필드가 존재, 초과 시 무시되고 부족하면 빈 문자열로 간주
+      # (TODO) 미완성... 로직이 너무 길고 복잡해
       elif pOp.opcode == OP_FileRead:
+        if self.pFile == 0:
+          # (TODO) goto fileread_jump;
+          continue
+
+        nField = pOp.p1
+
+        if nField != self.nField or self.azField == 0:
+          if self.azField == 0:
+            self.nField = 0
+            # (TODO) goto fileread_jump;
+            continue
+          self.nField = nField
+
+        
         pass
 
+      # 가장 최근에 읽은 줄에서 p1 번째 필드를 스택에 push
       elif pOp.opcode == OP_FileField:
-        pass
+        i = pOp.p1
+        if i >= 0 and i < self.nField and self.azField:
+          z = self.azField[i]
+        else:
+          z = ''
+        self.aStack.append(z)
 
       elif pOp.opcode == OP_MemStore:
         pass
