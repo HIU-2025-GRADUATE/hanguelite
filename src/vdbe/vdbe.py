@@ -778,20 +778,58 @@ class Vdbe:
         if self.aCsr[pOp.p1].pCursor.nextKey() == 0: pc = pOp.p2-1            #16 => makeLabel 없어서 하드 코딩
         else: self.nFetch+=1
 
+      # p1 커서의 다음 커서를 처음 커서 (0번) 으로 리셋
       elif pOp.opcode == OP_ResetIdx:
-        pass
+        i = pOp.p1
+        if i >= 0 and i < self.nCursor:
+          self.aCsr[i].index = 0
 
+      # 
       elif pOp.opcode == OP_NextIdx:
-        pass
+        i = pOp.p1
+        self.aStack.append(0)
+        if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          nIdx = self.aCsr[i].pCursor.dataLength()
+          aIdx = self.aCsr[i].pCursor.readData(0)
 
+          if nIdx > 1:
+            # TODO k = *(aIdx++)
+            k = aIdx[1]
+            if k > nIdx-1:
+              k = nIdx - 1
+          else:
+            k = nIdx
+          
+          for j in range(self.aCsr[i].index, k):
+            if aIdx[j] != 0:
+              self.aStack[-1]=aIdx[j]
+              break
+
+          if j >= k:
+            j = -1
+            pc = pOp.p2-1
+            self.aStack.pop()
+          
+          self.aCsr[i].index = j+1
+
+      # 스택의 top은 SQL index 키, 그 다음 값은 SQL table entry 키인 정수 값
+      # tos의 인덱스 키와 일치하는 레코드를 p1 커서에서 찾고 없다면 새 레코드를 생성
+      # 그 후 해당 레코드의 데이터에 정수 테이블 키를 추가하고 p1 커서 파일에 작성
       elif pOp.opcode == OP_PutIdx:
         pass
-
+      
+      # 스택의 top은 SQL index 키, 그 다음 값은 SQL table entry 키인 정수 값
+      # p1 커서에서 tos에 있는 인덱스 키와 일치하는 레코드를 찾고
+      # 해당 레코드에 포함된 정수 테이블 키 목록에서 nos 키 값과 일치하는 항목을 제거하고
+      # 수정된 데이터를 동일한 키로 p1 파일에 다시 작성
+      # 만약 해당 작업으로 p1 커서의 데이터에서 마지막 정수 테이블 키까지 모두 제거되면
+      # p1 커서에서 대응되는 레코드도 삭제
       elif pOp.opcode == OP_DeleteIdx:
         pass
 
+      # 파일 이름이 p3 인 파일을 디스크에서 삭제
       elif pOp.opcode == OP_Destroy:
-        pass
+        self.pBe.dropTable(pOp.p3)
 
       elif pOp.opcode == OP_ListOpen:
         pass

@@ -1,6 +1,7 @@
 import csv, os, random, time
 from src.gdbm import *
 from src.constant import MASTER_NAME
+from src.util import *
 
 class BeFile:
     def __init__(self):
@@ -82,6 +83,25 @@ class Dbbe:
         """
 
         return Dbbe(databaseName, writeFlag)
+    
+    # static char *sqliteFileOfTable(Dbbe *pBe, const char *zTable)
+    # SQL table 이름 혹은 인덱스 값에 해당하는 file 이름으로 변환함
+    def fileOfTable(self, zTable):
+        fileList = os.listdir(self.zDir)
+        if zTable+'.dat' in fileList:
+            zFile = os.path.join(self.zDir, zTable)
+        else:
+            zFile = None
+        return zFile
+
+    # 테이블 명이 zTable에 해당하는 파일을 디스크에서 삭제
+    def dropTable(self, zTable):
+        zFile = self.fileOfTable(zTable)
+        if zFile is None:
+            return
+        for ext in ['.bak', '.dat', '.dir']:
+            os.unlink(os.path.join(zFile, ext))
+        del zFile
 
 class DbbeCursor:
     def __init__(self):
@@ -126,7 +146,6 @@ class DbbeCursor:
     def openCursor(self, pBe, zFile, writeable=False):
         # (TODO) writeable==True 이면 쓸 수 writer 추가
         # writeable==False 면 읽기 전용
-        # (ForTest) csv 파일을 읽도록 만들었음
         if not writeable:
             self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile), "r")
         else:
@@ -213,6 +232,14 @@ class DbbeCursor:
         self.data = None
         rc = gdbm_delete(self.pFile.dbf, key)
         return rc
+    
+    # int sqliteDbbeDataLength(DbbeCursor *pCursr)
+    def dataLength(self):
+        if self.readPending and self.pFile and self.pFile.dbf:
+            self.data = gdbm_fetch(self.pFile.dbf, self.key)
+            self.readPending = 0
+        # (TODO) return pCursr->data.dsize;
+        return len(self.data)
 
 if __name__ == "__main__":
     pCursor = DbbeCursor()
