@@ -14,6 +14,13 @@ class Sorter:
     pData: str      # /* The data associated with this key */
     pNext = 0       # /* Next in the list */
 
+    def __del__(self):
+        del self.nKey
+        del self.zKey
+        del self.nData
+        del self.pData
+        del self.pNext
+
 # static Sorter *Merge(Sorter *pLeft, Sorter *pRight)
 def Merge(pLeft: Sorter, pRight: Sorter):
     sHead = Sorter()

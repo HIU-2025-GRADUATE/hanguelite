@@ -963,17 +963,39 @@ class Vdbe:
 
           self.apSort[i] = pElem
 
+      # p1 sorter의 topmost 원소의 데이터를 스택에 push 후, sorter에서 원소 삭제
       elif pOp.opcode == OP_SortNext:
-        pass
+        i = pOp.p1
+        if i < 0 or i >= len(self.apSort):
+          pSorter = self.apSort[i]
+          self.apSort[i] = pSorter.pNext
+          self.aStack.append(pSorter.pData)
+          del pSorter
 
+      # p1 sorter의 topmost 원소의 key를 스택에 push
+      # sorter는 건들지 않음
       elif pOp.opcode == OP_SortKey:
-        pass
+        i = pOp.p1
+        if i < 0 or i >= len(self.apSort):
+          pSorter = self.apSort[i]
+          self.aStack.append(pSorter.zKey)
 
+      # 스택의 top에는 SortMakeRec에 의해 생성된 callback record가 존재
+      # 해당 값을 pop 해서 callback을 실행
       elif pOp.opcode == OP_SortCallback:
-        pass
+        record = self.aStack.pop()
+        if xCallback != None:
+          xCallback(pOp.p1, record, [])
 
+      # p1 sorter를 닫고 모든 원소를 삭제
       elif pOp.opcode == OP_SortClose:
-        pass
+        i = pOp.p1
+        if i < len(self.apSort):
+          pSorter = self.apSort[i]
+          while pSorter != 0:
+            self.apSort[i] = pSorter.pNext
+            del pSorter
+            pSorter - self.apSort[i]
 
       elif pOp.opcode == OP_FileOpen:
         pass
