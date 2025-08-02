@@ -164,6 +164,15 @@ def p_item_null(p):
     p[0] = Expr(TK_NULL, None, None, None)
 
 """
+    UPDATE
+"""
+def p_command_update(p):
+    """cmd : TK_UPDATE id TK_SET setlist where_opt"""
+    table, setList, whereOpt = p[2], p[4], p[5]
+    update(pParse, table, setList, whereOpt)
+    p[0] = p[1]
+
+"""
     SELECT
 """
 def p_cmd(p):
