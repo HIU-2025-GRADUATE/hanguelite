@@ -23,55 +23,94 @@ Rule 10    columnid -> id
 Rule 11    type -> typename
 Rule 12    typename -> id
 Rule 13    id -> TK_STRING
-Rule 14    cmd -> select
-Rule 15    select -> oneselect
-Rule 16    oneselect -> TK_SELECT selcollist from
-Rule 17    selcollist -> TK_STAR
-Rule 18    selcollist -> sclp expr
-Rule 19    sclp -> selcollist TK_COMMA
-Rule 20    sclp -> <empty>
-Rule 21    from -> TK_FROM seltablist
-Rule 22    stl_prefix -> <empty>
-Rule 23    seltablist -> stl_prefix id
-Rule 24    cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
-Rule 25    cmd -> TK_INSERT TK_INTO id inscollist_opt select
-Rule 26    inscollist_opt -> <empty>
-Rule 27    inscollist_opt -> TK_LP inscollist TK_RP
-Rule 28    inscollist -> inscollist TK_COMMA id
-Rule 29    inscollist -> id
-Rule 30    itemlist -> itemlist TK_COMMA item
-Rule 31    itemlist -> item
-Rule 32    item -> TK_INT
-Rule 33    item -> TK_PLUS TK_INT
-Rule 34    item -> TK_MINUS TK_INT
-Rule 35    item -> TK_STRING
-Rule 36    item -> TK_NULL
-Rule 37    expr -> TK_ID
-Rule 38    id -> TK_ID
+Rule 14    cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
+Rule 15    cmd -> TK_INSERT TK_INTO id inscollist_opt select
+Rule 16    inscollist_opt -> <empty>
+Rule 17    inscollist_opt -> TK_LP inscollist TK_RP
+Rule 18    inscollist -> inscollist TK_COMMA id
+Rule 19    inscollist -> id
+Rule 20    itemlist -> itemlist TK_COMMA item
+Rule 21    itemlist -> item
+Rule 22    item -> TK_INTEGER
+Rule 23    item -> TK_PLUS TK_INTEGER
+Rule 24    item -> TK_MINUS TK_INTEGER
+Rule 25    item -> TK_STRING
+Rule 26    item -> TK_NULL
+Rule 27    cmd -> TK_UPDATE id TK_SET setlist where_opt
+Rule 28    cmd -> select
+Rule 29    select -> oneselect
+Rule 30    oneselect -> TK_SELECT selcollist from where_opt groupby_opt
+Rule 31    selcollist -> TK_STAR
+Rule 32    selcollist -> sclp expr
+Rule 33    sclp -> selcollist TK_COMMA
+Rule 34    sclp -> <empty>
+Rule 35    from -> TK_FROM seltablist
+Rule 36    stl_prefix -> <empty>
+Rule 37    seltablist -> stl_prefix id
+Rule 38    where_opt -> <empty>
+Rule 39    where_opt -> TK_WHERE expr
+Rule 40    groupby_opt -> <empty>
+Rule 41    groupby_opt -> TK_GROUP TK_BY exprlist
+Rule 42    exprlist -> exprlist TK_COMMA expritem
+Rule 43    exprlist -> expritem
+Rule 44    expritem -> expr
+Rule 45    expritem -> <empty>
+Rule 46    expr -> expr TK_AND expr
+Rule 47    expr -> expr TK_OR expr
+Rule 48    expr -> expr TK_LT expr
+Rule 49    expr -> expr TK_GT expr
+Rule 50    expr -> expr TK_LE expr
+Rule 51    expr -> expr TK_GE expr
+Rule 52    expr -> expr TK_NE expr
+Rule 53    expr -> expr TK_EQ expr
+Rule 54    expr -> expr TK_LIKE expr
+Rule 55    expr -> TK_INTEGER
+Rule 56    expr -> TK_FLOAT
+Rule 57    expr -> TK_STRING
+Rule 58    expr -> TK_ID
+Rule 59    id -> TK_ID
+Rule 60    expr -> TK_NOT expr
+Rule 61    expr -> expr TK_NOT TK_LIKE expr
 
 Terminals, with rules where they appear
 
+TK_AND               : 46
+TK_BY                : 41
 TK_COLUMN            : 
-TK_COMMA             : 7 19 28 30
+TK_COMMA             : 7 18 20 33 42
 TK_CREATE            : 5
 TK_DOT               : 
-TK_FROM              : 21
-TK_ID                : 37 38
+TK_EQ                : 53
+TK_FLOAT             : 56
+TK_FROM              : 35
+TK_GE                : 51
+TK_GROUP             : 41
+TK_GT                : 49
+TK_ID                : 58 59
 TK_IGNORE            : 
 TK_IN                : 
-TK_INSERT            : 24 25
-TK_INT               : 32 33 34
-TK_INTO              : 24 25
-TK_LP                : 6 24 27
-TK_MINUS             : 34
-TK_NULL              : 36
-TK_PLUS              : 33
-TK_RP                : 6 24 27
-TK_SELECT            : 16
-TK_STAR              : 17
-TK_STRING            : 13 35
+TK_INSERT            : 14 15
+TK_INTEGER           : 22 23 24 55
+TK_INTO              : 14 15
+TK_LE                : 50
+TK_LIKE              : 54 61
+TK_LP                : 6 14 17
+TK_LT                : 48
+TK_MINUS             : 24
+TK_NE                : 52
+TK_NOT               : 60 61
+TK_NULL              : 26
+TK_OR                : 47
+TK_PLUS              : 23
+TK_RP                : 6 14 17
+TK_SELECT            : 30
+TK_SET               : 27
+TK_STAR              : 31
+TK_STRING            : 13 25 57
 TK_TABLE             : 5
-TK_VALUES            : 24
+TK_UPDATE            : 27
+TK_VALUES            : 14
+TK_WHERE             : 39
 error                : 
 
 Nonterminals, with rules where they appear
@@ -84,618 +123,25 @@ columnlist           : 6 7
 create_table         : 4
 create_table_args    : 4
 ecmd                 : 2
-expr                 : 18
-from                 : 16
-id                   : 5 10 12 23 24 25 28 29
+expr                 : 32 39 44 46 46 47 47 48 48 49 49 50 50 51 51 52 52 53 53 54 54 60 61 61
+expritem             : 42 43
+exprlist             : 41 42
+from                 : 30
+groupby_opt          : 30
+id                   : 5 10 12 14 15 18 19 27 37
 input                : 0
-inscollist           : 27 28
-inscollist_opt       : 24 25
-item                 : 30 31
-itemlist             : 24 30
-oneselect            : 15
-sclp                 : 18
-selcollist           : 16 19
-select               : 14 25
-seltablist           : 21
-stl_prefix           : 23
+inscollist           : 17 18
+inscollist_opt       : 14 15
+item                 : 20 21
+itemlist             : 14 20
+oneselect            : 29
+sclp                 : 32
+selcollist           : 30 33
+select               : 15 28
+seltablist           : 35
+setlist              : 27
+stl_prefix           : 37
 type                 : 9
 typename             : 11
-
-
-state 0
-
-    (0) S' -> . input
-    (1) input -> . cmdlist
-    (2) cmdlist -> . ecmd
-    (3) ecmd -> . cmd
-    (4) cmd -> . create_table create_table_args
-    (14) cmd -> . select
-    (24) cmd -> . TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
-    (25) cmd -> . TK_INSERT TK_INTO id inscollist_opt select
-    (5) create_table -> . TK_CREATE TK_TABLE id
-    (15) select -> . oneselect
-    (16) oneselect -> . TK_SELECT selcollist from
-
-    TK_INSERT       shift and go to state 7
-    TK_CREATE       shift and go to state 8
-    TK_SELECT       shift and go to state 10
-
-    input                          shift and go to state 1
-    cmdlist                        shift and go to state 2
-    ecmd                           shift and go to state 3
-    cmd                            shift and go to state 4
-    create_table                   shift and go to state 5
-    select                         shift and go to state 6
-    oneselect                      shift and go to state 9
-
-state 1
-
-    (0) S' -> input .
-
-
-
-state 2
-
-    (1) input -> cmdlist .
-
-    $end            reduce using rule 1 (input -> cmdlist .)
-
-
-state 3
-
-    (2) cmdlist -> ecmd .
-
-    $end            reduce using rule 2 (cmdlist -> ecmd .)
-
-
-state 4
-
-    (3) ecmd -> cmd .
-
-    $end            reduce using rule 3 (ecmd -> cmd .)
-
-
-state 5
-
-    (4) cmd -> create_table . create_table_args
-    (6) create_table_args -> . TK_LP columnlist TK_RP
-
-    TK_LP           shift and go to state 12
-
-    create_table_args              shift and go to state 11
-
-state 6
-
-    (14) cmd -> select .
-
-    $end            reduce using rule 14 (cmd -> select .)
-
-
-state 7
-
-    (24) cmd -> TK_INSERT . TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
-    (25) cmd -> TK_INSERT . TK_INTO id inscollist_opt select
-
-    TK_INTO         shift and go to state 13
-
-
-state 8
-
-    (5) create_table -> TK_CREATE . TK_TABLE id
-
-    TK_TABLE        shift and go to state 14
-
-
-state 9
-
-    (15) select -> oneselect .
-
-    $end            reduce using rule 15 (select -> oneselect .)
-
-
-state 10
-
-    (16) oneselect -> TK_SELECT . selcollist from
-    (17) selcollist -> . TK_STAR
-    (18) selcollist -> . sclp expr
-    (19) sclp -> . selcollist TK_COMMA
-    (20) sclp -> .
-
-    TK_STAR         shift and go to state 16
-    TK_ID           reduce using rule 20 (sclp -> .)
-
-    selcollist                     shift and go to state 15
-    sclp                           shift and go to state 17
-
-state 11
-
-    (4) cmd -> create_table create_table_args .
-
-    $end            reduce using rule 4 (cmd -> create_table create_table_args .)
-
-
-state 12
-
-    (6) create_table_args -> TK_LP . columnlist TK_RP
-    (7) columnlist -> . columnlist TK_COMMA column
-    (8) columnlist -> . column
-    (9) column -> . columnid type
-    (10) columnid -> . id
-    (13) id -> . TK_STRING
-    (38) id -> . TK_ID
-
-    TK_STRING       shift and go to state 22
-    TK_ID           shift and go to state 23
-
-    columnlist                     shift and go to state 18
-    column                         shift and go to state 19
-    columnid                       shift and go to state 20
-    id                             shift and go to state 21
-
-state 13
-
-    (24) cmd -> TK_INSERT TK_INTO . id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
-    (25) cmd -> TK_INSERT TK_INTO . id inscollist_opt select
-    (13) id -> . TK_STRING
-    (38) id -> . TK_ID
-
-    TK_STRING       shift and go to state 22
-    TK_ID           shift and go to state 23
-
-    id                             shift and go to state 24
-
-state 14
-
-    (5) create_table -> TK_CREATE TK_TABLE . id
-    (13) id -> . TK_STRING
-    (38) id -> . TK_ID
-
-    TK_STRING       shift and go to state 22
-    TK_ID           shift and go to state 23
-
-    id                             shift and go to state 25
-
-state 15
-
-    (16) oneselect -> TK_SELECT selcollist . from
-    (19) sclp -> selcollist . TK_COMMA
-    (21) from -> . TK_FROM seltablist
-
-    TK_COMMA        shift and go to state 27
-    TK_FROM         shift and go to state 28
-
-    from                           shift and go to state 26
-
-state 16
-
-    (17) selcollist -> TK_STAR .
-
-    TK_COMMA        reduce using rule 17 (selcollist -> TK_STAR .)
-    TK_FROM         reduce using rule 17 (selcollist -> TK_STAR .)
-
-
-state 17
-
-    (18) selcollist -> sclp . expr
-    (37) expr -> . TK_ID
-
-    TK_ID           shift and go to state 30
-
-    expr                           shift and go to state 29
-
-state 18
-
-    (6) create_table_args -> TK_LP columnlist . TK_RP
-    (7) columnlist -> columnlist . TK_COMMA column
-
-    TK_RP           shift and go to state 31
-    TK_COMMA        shift and go to state 32
-
-
-state 19
-
-    (8) columnlist -> column .
-
-    TK_RP           reduce using rule 8 (columnlist -> column .)
-    TK_COMMA        reduce using rule 8 (columnlist -> column .)
-
-
-state 20
-
-    (9) column -> columnid . type
-    (11) type -> . typename
-    (12) typename -> . id
-    (13) id -> . TK_STRING
-    (38) id -> . TK_ID
-
-    TK_STRING       shift and go to state 22
-    TK_ID           shift and go to state 23
-
-    type                           shift and go to state 33
-    typename                       shift and go to state 34
-    id                             shift and go to state 35
-
-state 21
-
-    (10) columnid -> id .
-
-    TK_STRING       reduce using rule 10 (columnid -> id .)
-    TK_ID           reduce using rule 10 (columnid -> id .)
-
-
-state 22
-
-    (13) id -> TK_STRING .
-
-    TK_STRING       reduce using rule 13 (id -> TK_STRING .)
-    TK_ID           reduce using rule 13 (id -> TK_STRING .)
-    TK_LP           reduce using rule 13 (id -> TK_STRING .)
-    TK_VALUES       reduce using rule 13 (id -> TK_STRING .)
-    TK_SELECT       reduce using rule 13 (id -> TK_STRING .)
-    TK_RP           reduce using rule 13 (id -> TK_STRING .)
-    TK_COMMA        reduce using rule 13 (id -> TK_STRING .)
-    $end            reduce using rule 13 (id -> TK_STRING .)
-
-
-state 23
-
-    (38) id -> TK_ID .
-
-    TK_STRING       reduce using rule 38 (id -> TK_ID .)
-    TK_ID           reduce using rule 38 (id -> TK_ID .)
-    TK_LP           reduce using rule 38 (id -> TK_ID .)
-    TK_VALUES       reduce using rule 38 (id -> TK_ID .)
-    TK_SELECT       reduce using rule 38 (id -> TK_ID .)
-    TK_RP           reduce using rule 38 (id -> TK_ID .)
-    TK_COMMA        reduce using rule 38 (id -> TK_ID .)
-    $end            reduce using rule 38 (id -> TK_ID .)
-
-
-state 24
-
-    (24) cmd -> TK_INSERT TK_INTO id . inscollist_opt TK_VALUES TK_LP itemlist TK_RP
-    (25) cmd -> TK_INSERT TK_INTO id . inscollist_opt select
-    (26) inscollist_opt -> .
-    (27) inscollist_opt -> . TK_LP inscollist TK_RP
-
-    TK_VALUES       reduce using rule 26 (inscollist_opt -> .)
-    TK_SELECT       reduce using rule 26 (inscollist_opt -> .)
-    TK_LP           shift and go to state 37
-
-    inscollist_opt                 shift and go to state 36
-
-state 25
-
-    (5) create_table -> TK_CREATE TK_TABLE id .
-
-    TK_LP           reduce using rule 5 (create_table -> TK_CREATE TK_TABLE id .)
-
-
-state 26
-
-    (16) oneselect -> TK_SELECT selcollist from .
-
-    $end            reduce using rule 16 (oneselect -> TK_SELECT selcollist from .)
-
-
-state 27
-
-    (19) sclp -> selcollist TK_COMMA .
-
-    TK_ID           reduce using rule 19 (sclp -> selcollist TK_COMMA .)
-
-
-state 28
-
-    (21) from -> TK_FROM . seltablist
-    (23) seltablist -> . stl_prefix id
-    (22) stl_prefix -> .
-
-    TK_STRING       reduce using rule 22 (stl_prefix -> .)
-    TK_ID           reduce using rule 22 (stl_prefix -> .)
-
-    seltablist                     shift and go to state 38
-    stl_prefix                     shift and go to state 39
-
-state 29
-
-    (18) selcollist -> sclp expr .
-
-    TK_COMMA        reduce using rule 18 (selcollist -> sclp expr .)
-    TK_FROM         reduce using rule 18 (selcollist -> sclp expr .)
-
-
-state 30
-
-    (37) expr -> TK_ID .
-
-    TK_COMMA        reduce using rule 37 (expr -> TK_ID .)
-    TK_FROM         reduce using rule 37 (expr -> TK_ID .)
-
-
-state 31
-
-    (6) create_table_args -> TK_LP columnlist TK_RP .
-
-    $end            reduce using rule 6 (create_table_args -> TK_LP columnlist TK_RP .)
-
-
-state 32
-
-    (7) columnlist -> columnlist TK_COMMA . column
-    (9) column -> . columnid type
-    (10) columnid -> . id
-    (13) id -> . TK_STRING
-    (38) id -> . TK_ID
-
-    TK_STRING       shift and go to state 22
-    TK_ID           shift and go to state 23
-
-    column                         shift and go to state 40
-    columnid                       shift and go to state 20
-    id                             shift and go to state 21
-
-state 33
-
-    (9) column -> columnid type .
-
-    TK_RP           reduce using rule 9 (column -> columnid type .)
-    TK_COMMA        reduce using rule 9 (column -> columnid type .)
-
-
-state 34
-
-    (11) type -> typename .
-
-    TK_RP           reduce using rule 11 (type -> typename .)
-    TK_COMMA        reduce using rule 11 (type -> typename .)
-
-
-state 35
-
-    (12) typename -> id .
-
-    TK_RP           reduce using rule 12 (typename -> id .)
-    TK_COMMA        reduce using rule 12 (typename -> id .)
-
-
-state 36
-
-    (24) cmd -> TK_INSERT TK_INTO id inscollist_opt . TK_VALUES TK_LP itemlist TK_RP
-    (25) cmd -> TK_INSERT TK_INTO id inscollist_opt . select
-    (15) select -> . oneselect
-    (16) oneselect -> . TK_SELECT selcollist from
-
-    TK_VALUES       shift and go to state 41
-    TK_SELECT       shift and go to state 10
-
-    select                         shift and go to state 42
-    oneselect                      shift and go to state 9
-
-state 37
-
-    (27) inscollist_opt -> TK_LP . inscollist TK_RP
-    (28) inscollist -> . inscollist TK_COMMA id
-    (29) inscollist -> . id
-    (13) id -> . TK_STRING
-    (38) id -> . TK_ID
-
-    TK_STRING       shift and go to state 22
-    TK_ID           shift and go to state 23
-
-    inscollist                     shift and go to state 43
-    id                             shift and go to state 44
-
-state 38
-
-    (21) from -> TK_FROM seltablist .
-
-    $end            reduce using rule 21 (from -> TK_FROM seltablist .)
-
-
-state 39
-
-    (23) seltablist -> stl_prefix . id
-    (13) id -> . TK_STRING
-    (38) id -> . TK_ID
-
-    TK_STRING       shift and go to state 22
-    TK_ID           shift and go to state 23
-
-    id                             shift and go to state 45
-
-state 40
-
-    (7) columnlist -> columnlist TK_COMMA column .
-
-    TK_RP           reduce using rule 7 (columnlist -> columnlist TK_COMMA column .)
-    TK_COMMA        reduce using rule 7 (columnlist -> columnlist TK_COMMA column .)
-
-
-state 41
-
-    (24) cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES . TK_LP itemlist TK_RP
-
-    TK_LP           shift and go to state 46
-
-
-state 42
-
-    (25) cmd -> TK_INSERT TK_INTO id inscollist_opt select .
-
-    $end            reduce using rule 25 (cmd -> TK_INSERT TK_INTO id inscollist_opt select .)
-
-
-state 43
-
-    (27) inscollist_opt -> TK_LP inscollist . TK_RP
-    (28) inscollist -> inscollist . TK_COMMA id
-
-    TK_RP           shift and go to state 47
-    TK_COMMA        shift and go to state 48
-
-
-state 44
-
-    (29) inscollist -> id .
-
-    TK_RP           reduce using rule 29 (inscollist -> id .)
-    TK_COMMA        reduce using rule 29 (inscollist -> id .)
-
-
-state 45
-
-    (23) seltablist -> stl_prefix id .
-
-    $end            reduce using rule 23 (seltablist -> stl_prefix id .)
-
-
-state 46
-
-    (24) cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP . itemlist TK_RP
-    (30) itemlist -> . itemlist TK_COMMA item
-    (31) itemlist -> . item
-    (32) item -> . TK_INT
-    (33) item -> . TK_PLUS TK_INT
-    (34) item -> . TK_MINUS TK_INT
-    (35) item -> . TK_STRING
-    (36) item -> . TK_NULL
-
-    TK_INT          shift and go to state 51
-    TK_PLUS         shift and go to state 52
-    TK_MINUS        shift and go to state 53
-    TK_STRING       shift and go to state 54
-    TK_NULL         shift and go to state 55
-
-    itemlist                       shift and go to state 49
-    item                           shift and go to state 50
-
-state 47
-
-    (27) inscollist_opt -> TK_LP inscollist TK_RP .
-
-    TK_VALUES       reduce using rule 27 (inscollist_opt -> TK_LP inscollist TK_RP .)
-    TK_SELECT       reduce using rule 27 (inscollist_opt -> TK_LP inscollist TK_RP .)
-
-
-state 48
-
-    (28) inscollist -> inscollist TK_COMMA . id
-    (13) id -> . TK_STRING
-    (38) id -> . TK_ID
-
-    TK_STRING       shift and go to state 22
-    TK_ID           shift and go to state 23
-
-    id                             shift and go to state 56
-
-state 49
-
-    (24) cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist . TK_RP
-    (30) itemlist -> itemlist . TK_COMMA item
-
-    TK_RP           shift and go to state 57
-    TK_COMMA        shift and go to state 58
-
-
-state 50
-
-    (31) itemlist -> item .
-
-    TK_RP           reduce using rule 31 (itemlist -> item .)
-    TK_COMMA        reduce using rule 31 (itemlist -> item .)
-
-
-state 51
-
-    (32) item -> TK_INT .
-
-    TK_RP           reduce using rule 32 (item -> TK_INT .)
-    TK_COMMA        reduce using rule 32 (item -> TK_INT .)
-
-
-state 52
-
-    (33) item -> TK_PLUS . TK_INT
-
-    TK_INT          shift and go to state 59
-
-
-state 53
-
-    (34) item -> TK_MINUS . TK_INT
-
-    TK_INT          shift and go to state 60
-
-
-state 54
-
-    (35) item -> TK_STRING .
-
-    TK_RP           reduce using rule 35 (item -> TK_STRING .)
-    TK_COMMA        reduce using rule 35 (item -> TK_STRING .)
-
-
-state 55
-
-    (36) item -> TK_NULL .
-
-    TK_RP           reduce using rule 36 (item -> TK_NULL .)
-    TK_COMMA        reduce using rule 36 (item -> TK_NULL .)
-
-
-state 56
-
-    (28) inscollist -> inscollist TK_COMMA id .
-
-    TK_RP           reduce using rule 28 (inscollist -> inscollist TK_COMMA id .)
-    TK_COMMA        reduce using rule 28 (inscollist -> inscollist TK_COMMA id .)
-
-
-state 57
-
-    (24) cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP .
-
-    $end            reduce using rule 24 (cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP .)
-
-
-state 58
-
-    (30) itemlist -> itemlist TK_COMMA . item
-    (32) item -> . TK_INT
-    (33) item -> . TK_PLUS TK_INT
-    (34) item -> . TK_MINUS TK_INT
-    (35) item -> . TK_STRING
-    (36) item -> . TK_NULL
-
-    TK_INT          shift and go to state 51
-    TK_PLUS         shift and go to state 52
-    TK_MINUS        shift and go to state 53
-    TK_STRING       shift and go to state 54
-    TK_NULL         shift and go to state 55
-
-    item                           shift and go to state 61
-
-state 59
-
-    (33) item -> TK_PLUS TK_INT .
-
-    TK_RP           reduce using rule 33 (item -> TK_PLUS TK_INT .)
-    TK_COMMA        reduce using rule 33 (item -> TK_PLUS TK_INT .)
-
-
-state 60
-
-    (34) item -> TK_MINUS TK_INT .
-
-    TK_RP           reduce using rule 34 (item -> TK_MINUS TK_INT .)
-    TK_COMMA        reduce using rule 34 (item -> TK_MINUS TK_INT .)
-
-
-state 61
-
-    (30) itemlist -> itemlist TK_COMMA item .
-
-    TK_RP           reduce using rule 30 (itemlist -> itemlist TK_COMMA item .)
-    TK_COMMA        reduce using rule 30 (itemlist -> itemlist TK_COMMA item .)
+where_opt            : 27 30
 

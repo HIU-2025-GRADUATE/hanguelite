@@ -1,6 +1,7 @@
 from ply import yacc
 from src.select import *
 from src.insert import *
+from src.update import *
 from src.tokenizer import tokens
 
 # 전역 파서 컨텍스트 등 (예: pParse, SRT_Callback 등)
