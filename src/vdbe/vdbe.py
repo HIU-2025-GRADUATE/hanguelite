@@ -579,8 +579,8 @@ class Vdbe:
       # a와 b를 pop한 후에 b 값에 a 값을 연산한 결과를 push
       # Subtract 인 경우 b-a 값을 저장
       elif pOp.opcode in [OP_Add, OP_Subtract, OP_Multiply, OP_Divide]:
-        a = self.aStack[len(self.aStack) - 1]
-        b = self.aStack[len(self.aStack) - 2]
+        a = self.aStack[-1]
+        b = self.aStack[-2]
         flag = isinstance(a, int) and isinstance(b, int)
         
         if not flag:
@@ -590,8 +590,8 @@ class Vdbe:
           except:
             self.hardRealify(len(self.aStack) - 1)
             self.hardRealify(len(self.aStack) - 2)
-            a = self.aStack[len(self.aStack) - 1]
-            b = self.aStack[len(self.aStack) - 2]
+            a = self.aStack[-1]
+            b = self.aStack[-2]
 
         if pOp.opcode == OP_Add:
           b += a
@@ -600,7 +600,7 @@ class Vdbe:
         elif pOp.opcode == OP_Multiply:
           b *= a
         elif pOp.opcode == OP_Divide:
-          if a == 0 or a == 0.0:
+          if a == 0:
             b = None
           else: 
             b /= a
@@ -611,9 +611,11 @@ class Vdbe:
 
       # 스택의 탑에서 원소 두 개를 꺼내 그중 큰 것을 push
       elif pOp.opcode == OP_Max:
-        tosInd = len(self.aStack) - 1
-        tos = self.aStack[tosInd]
-        nos = self.aStack[tosInd - 1]
+        if len(self.aStack) < 2:
+          raise RuntimeError("Not Enough Stack Element")
+
+        tos = self.aStack[-1]
+        nos = self.aStack[-2]
         copy = False
 
         if nos is None:
@@ -626,20 +628,22 @@ class Vdbe:
           copy = float(tos) > float(nos)
         
         else:
-          self.hardStringify(tosInd)
-          self.hardStringify(tosInd - 1)
-          copy = compare(self.aStack[tosInd], self.aStack[tosInd - 1]) > 0
+          self.hardStringify(len(self.aStack) - 1)
+          self.hardStringify(len(self.aStack) - 2)
+          copy = compare(self.aStack[-1], self.aStack[-2]) > 0
 
         if copy:
-          self.aStack[tosInd - 1] = self.aStack[tosInd]
+          self.aStack[-2] = self.aStack[-1]
         
         self.aStack.pop()
 
       # 스택의 탑에서 원소 두 개를 꺼내 그중 작은 것을 push
       elif pOp.opcode == OP_Min:
-        tosInd = len(self.aStack) - 1
-        tos = self.aStack[tosInd]
-        nos = self.aStack[tosInd - 1]
+        if len(self.aStack) < 2:
+          raise RuntimeError("Not Enough Stack Element")
+        
+        tos = self.aStack[-1]
+        nos = self.aStack[-2]
         copy = False
 
         if nos is None:
@@ -655,12 +659,12 @@ class Vdbe:
           copy = float(tos) < float(nos)
         
         else:
-          self.hardStringify(tosInd)
-          self.hardStringify(tosInd - 1)
-          copy = compare(self.aStack[tosInd], self.aStack[tosInd - 1]) < 0
+          self.hardStringify(len(self.aStack) - 1)
+          self.hardStringify(len(self.aStack) - 2)
+          copy = compare(self.aStack[-1], self.aStack[-2]) < 0
 
         if copy:
-          self.aStack[tosInd - 1] = self.aStack[tosInd]
+          self.aStack[-2] = self.aStack[-1]
         
         self.aStack.pop()
 
