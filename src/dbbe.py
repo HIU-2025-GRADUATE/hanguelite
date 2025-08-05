@@ -257,7 +257,6 @@ class DbbeCursor:
         return rc
 
     def __getFileNameOfTable(self, directory: str, tableName: str):
-        # (ForTest) csv 파일을 읽도록 만들었음
         if tableName:
             return os.path.join(directory, tableName)
         # TODO : 임시 파일 이름 랜덤 생성

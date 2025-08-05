@@ -5,7 +5,6 @@ GDBM_REPLACE = 0
 GDBM_INSERT = 1
 
 def gdbm_store(dbf: TextIOWrapper, key, data: list, mode=GDBM_REPLACE):
-    # print("store", key, data)
     dbf[key] = str(data).encode('utf-8')
 
 def gdbm_open(filePath, mode):
@@ -54,13 +53,12 @@ if __name__ == "__main__":
     path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'db')
     print(os.path.join(path, 'student_test'))
     dbf = gdbm_open(os.path.join(path, 'student_test'), "c")
-    gdbm_store(dbf, 'e3f2cc4aaf371618', ['권 찬',26,4], GDBM_REPLACE)
-    gdbm_store(dbf, '84f05dd77fca94f5', ['김 태연',26,4], GDBM_REPLACE)
-    gdbm_store(dbf, 'e79992d46e467582', ['유 호윤',26,4], GDBM_REPLACE)
+    # gdbm_store(dbf, 'e3f2cc4aaf371618', ['권 찬',26,4], GDBM_REPLACE)
+    # gdbm_store(dbf, '84f05dd77fca94f5', ['김 태연',26,4], GDBM_REPLACE)
+    # gdbm_store(dbf, 'e79992d46e467582', ['유 호윤',26,4], GDBM_REPLACE)
     currKey = gdbm_firstKey(dbf)
     print(currKey, gdbm_fetch(dbf, currKey))
     currKey = gdbm_nextKey(dbf, currKey)
     print(currKey, gdbm_fetch(dbf, currKey))
     currKey = gdbm_nextKey(dbf, currKey)
     print(currKey, gdbm_fetch(dbf, currKey))
-    # gdbm_store(dbf, 'e79992d46e467582', ['유 호윤',26,4], GDBM_REPLACE)
