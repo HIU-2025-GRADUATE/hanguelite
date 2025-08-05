@@ -26,7 +26,6 @@ def main():
             execute_sql(db, s)
         except Exception as e:
             print(e)
-            raise e
 
 if __name__ == '__main__':
     main()
