@@ -323,8 +323,6 @@ class Vdbe:
   ** This routine will automatically close any cursors, list, and/or sorters that were left open.
   """
   def cleanUp(self):
-    print("clean up vdbe")
-    print(self.nCursor)
     for i in range(self.nCursor):
       self.aCsr[i].pCursor.closeCursor()
   # static void Cleanup(Vdbe *p){
