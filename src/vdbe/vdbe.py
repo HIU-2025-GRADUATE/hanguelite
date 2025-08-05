@@ -706,7 +706,7 @@ class Vdbe:
           busy, once = False, True
           while busy or once:
             self.aCsr[i] = Cursor()
-            print(f"cursor open at {i} for table {tableName}")
+            # print(f"cursor open at {i} for table {tableName}")
             rc = self.aCsr[i].pCursor.openCursor(self.pBe, tableName, writeable)
 
             if rc == SQLITE_OK:
@@ -722,7 +722,7 @@ class Vdbe:
         elif pOp.opcode == OP_Close:
           i = pOp.p1
           if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
-            print(f"cursor closed at {i}")
+            # print(f"cursor closed at {i}")
             self.aCsr[i].pCursor.closeCursor()
             #self.aCsr[i].pCursor = 0
 

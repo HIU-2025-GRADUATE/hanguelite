@@ -5,12 +5,12 @@ GDBM_REPLACE = 0
 GDBM_INSERT = 1
 
 def gdbm_store(dbf: TextIOWrapper, key, data: list, mode=GDBM_REPLACE):
-    print("store", key, data)
+    # print("store", key, data)
     dbf[key] = str(data).encode('utf-8')
 
 def gdbm_open(filePath, mode):
     try:
-        print("oepn", filePath, mode)
+        # print("oepn", filePath, mode)
         return dbm.open(filePath, mode)
     except dbm.error as e:
         if "db file doesn't exist" in str(e):

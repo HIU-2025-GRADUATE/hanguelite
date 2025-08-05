@@ -114,7 +114,7 @@ class DbbeCursor:
         if not os.path.isdir(zName): return 0
 
     def closeCursor(self):
-        print(f"close file {self.pFile.zName}")
+        # print(f"close file {self.pFile.zName}")
         self.pFile.nRef -= 1
         if self.pFile.nRef <= 0:
             try:
