@@ -166,7 +166,7 @@ class DbbeCursor:
                     rc = SQLITE_OK
                 elif not pBe.write:
                     rc = SQLITE_READONLY
-                elif os.access(zFile, os.R_OK | os.W_OK):
+                elif not os.access(zFile, os.R_OK | os.W_OK):
                     rc = SQLITE_PERM
                 else:
                     rc = SQLITE_BUSY
