@@ -2,6 +2,7 @@ from src.dbbe import *
 from .vdbeOp import VdbeOp
 from src.vdbe.vdbeOp import *
 from src.vdbe.cursor import *
+from src.vdbe.agg import *
 from src.util import *
 
 #  Allowed values for Stack.flags
@@ -10,7 +11,7 @@ STK_Str = 0x0002      # Value is a string */
 STK_Int = 0x0004      # Value is an integer */
 STK_Real = 0x0008     # Value is a real number */
 STK_Dyn = 0x0010      # Need to call sqliteFree() on zStack[*] */
-
+    
 class Vdbe:
   """
   ** 기존의 createVdbe 함수가 Dbbe 를 인자로 받아서 VDBE 구조체 기반으로 메모리 할당해서 객체 만들고 포인터를 리턴하는 방식이었음.
@@ -34,7 +35,7 @@ class Vdbe:
     # 문자열 스택
     self.zStack = list()
     # 열려있는 커서 리스트 (Cursor 객체 리스트)
-    self.aCsr = list()
+    self.aCsr : list[Cursor] = list()
     # self.aCsr의 길이
     self.nCursor = 0
     # 각 컬럼의 이름 리스트
@@ -60,7 +61,7 @@ class Vdbe:
     # int nLineAlloc;    # /* Number of spaces allocated for zLine */
     # int nMem;          # /* Number of memory locations currently allocated */
     # Mem *aMem;         # /* The memory locations */
-    # Agg agg;           # /* Aggregate information */
+    self.agg: Agg = Agg()# /* Aggregate information */
     # int nSet;          # /* Number of sets allocated */
     # Set *aSet;         # /* An array of sets */
     # OP_Fetch 명령어 실행 횟수
@@ -190,8 +191,18 @@ class Vdbe:
   **
   ** NULLs are converted into an empty string.
   """
-  def hardStringify(self, i: int) -> int:
-    pass
+  def hardStringify(self, i: int):
+    try:
+      self.aStack[i] = str(float(self.aStack[i]))
+      return
+    except:
+      try:
+        self.aStack[i] = str(int(self.aStack[i]))
+        return
+      except:
+        self.aStack[i] = ""
+        return
+      
   #define Stringify(P,I) ((P->aStack[I].flags & STK_Str)==0 ? hardStringify(P,I) : 0)
   # static int hardStringify(Vdbe *p, int i){
   #   char zBuf[30];
@@ -253,17 +264,11 @@ class Vdbe:
   # ** Any prior string or integer representation is retained.
   # ** NULLs are converted into 0.0.
   # */
-  # #define Realify(P,I) if(((P)->aStack[(I)].flags&STK_Real)==0){ hardRealify(P,I); }
-  # static void hardRealify(Vdbe *p, int i){
-  #   if( p->aStack[i].flags & STK_Str ){
-  #     p->aStack[i].r = atof(p->zStack[i]);
-  #   }else if( p->aStack[i].flags & STK_Int ){
-  #     p->aStack[i].r = p->aStack[i].i;
-  #   }else{
-  #     p->aStack[i].r = 0.0;
-  #   }
-  #   p->aStack[i].flags |= STK_Real;
-  # }
+  def hardRealify(self, i : int):
+    try:
+      self.aStack[i] = float(self.aStack[i])
+    except:
+      self.aStack[i] = 0.0
 
   # /*
   # ** Pop the stack N times.  Free any memory associated with the
@@ -507,8 +512,20 @@ class Vdbe:
       # a와 b를 pop한 후에 b 값에 a 값을 연산한 결과를 push
       # Subtract 인 경우 b-a 값을 저장
       elif pOp.opcode in [OP_Add, OP_Subtract, OP_Multiply, OP_Divide]:
-        a = self.aStack.pop()
-        b = self.aStack.pop()
+        a = self.aStack[-1]
+        b = self.aStack[-2]
+        flag = isinstance(a, int) and isinstance(b, int)
+        
+        if not flag:
+          try:
+            a = int(a)
+            b = int(b)
+          except:
+            self.hardRealify(len(self.aStack) - 1)
+            self.hardRealify(len(self.aStack) - 2)
+            a = self.aStack[-1]
+            b = self.aStack[-2]
+
         if pOp.opcode == OP_Add:
           b += a
         elif pOp.opcode == OP_Subtract:
@@ -516,26 +533,73 @@ class Vdbe:
         elif pOp.opcode == OP_Multiply:
           b *= a
         elif pOp.opcode == OP_Divide:
-          b /= a
+          if a == 0:
+            b = None
+          else: 
+            b /= a
+        
+        self.aStack.pop()
+        self.aStack.pop()
         self.aStack.append(b)
 
       # 스택의 탑에서 원소 두 개를 꺼내 그중 큰 것을 push
       elif pOp.opcode == OP_Max:
-        tos = self.aStack.pop()
-        nos = self.aStack.pop()
-        if tos>nos:
-          self.aStack.append(tos)
+        if len(self.aStack) < 2:
+          raise RuntimeError("Not Enough Stack Element")
+
+        tos = self.aStack[-1]
+        nos = self.aStack[-2]
+        copy = False
+
+        if nos is None:
+          copy = True
+        
+        elif isinstance(tos, int) and isinstance(nos, int):
+          copy = nos < tos
+        
+        elif isinstance(tos, (int, float)) and isinstance(nos, (int, float)):
+          copy = float(tos) > float(nos)
+        
         else:
-          self.aStack.append(nos)
+          self.hardStringify(len(self.aStack) - 1)
+          self.hardStringify(len(self.aStack) - 2)
+          copy = compare(self.aStack[-1], self.aStack[-2]) > 0
+
+        if copy:
+          self.aStack[-2] = self.aStack[-1]
+        
+        self.aStack.pop()
 
       # 스택의 탑에서 원소 두 개를 꺼내 그중 작은 것을 push
       elif pOp.opcode == OP_Min:
-        tos = self.aStack.pop()
-        nos = self.aStack.pop()
-        if tos<nos:
-          self.aStack.append(tos)
+        if len(self.aStack) < 2:
+          raise RuntimeError("Not Enough Stack Element")
+        
+        tos = self.aStack[-1]
+        nos = self.aStack[-2]
+        copy = False
+
+        if nos is None:
+          copy = True
+        
+        elif tos is None:
+          copy = False
+
+        elif isinstance(tos, int) and isinstance(nos, int):
+          copy = nos > tos
+        
+        elif isinstance(tos, (int, float)) and isinstance(nos, (int, float)):
+          copy = float(tos) < float(nos)
+        
         else:
-          self.aStack.append(nos)
+          self.hardStringify(len(self.aStack) - 1)
+          self.hardStringify(len(self.aStack) - 2)
+          copy = compare(self.aStack[-1], self.aStack[-2]) < 0
+
+        if copy:
+          self.aStack[-2] = self.aStack[-1]
+        
+        self.aStack.pop()
 
       # 스택의 top 원소에 p1을 더함
       elif pOp.opcode == OP_AddImm:
@@ -654,13 +718,17 @@ class Vdbe:
       # P2가 0이면 원소를 삭제 (pop), 1이면 유지
       elif pOp.opcode == OP_MakeKey:
         # (TODO) 오류 출력 만들어야함
-        if len(self.aStack) < pOp.p1: return "Error"
-        tmp = ""
-        idx = len(self.aStack)-pOp.p1
-        for _ in range(pOp.p1):
-          tmp += str(self.aStack[idx])
-          if pOp.p2: 
-            del self.aStack[idx]
+        nField = pOp.p1
+        if len(self.aStack) < nField: 
+          raise RuntimeError("Not Enough Stack Element")
+
+        start = len(self.aStack) - pOp.p1
+        tmp = "\t".join([str(self.aStack[i]) if self.aStack[i] is not None else "" for i in range(start, len(self.aStack))])
+
+        if pOp.p2 == 0:
+          for _ in range(nField):
+            self.aStack.pop()
+        
         self.aStack.append(tmp)
 
       elif pOp.opcode == OP_Open:
@@ -751,7 +819,7 @@ class Vdbe:
       # p1 커서의 최근에 가져온 데이터에서 p2 번째 필드 값을 읽어옴
       # 만약 조회하는 커서의 KeyAsData 값이 1 이라면 데이터 대신 키 값을 읽어옴
       elif pOp.opcode == OP_Field:
-        if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
+        if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1].pCursor==0: continue
         if self.aCsr[pOp.p1].keyAsData:
           z = self.aCsr[pOp.p1].pCursor.readKey()
         else:
@@ -854,22 +922,62 @@ class Vdbe:
         pass
 
       elif pOp.opcode == OP_AggReset:
-        pass
+        self.agg.reset()
+        self.agg.nMem = pOp.p2
 
       elif pOp.opcode == OP_AggFocus:
-        pass
+        zKey = str(self.aStack.pop())
+        if self.agg.nHash <= 0:
+          pElem = None
+        else:
+          h = hashNoCase(zKey, len(zKey)) % self.agg.nHash    #TODO GROUP BY 절에 다수의 COLUMN이 있는 경우에 대해 좀 더 보완해야 함
+          pElem = self.agg.apHash[h]
+          while pElem:
+            if pElem.zKey == zKey:
+              break
+            pElem = pElem.pHash
 
-      elif pOp.opcode == OP_AggIncr:
-        pass
+        if pElem:
+          self.agg.pCurrent = pElem
+          pc = pOp.p2 - 1
+        else:
+          self.agg.insert(zKey)
+
+      elif pOp.opcode == OP_AggIncr:   # 정확한 구현인지 확인 필요. Mem을 안 써서 원본 코드와 완벽히 일치 X
+        pFocus = self.agg.aggInFocus()
+        i = pOp.p2
+
+        if 0 <= i < self.agg.nMem:
+          try:
+            val = int(pFocus.aMem[i])
+          except:
+            val = 0
+
+          pFocus.aMem[i] = val + pOp.p1
 
       elif pOp.opcode == OP_AggSet:
-        pass
-
+        pFocus = self.agg.aggInFocus()
+        if 0 <= pOp.p2 < self.agg.nMem:
+          pFocus.aMem[pOp.p2] = self.aStack.pop()
+          
       elif pOp.opcode == OP_AggGet:
-        pass
+        pFocus = self.agg.aggInFocus()
+        if 0 <= pOp.p2 < self.agg.nMem:
+          self.aStack.append(pFocus.aMem[pOp.p2])
 
       elif pOp.opcode == OP_AggNext:
-        pass
+        if self.agg.nHash:
+          self.agg.nHash = 0
+          self.agg.apHash = None
+          self.agg.pCurrent = self.agg.pFirst
+          
+        elif self.agg.pCurrent == self.agg.pFirst and self.agg.pCurrent:
+          pElem = self.agg.pCurrent
+          self.agg.pCurrent = self.agg.pFirst = pElem.pNext
+          self.agg.nElem -= 1
+        
+        if self.agg.pCurrent is None:
+          pc = pOp.p2 - 1
 
       elif pOp.opcode == OP_SetClear:
         pass
