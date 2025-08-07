@@ -145,6 +145,26 @@ def exprCode(pParse : Parse, pExpr : Expr):
     elif pExpr.op == TK_SELECT:
         v.addOp(OP_MemLoad, pExpr.iColumn, 0, 0, 0)
 
+    elif pExpr.op == TK_AGG_FUNCTION:
+        v.addOp(OP_AggGet, 0, pExpr.iAgg, None, 0)
+        if pExpr.iColumn == FN_Avg:
+            assert 0 <= pParse.iAggCount < pParse.nAgg
+            v.addOp(OP_AggGet, 0, pParse.iAggCount, None, 0)
+            v.addOp(OP_Divide, 0, 0, None, 0)
+
+    elif pExpr.op == TK_FUNCTION:
+        id = pExpr.iColumn
+        pList = pExpr.pList
+
+        if id == FN_Fcnt:
+            v.addOp(OP_Fcnt, 0, 0, None, 0)
+        else:
+            op = OP_Min if id == FN_Min else OP_Max
+            for i in range(pList.nExpr):
+                exprCode(pParse, pList.a[i].pExpr)
+                if i > 0:
+                    v.addOp(op, 0, 0, None, 0)
+
 def exprIfTrue(pParse : Parse, pExpr : Expr, dest : int):
     v = pParse.pVdbe
     op = 0
@@ -232,3 +252,203 @@ def exprIfFalse(pParse : Parse, pExpr : Expr, dest : int):
         exprCode(pParse, pExpr)
         v.addOp(OP_Not, 0, 0, 0, 0)
         v.addOp(OP_If, 0, dest, 0, 0)
+
+def exprCheck(pParse: Parse, pExpr: Expr, allowAgg: int, pIsAgg: list[int]):
+    nErr = 0
+    if pExpr is None:
+        return 0
+
+    if pExpr.op == TK_FUNCTION:
+        id = funcId(pExpr.token)
+        n = pExpr.pList.nExpr if pExpr.pList else 0
+        noSuchFunc = False
+        tooManyArgs = False
+        tooFewArgs = False
+        isAgg = False
+
+        pExpr.iColumn = id
+
+        if id == FN_Unknown:
+            noSuchFunc = True
+        elif id == FN_Count:
+            noSuchFunc = not allowAgg
+            tooManyArgs = n > 1
+            isAgg = True
+        elif id in (FN_Max, FN_Min):
+            tooFewArgs = n < 1 if allowAgg else n < 2
+            isAgg = (n == 1)
+        elif id in (FN_Avg, FN_Sum):
+            noSuchFunc = not allowAgg
+            tooManyArgs = n > 1
+            tooFewArgs = n < 1
+            isAgg = True
+        elif id == FN_Fcnt:
+            n = 0
+        
+
+        if noSuchFunc:
+            pParse.zErrMsg = f"no such function: {pExpr.token.z}"
+            pParse.nErr += 1
+            nErr += 1
+        elif tooManyArgs:
+            pParse.zErrMsg = f"too many arguments to function {pExpr.token.z}()"
+            pParse.nErr += 1
+            nErr += 1
+        elif tooFewArgs:
+            pParse.zErrMsg = f"too few arguments to function {pExpr.token.z}()"
+            pParse.nErr += 1
+            nErr += 1
+
+        if isAgg:
+            pExpr.op = TK_AGG_FUNCTION
+            if pIsAgg is not None:
+                pIsAgg[0] = 1  
+
+        if pExpr.pList and nErr == 0:
+            for i in range(n):
+                nErr = exprCheck(pParse, pExpr.pList.a[i].pExpr, allowAgg and not isAgg, pIsAgg)
+                if nErr != 0:
+                    break 
+    
+    else:
+        if pExpr.pLeft:
+            nErr = exprCheck(pParse, pExpr.pLeft, allowAgg, pIsAgg)
+
+        if nErr == 0 and pExpr.pRight:
+            nErr = exprCheck(pParse, pExpr.pRight, allowAgg, pIsAgg)
+            
+        if nErr == 0 and pExpr.pList:
+            for elem in pExpr.pList.a:
+                nErr = exprCheck(pParse, elem.pExpr, allowAgg, pIsAgg)
+                if nErr != 0:
+                    break
+
+    return nErr
+
+def funcId(pToken: Token):
+    funcMap = {
+        "count": FN_Count,
+        "min": FN_Min,
+        "max": FN_Max,
+        "sum": FN_Sum,
+        "avg": FN_Avg,
+        "fcnt": FN_Fcnt,
+    }
+
+    tokenStr = pToken.z.lower()
+    return funcMap.get(tokenStr, FN_Unknown)
+
+def exprAnalyzeAggregates(pParse: Parse, pExpr: Expr):
+    nErr = 0
+
+    if pExpr is None:
+        return 0
+
+    if pExpr.op == TK_COLUMN:
+        aAgg = pParse.aAgg
+        for i in range(pParse.nAgg):
+            if aAgg[i].isAgg:
+                continue
+            if (aAgg[i].pExpr.iTable == pExpr.iTable and aAgg[i].pExpr.iColumn == pExpr.iColumn):
+                break
+        else:
+            i = appendAggInfo(pParse)
+            if i < 0:
+                return 1
+            pParse.aAgg[i].isAgg = 0
+            pParse.aAgg[i].pExpr = pExpr
+        pExpr.iAgg = i
+
+    elif pExpr.op == TK_AGG_FUNCTION:
+        if pExpr.iColumn == FN_Count or pExpr.iColumn == FN_Avg:
+            if pParse.iAggCount >= 0:
+                i = pParse.iAggCount
+            else:
+                i = appendAggInfo(pParse)
+                if i < 0:
+                    return 1
+                pParse.aAgg[i].isAgg = 1
+                pParse.aAgg[i].pExpr = None
+                pParse.iAggCount = i
+            if pExpr.iColumn == FN_Count:
+                pExpr.iAgg = i
+                return 0  # break에 해당
+
+        aAgg = pParse.aAgg
+        for i in range(pParse.nAgg):
+            if not aAgg[i].isAgg:
+                continue
+            if exprCompare(aAgg[i].pExpr, pExpr):
+                break
+        else:
+            i = appendAggInfo(pParse)
+            if i < 0:
+                return 1
+            pParse.aAgg[i].isAgg = 1
+            pParse.aAgg[i].pExpr = pExpr
+        pExpr.iAgg = i
+
+    else:
+        if pExpr.pLeft:
+            nErr = exprAnalyzeAggregates(pParse, pExpr.pLeft)
+        if nErr == 0 and pExpr.pRight:
+            nErr = exprAnalyzeAggregates(pParse, pExpr.pRight)
+        if nErr == 0 and pExpr.pList:
+            n = pExpr.pList.nExpr
+            for i in range(n):
+                nErr = exprAnalyzeAggregates(pParse, pExpr.pList.a[i].pExpr)
+                if nErr != 0:
+                    break
+
+    return nErr
+
+def appendAggInfo(pParse: Parse):
+    try:
+        pParse.aAgg = pParse.aAgg if pParse.aAgg else []
+        pParse.aAgg.append(AggExpr())  # 새 항목 추가
+        index = len(pParse.aAgg) - 1
+        pParse.nAgg += 1
+        return index
+    except MemoryError:
+        pParse.zErrMsg = "out of memory"
+        pParse.nErr += 1
+        return -1
+    
+def exprCompare(pA: Expr, pB: Expr):
+    if pA is None:
+        return pB is None
+    elif pB is None:
+        return False
+
+    if pA.op != pB.op:
+        return False
+
+    if not exprCompare(pA.pLeft, pB.pLeft):
+        return False
+
+    if not exprCompare(pA.pRight, pB.pRight):
+        return False
+
+    if pA.pList:
+        if pB.pList is None:
+            return False
+        if pA.pList.nExpr != pB.pList.nExpr:
+            return False
+        for i in range(pA.pList.nExpr):
+            if not exprCompare(pA.pList.a[i].pExpr, pB.pList.a[i].pExpr):
+                return False
+    elif pB.pList:
+        return False
+
+    if pA.pSelect or pB.pSelect:
+        return False
+
+    if pA.token.z:
+        if pB.token.z is None:
+            return False
+        if pB.token.n != pA.token.n:
+            return False
+        if pA.token.z.lower() != pB.token.z.lower():
+            return False
+
+    return True
