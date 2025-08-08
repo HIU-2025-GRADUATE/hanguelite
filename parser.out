@@ -23,55 +23,91 @@ Rule 10    columnid -> id
 Rule 11    type -> typename
 Rule 12    typename -> id
 Rule 13    id -> TK_STRING
-Rule 14    cmd -> select
-Rule 15    select -> oneselect
-Rule 16    oneselect -> TK_SELECT selcollist from
-Rule 17    selcollist -> TK_STAR
-Rule 18    selcollist -> sclp expr
-Rule 19    sclp -> selcollist TK_COMMA
-Rule 20    sclp -> <empty>
-Rule 21    from -> TK_FROM seltablist
-Rule 22    stl_prefix -> <empty>
-Rule 23    seltablist -> stl_prefix id
-Rule 24    cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
-Rule 25    cmd -> TK_INSERT TK_INTO id inscollist_opt select
-Rule 26    inscollist_opt -> <empty>
-Rule 27    inscollist_opt -> TK_LP inscollist TK_RP
-Rule 28    inscollist -> inscollist TK_COMMA id
-Rule 29    inscollist -> id
-Rule 30    itemlist -> itemlist TK_COMMA item
-Rule 31    itemlist -> item
-Rule 32    item -> TK_INT
-Rule 33    item -> TK_PLUS TK_INT
-Rule 34    item -> TK_MINUS TK_INT
-Rule 35    item -> TK_STRING
-Rule 36    item -> TK_NULL
-Rule 37    expr -> TK_ID
-Rule 38    id -> TK_ID
+Rule 14    cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
+Rule 15    cmd -> TK_INSERT TK_INTO id inscollist_opt select
+Rule 16    inscollist_opt -> <empty>
+Rule 17    inscollist_opt -> TK_LP inscollist TK_RP
+Rule 18    inscollist -> inscollist TK_COMMA id
+Rule 19    inscollist -> id
+Rule 20    itemlist -> itemlist TK_COMMA item
+Rule 21    itemlist -> item
+Rule 22    item -> TK_INTEGER
+Rule 23    item -> TK_PLUS TK_INTEGER
+Rule 24    item -> TK_MINUS TK_INTEGER
+Rule 25    item -> TK_STRING
+Rule 26    item -> TK_NULL
+Rule 27    cmd -> select
+Rule 28    select -> oneselect
+Rule 29    oneselect -> TK_SELECT selcollist from where_opt groupby_opt
+Rule 30    selcollist -> TK_STAR
+Rule 31    selcollist -> sclp expr
+Rule 32    sclp -> selcollist TK_COMMA
+Rule 33    sclp -> <empty>
+Rule 34    from -> TK_FROM seltablist
+Rule 35    stl_prefix -> <empty>
+Rule 36    seltablist -> stl_prefix id
+Rule 37    where_opt -> <empty>
+Rule 38    where_opt -> TK_WHERE expr
+Rule 39    groupby_opt -> <empty>
+Rule 40    groupby_opt -> TK_GROUP TK_BY exprlist
+Rule 41    exprlist -> exprlist TK_COMMA expritem
+Rule 42    exprlist -> expritem
+Rule 43    expritem -> expr
+Rule 44    expritem -> <empty>
+Rule 45    expr -> expr TK_AND expr
+Rule 46    expr -> expr TK_OR expr
+Rule 47    expr -> expr TK_LT expr
+Rule 48    expr -> expr TK_GT expr
+Rule 49    expr -> expr TK_LE expr
+Rule 50    expr -> expr TK_GE expr
+Rule 51    expr -> expr TK_NE expr
+Rule 52    expr -> expr TK_EQ expr
+Rule 53    expr -> expr TK_LIKE expr
+Rule 54    expr -> TK_INTEGER
+Rule 55    expr -> TK_FLOAT
+Rule 56    expr -> TK_STRING
+Rule 57    expr -> TK_ID
+Rule 58    id -> TK_ID
+Rule 59    expr -> TK_NOT expr
+Rule 60    expr -> expr TK_NOT TK_LIKE expr
 
 Terminals, with rules where they appear
 
+TK_AND               : 45
+TK_BY                : 40
 TK_COLUMN            : 
-TK_COMMA             : 7 19 28 30
+TK_COMMA             : 7 18 20 32 41
 TK_CREATE            : 5
 TK_DOT               : 
-TK_FROM              : 21
-TK_ID                : 37 38
+TK_EQ                : 52
+TK_FLOAT             : 55
+TK_FROM              : 34
+TK_GE                : 50
+TK_GROUP             : 40
+TK_GT                : 48
+TK_ID                : 57 58
 TK_IGNORE            : 
 TK_IN                : 
-TK_INSERT            : 24 25
-TK_INT               : 32 33 34
-TK_INTO              : 24 25
-TK_LP                : 6 24 27
-TK_MINUS             : 34
-TK_NULL              : 36
-TK_PLUS              : 33
-TK_RP                : 6 24 27
-TK_SELECT            : 16
-TK_STAR              : 17
-TK_STRING            : 13 35
+TK_INSERT            : 14 15
+TK_INTEGER           : 22 23 24 54
+TK_INTO              : 14 15
+TK_LE                : 49
+TK_LIKE              : 53 60
+TK_LP                : 6 14 17
+TK_LT                : 47
+TK_MINUS             : 24
+TK_NE                : 51
+TK_NOT               : 59 60
+TK_NULL              : 26
+TK_OR                : 46
+TK_PLUS              : 23
+TK_RP                : 6 14 17
+TK_SELECT            : 29
+TK_STAR              : 30
+TK_STRING            : 13 25 56
 TK_TABLE             : 5
-TK_VALUES            : 24
+TK_VALUES            : 14
+TK_WHERE             : 38
 error                : 
 
 Nonterminals, with rules where they appear
@@ -84,22 +120,26 @@ columnlist           : 6 7
 create_table         : 4
 create_table_args    : 4
 ecmd                 : 2
-expr                 : 18
-from                 : 16
-id                   : 5 10 12 23 24 25 28 29
+expr                 : 31 38 43 45 45 46 46 47 47 48 48 49 49 50 50 51 51 52 52 53 53 59 60 60
+expritem             : 41 42
+exprlist             : 40 41
+from                 : 29
+groupby_opt          : 29
+id                   : 5 10 12 14 15 18 19 36
 input                : 0
-inscollist           : 27 28
-inscollist_opt       : 24 25
-item                 : 30 31
-itemlist             : 24 30
-oneselect            : 15
-sclp                 : 18
-selcollist           : 16 19
-select               : 14 25
-seltablist           : 21
-stl_prefix           : 23
+inscollist           : 17 18
+inscollist_opt       : 14 15
+item                 : 20 21
+itemlist             : 14 20
+oneselect            : 28
+sclp                 : 31
+selcollist           : 29 32
+select               : 15 27
+seltablist           : 34
+stl_prefix           : 36
 type                 : 9
 typename             : 11
+where_opt            : 29
 
 
 state 0
@@ -109,14 +149,14 @@ state 0
     (2) cmdlist -> . ecmd
     (3) ecmd -> . cmd
     (4) cmd -> . create_table create_table_args
-    (14) cmd -> . select
-    (24) cmd -> . TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
-    (25) cmd -> . TK_INSERT TK_INTO id inscollist_opt select
+    (14) cmd -> . TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
+    (15) cmd -> . TK_INSERT TK_INTO id inscollist_opt select
+    (27) cmd -> . select
     (5) create_table -> . TK_CREATE TK_TABLE id
-    (15) select -> . oneselect
-    (16) oneselect -> . TK_SELECT selcollist from
+    (28) select -> . oneselect
+    (29) oneselect -> . TK_SELECT selcollist from where_opt groupby_opt
 
-    TK_INSERT       shift and go to state 7
+    TK_INSERT       shift and go to state 6
     TK_CREATE       shift and go to state 8
     TK_SELECT       shift and go to state 10
 
@@ -125,7 +165,7 @@ state 0
     ecmd                           shift and go to state 3
     cmd                            shift and go to state 4
     create_table                   shift and go to state 5
-    select                         shift and go to state 6
+    select                         shift and go to state 7
     oneselect                      shift and go to state 9
 
 state 1
@@ -166,17 +206,17 @@ state 5
 
 state 6
 
-    (14) cmd -> select .
+    (14) cmd -> TK_INSERT . TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
+    (15) cmd -> TK_INSERT . TK_INTO id inscollist_opt select
 
-    $end            reduce using rule 14 (cmd -> select .)
+    TK_INTO         shift and go to state 13
 
 
 state 7
 
-    (24) cmd -> TK_INSERT . TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
-    (25) cmd -> TK_INSERT . TK_INTO id inscollist_opt select
+    (27) cmd -> select .
 
-    TK_INTO         shift and go to state 13
+    $end            reduce using rule 27 (cmd -> select .)
 
 
 state 8
@@ -188,21 +228,25 @@ state 8
 
 state 9
 
-    (15) select -> oneselect .
+    (28) select -> oneselect .
 
-    $end            reduce using rule 15 (select -> oneselect .)
+    $end            reduce using rule 28 (select -> oneselect .)
 
 
 state 10
 
-    (16) oneselect -> TK_SELECT . selcollist from
-    (17) selcollist -> . TK_STAR
-    (18) selcollist -> . sclp expr
-    (19) sclp -> . selcollist TK_COMMA
-    (20) sclp -> .
+    (29) oneselect -> TK_SELECT . selcollist from where_opt groupby_opt
+    (30) selcollist -> . TK_STAR
+    (31) selcollist -> . sclp expr
+    (32) sclp -> . selcollist TK_COMMA
+    (33) sclp -> .
 
     TK_STAR         shift and go to state 16
-    TK_ID           reduce using rule 20 (sclp -> .)
+    TK_INTEGER      reduce using rule 33 (sclp -> .)
+    TK_FLOAT        reduce using rule 33 (sclp -> .)
+    TK_STRING       reduce using rule 33 (sclp -> .)
+    TK_ID           reduce using rule 33 (sclp -> .)
+    TK_NOT          reduce using rule 33 (sclp -> .)
 
     selcollist                     shift and go to state 15
     sclp                           shift and go to state 17
@@ -222,7 +266,7 @@ state 12
     (9) column -> . columnid type
     (10) columnid -> . id
     (13) id -> . TK_STRING
-    (38) id -> . TK_ID
+    (58) id -> . TK_ID
 
     TK_STRING       shift and go to state 22
     TK_ID           shift and go to state 23
@@ -234,10 +278,10 @@ state 12
 
 state 13
 
-    (24) cmd -> TK_INSERT TK_INTO . id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
-    (25) cmd -> TK_INSERT TK_INTO . id inscollist_opt select
+    (14) cmd -> TK_INSERT TK_INTO . id inscollist_opt TK_VALUES TK_LP itemlist TK_RP
+    (15) cmd -> TK_INSERT TK_INTO . id inscollist_opt select
     (13) id -> . TK_STRING
-    (38) id -> . TK_ID
+    (58) id -> . TK_ID
 
     TK_STRING       shift and go to state 22
     TK_ID           shift and go to state 23
@@ -248,7 +292,7 @@ state 14
 
     (5) create_table -> TK_CREATE TK_TABLE . id
     (13) id -> . TK_STRING
-    (38) id -> . TK_ID
+    (58) id -> . TK_ID
 
     TK_STRING       shift and go to state 22
     TK_ID           shift and go to state 23
@@ -257,9 +301,9 @@ state 14
 
 state 15
 
-    (16) oneselect -> TK_SELECT selcollist . from
-    (19) sclp -> selcollist . TK_COMMA
-    (21) from -> . TK_FROM seltablist
+    (29) oneselect -> TK_SELECT selcollist . from where_opt groupby_opt
+    (32) sclp -> selcollist . TK_COMMA
+    (34) from -> . TK_FROM seltablist
 
     TK_COMMA        shift and go to state 27
     TK_FROM         shift and go to state 28
@@ -268,18 +312,36 @@ state 15
 
 state 16
 
-    (17) selcollist -> TK_STAR .
+    (30) selcollist -> TK_STAR .
 
-    TK_COMMA        reduce using rule 17 (selcollist -> TK_STAR .)
-    TK_FROM         reduce using rule 17 (selcollist -> TK_STAR .)
+    TK_COMMA        reduce using rule 30 (selcollist -> TK_STAR .)
+    TK_FROM         reduce using rule 30 (selcollist -> TK_STAR .)
 
 
 state 17
 
-    (18) selcollist -> sclp . expr
-    (37) expr -> . TK_ID
+    (31) selcollist -> sclp . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
 
-    TK_ID           shift and go to state 30
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
 
     expr                           shift and go to state 29
 
@@ -288,8 +350,8 @@ state 18
     (6) create_table_args -> TK_LP columnlist . TK_RP
     (7) columnlist -> columnlist . TK_COMMA column
 
-    TK_RP           shift and go to state 31
-    TK_COMMA        shift and go to state 32
+    TK_RP           shift and go to state 35
+    TK_COMMA        shift and go to state 36
 
 
 state 19
@@ -306,14 +368,14 @@ state 20
     (11) type -> . typename
     (12) typename -> . id
     (13) id -> . TK_STRING
-    (38) id -> . TK_ID
+    (58) id -> . TK_ID
 
     TK_STRING       shift and go to state 22
     TK_ID           shift and go to state 23
 
-    type                           shift and go to state 33
-    typename                       shift and go to state 34
-    id                             shift and go to state 35
+    type                           shift and go to state 37
+    typename                       shift and go to state 38
+    id                             shift and go to state 39
 
 state 21
 
@@ -334,35 +396,39 @@ state 22
     TK_SELECT       reduce using rule 13 (id -> TK_STRING .)
     TK_RP           reduce using rule 13 (id -> TK_STRING .)
     TK_COMMA        reduce using rule 13 (id -> TK_STRING .)
+    TK_WHERE        reduce using rule 13 (id -> TK_STRING .)
+    TK_GROUP        reduce using rule 13 (id -> TK_STRING .)
     $end            reduce using rule 13 (id -> TK_STRING .)
 
 
 state 23
 
-    (38) id -> TK_ID .
+    (58) id -> TK_ID .
 
-    TK_STRING       reduce using rule 38 (id -> TK_ID .)
-    TK_ID           reduce using rule 38 (id -> TK_ID .)
-    TK_LP           reduce using rule 38 (id -> TK_ID .)
-    TK_VALUES       reduce using rule 38 (id -> TK_ID .)
-    TK_SELECT       reduce using rule 38 (id -> TK_ID .)
-    TK_RP           reduce using rule 38 (id -> TK_ID .)
-    TK_COMMA        reduce using rule 38 (id -> TK_ID .)
-    $end            reduce using rule 38 (id -> TK_ID .)
+    TK_STRING       reduce using rule 58 (id -> TK_ID .)
+    TK_ID           reduce using rule 58 (id -> TK_ID .)
+    TK_LP           reduce using rule 58 (id -> TK_ID .)
+    TK_VALUES       reduce using rule 58 (id -> TK_ID .)
+    TK_SELECT       reduce using rule 58 (id -> TK_ID .)
+    TK_RP           reduce using rule 58 (id -> TK_ID .)
+    TK_COMMA        reduce using rule 58 (id -> TK_ID .)
+    TK_WHERE        reduce using rule 58 (id -> TK_ID .)
+    TK_GROUP        reduce using rule 58 (id -> TK_ID .)
+    $end            reduce using rule 58 (id -> TK_ID .)
 
 
 state 24
 
-    (24) cmd -> TK_INSERT TK_INTO id . inscollist_opt TK_VALUES TK_LP itemlist TK_RP
-    (25) cmd -> TK_INSERT TK_INTO id . inscollist_opt select
-    (26) inscollist_opt -> .
-    (27) inscollist_opt -> . TK_LP inscollist TK_RP
+    (14) cmd -> TK_INSERT TK_INTO id . inscollist_opt TK_VALUES TK_LP itemlist TK_RP
+    (15) cmd -> TK_INSERT TK_INTO id . inscollist_opt select
+    (16) inscollist_opt -> .
+    (17) inscollist_opt -> . TK_LP inscollist TK_RP
 
-    TK_VALUES       reduce using rule 26 (inscollist_opt -> .)
-    TK_SELECT       reduce using rule 26 (inscollist_opt -> .)
-    TK_LP           shift and go to state 37
+    TK_VALUES       reduce using rule 16 (inscollist_opt -> .)
+    TK_SELECT       reduce using rule 16 (inscollist_opt -> .)
+    TK_LP           shift and go to state 41
 
-    inscollist_opt                 shift and go to state 36
+    inscollist_opt                 shift and go to state 40
 
 state 25
 
@@ -373,69 +439,197 @@ state 25
 
 state 26
 
-    (16) oneselect -> TK_SELECT selcollist from .
+    (29) oneselect -> TK_SELECT selcollist from . where_opt groupby_opt
+    (37) where_opt -> .
+    (38) where_opt -> . TK_WHERE expr
 
-    $end            reduce using rule 16 (oneselect -> TK_SELECT selcollist from .)
+    TK_GROUP        reduce using rule 37 (where_opt -> .)
+    $end            reduce using rule 37 (where_opt -> .)
+    TK_WHERE        shift and go to state 43
 
+    where_opt                      shift and go to state 42
 
 state 27
 
-    (19) sclp -> selcollist TK_COMMA .
+    (32) sclp -> selcollist TK_COMMA .
 
-    TK_ID           reduce using rule 19 (sclp -> selcollist TK_COMMA .)
+    TK_INTEGER      reduce using rule 32 (sclp -> selcollist TK_COMMA .)
+    TK_FLOAT        reduce using rule 32 (sclp -> selcollist TK_COMMA .)
+    TK_STRING       reduce using rule 32 (sclp -> selcollist TK_COMMA .)
+    TK_ID           reduce using rule 32 (sclp -> selcollist TK_COMMA .)
+    TK_NOT          reduce using rule 32 (sclp -> selcollist TK_COMMA .)
 
 
 state 28
 
-    (21) from -> TK_FROM . seltablist
-    (23) seltablist -> . stl_prefix id
-    (22) stl_prefix -> .
+    (34) from -> TK_FROM . seltablist
+    (36) seltablist -> . stl_prefix id
+    (35) stl_prefix -> .
 
-    TK_STRING       reduce using rule 22 (stl_prefix -> .)
-    TK_ID           reduce using rule 22 (stl_prefix -> .)
+    TK_STRING       reduce using rule 35 (stl_prefix -> .)
+    TK_ID           reduce using rule 35 (stl_prefix -> .)
 
-    seltablist                     shift and go to state 38
-    stl_prefix                     shift and go to state 39
+    seltablist                     shift and go to state 44
+    stl_prefix                     shift and go to state 45
 
 state 29
 
-    (18) selcollist -> sclp expr .
+    (31) selcollist -> sclp expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
 
-    TK_COMMA        reduce using rule 18 (selcollist -> sclp expr .)
-    TK_FROM         reduce using rule 18 (selcollist -> sclp expr .)
+    TK_COMMA        reduce using rule 31 (selcollist -> sclp expr .)
+    TK_FROM         reduce using rule 31 (selcollist -> sclp expr .)
+    TK_AND          shift and go to state 46
+    TK_OR           shift and go to state 47
+    TK_LT           shift and go to state 48
+    TK_GT           shift and go to state 49
+    TK_LE           shift and go to state 50
+    TK_GE           shift and go to state 51
+    TK_NE           shift and go to state 52
+    TK_EQ           shift and go to state 53
+    TK_LIKE         shift and go to state 54
+    TK_NOT          shift and go to state 55
 
 
 state 30
 
-    (37) expr -> TK_ID .
+    (54) expr -> TK_INTEGER .
 
-    TK_COMMA        reduce using rule 37 (expr -> TK_ID .)
-    TK_FROM         reduce using rule 37 (expr -> TK_ID .)
+    TK_AND          reduce using rule 54 (expr -> TK_INTEGER .)
+    TK_OR           reduce using rule 54 (expr -> TK_INTEGER .)
+    TK_LT           reduce using rule 54 (expr -> TK_INTEGER .)
+    TK_GT           reduce using rule 54 (expr -> TK_INTEGER .)
+    TK_LE           reduce using rule 54 (expr -> TK_INTEGER .)
+    TK_GE           reduce using rule 54 (expr -> TK_INTEGER .)
+    TK_NE           reduce using rule 54 (expr -> TK_INTEGER .)
+    TK_EQ           reduce using rule 54 (expr -> TK_INTEGER .)
+    TK_LIKE         reduce using rule 54 (expr -> TK_INTEGER .)
+    TK_NOT          reduce using rule 54 (expr -> TK_INTEGER .)
+    TK_COMMA        reduce using rule 54 (expr -> TK_INTEGER .)
+    TK_FROM         reduce using rule 54 (expr -> TK_INTEGER .)
+    TK_GROUP        reduce using rule 54 (expr -> TK_INTEGER .)
+    $end            reduce using rule 54 (expr -> TK_INTEGER .)
 
 
 state 31
+
+    (55) expr -> TK_FLOAT .
+
+    TK_AND          reduce using rule 55 (expr -> TK_FLOAT .)
+    TK_OR           reduce using rule 55 (expr -> TK_FLOAT .)
+    TK_LT           reduce using rule 55 (expr -> TK_FLOAT .)
+    TK_GT           reduce using rule 55 (expr -> TK_FLOAT .)
+    TK_LE           reduce using rule 55 (expr -> TK_FLOAT .)
+    TK_GE           reduce using rule 55 (expr -> TK_FLOAT .)
+    TK_NE           reduce using rule 55 (expr -> TK_FLOAT .)
+    TK_EQ           reduce using rule 55 (expr -> TK_FLOAT .)
+    TK_LIKE         reduce using rule 55 (expr -> TK_FLOAT .)
+    TK_NOT          reduce using rule 55 (expr -> TK_FLOAT .)
+    TK_COMMA        reduce using rule 55 (expr -> TK_FLOAT .)
+    TK_FROM         reduce using rule 55 (expr -> TK_FLOAT .)
+    TK_GROUP        reduce using rule 55 (expr -> TK_FLOAT .)
+    $end            reduce using rule 55 (expr -> TK_FLOAT .)
+
+
+state 32
+
+    (56) expr -> TK_STRING .
+
+    TK_AND          reduce using rule 56 (expr -> TK_STRING .)
+    TK_OR           reduce using rule 56 (expr -> TK_STRING .)
+    TK_LT           reduce using rule 56 (expr -> TK_STRING .)
+    TK_GT           reduce using rule 56 (expr -> TK_STRING .)
+    TK_LE           reduce using rule 56 (expr -> TK_STRING .)
+    TK_GE           reduce using rule 56 (expr -> TK_STRING .)
+    TK_NE           reduce using rule 56 (expr -> TK_STRING .)
+    TK_EQ           reduce using rule 56 (expr -> TK_STRING .)
+    TK_LIKE         reduce using rule 56 (expr -> TK_STRING .)
+    TK_NOT          reduce using rule 56 (expr -> TK_STRING .)
+    TK_COMMA        reduce using rule 56 (expr -> TK_STRING .)
+    TK_FROM         reduce using rule 56 (expr -> TK_STRING .)
+    TK_GROUP        reduce using rule 56 (expr -> TK_STRING .)
+    $end            reduce using rule 56 (expr -> TK_STRING .)
+
+
+state 33
+
+    (57) expr -> TK_ID .
+
+    TK_AND          reduce using rule 57 (expr -> TK_ID .)
+    TK_OR           reduce using rule 57 (expr -> TK_ID .)
+    TK_LT           reduce using rule 57 (expr -> TK_ID .)
+    TK_GT           reduce using rule 57 (expr -> TK_ID .)
+    TK_LE           reduce using rule 57 (expr -> TK_ID .)
+    TK_GE           reduce using rule 57 (expr -> TK_ID .)
+    TK_NE           reduce using rule 57 (expr -> TK_ID .)
+    TK_EQ           reduce using rule 57 (expr -> TK_ID .)
+    TK_LIKE         reduce using rule 57 (expr -> TK_ID .)
+    TK_NOT          reduce using rule 57 (expr -> TK_ID .)
+    TK_COMMA        reduce using rule 57 (expr -> TK_ID .)
+    TK_FROM         reduce using rule 57 (expr -> TK_ID .)
+    TK_GROUP        reduce using rule 57 (expr -> TK_ID .)
+    $end            reduce using rule 57 (expr -> TK_ID .)
+
+
+state 34
+
+    (59) expr -> TK_NOT . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expr                           shift and go to state 56
+
+state 35
 
     (6) create_table_args -> TK_LP columnlist TK_RP .
 
     $end            reduce using rule 6 (create_table_args -> TK_LP columnlist TK_RP .)
 
 
-state 32
+state 36
 
     (7) columnlist -> columnlist TK_COMMA . column
     (9) column -> . columnid type
     (10) columnid -> . id
     (13) id -> . TK_STRING
-    (38) id -> . TK_ID
+    (58) id -> . TK_ID
 
     TK_STRING       shift and go to state 22
     TK_ID           shift and go to state 23
 
-    column                         shift and go to state 40
+    column                         shift and go to state 57
     columnid                       shift and go to state 20
     id                             shift and go to state 21
 
-state 33
+state 37
 
     (9) column -> columnid type .
 
@@ -443,7 +637,7 @@ state 33
     TK_COMMA        reduce using rule 9 (column -> columnid type .)
 
 
-state 34
+state 38
 
     (11) type -> typename .
 
@@ -451,7 +645,7 @@ state 34
     TK_COMMA        reduce using rule 11 (type -> typename .)
 
 
-state 35
+state 39
 
     (12) typename -> id .
 
@@ -459,52 +653,383 @@ state 35
     TK_COMMA        reduce using rule 12 (typename -> id .)
 
 
-state 36
+state 40
 
-    (24) cmd -> TK_INSERT TK_INTO id inscollist_opt . TK_VALUES TK_LP itemlist TK_RP
-    (25) cmd -> TK_INSERT TK_INTO id inscollist_opt . select
-    (15) select -> . oneselect
-    (16) oneselect -> . TK_SELECT selcollist from
+    (14) cmd -> TK_INSERT TK_INTO id inscollist_opt . TK_VALUES TK_LP itemlist TK_RP
+    (15) cmd -> TK_INSERT TK_INTO id inscollist_opt . select
+    (28) select -> . oneselect
+    (29) oneselect -> . TK_SELECT selcollist from where_opt groupby_opt
 
-    TK_VALUES       shift and go to state 41
+    TK_VALUES       shift and go to state 58
     TK_SELECT       shift and go to state 10
 
-    select                         shift and go to state 42
+    select                         shift and go to state 59
     oneselect                      shift and go to state 9
 
-state 37
+state 41
 
-    (27) inscollist_opt -> TK_LP . inscollist TK_RP
-    (28) inscollist -> . inscollist TK_COMMA id
-    (29) inscollist -> . id
+    (17) inscollist_opt -> TK_LP . inscollist TK_RP
+    (18) inscollist -> . inscollist TK_COMMA id
+    (19) inscollist -> . id
     (13) id -> . TK_STRING
-    (38) id -> . TK_ID
+    (58) id -> . TK_ID
 
     TK_STRING       shift and go to state 22
     TK_ID           shift and go to state 23
 
-    inscollist                     shift and go to state 43
-    id                             shift and go to state 44
+    inscollist                     shift and go to state 60
+    id                             shift and go to state 61
 
-state 38
+state 42
 
-    (21) from -> TK_FROM seltablist .
+    (29) oneselect -> TK_SELECT selcollist from where_opt . groupby_opt
+    (39) groupby_opt -> .
+    (40) groupby_opt -> . TK_GROUP TK_BY exprlist
 
-    $end            reduce using rule 21 (from -> TK_FROM seltablist .)
+    $end            reduce using rule 39 (groupby_opt -> .)
+    TK_GROUP        shift and go to state 63
+
+    groupby_opt                    shift and go to state 62
+
+state 43
+
+    (38) where_opt -> TK_WHERE . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expr                           shift and go to state 64
+
+state 44
+
+    (34) from -> TK_FROM seltablist .
+
+    TK_WHERE        reduce using rule 34 (from -> TK_FROM seltablist .)
+    TK_GROUP        reduce using rule 34 (from -> TK_FROM seltablist .)
+    $end            reduce using rule 34 (from -> TK_FROM seltablist .)
 
 
-state 39
+state 45
 
-    (23) seltablist -> stl_prefix . id
+    (36) seltablist -> stl_prefix . id
     (13) id -> . TK_STRING
-    (38) id -> . TK_ID
+    (58) id -> . TK_ID
 
     TK_STRING       shift and go to state 22
     TK_ID           shift and go to state 23
 
-    id                             shift and go to state 45
+    id                             shift and go to state 65
 
-state 40
+state 46
+
+    (45) expr -> expr TK_AND . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expr                           shift and go to state 66
+
+state 47
+
+    (46) expr -> expr TK_OR . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expr                           shift and go to state 67
+
+state 48
+
+    (47) expr -> expr TK_LT . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expr                           shift and go to state 68
+
+state 49
+
+    (48) expr -> expr TK_GT . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expr                           shift and go to state 69
+
+state 50
+
+    (49) expr -> expr TK_LE . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expr                           shift and go to state 70
+
+state 51
+
+    (50) expr -> expr TK_GE . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expr                           shift and go to state 71
+
+state 52
+
+    (51) expr -> expr TK_NE . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expr                           shift and go to state 72
+
+state 53
+
+    (52) expr -> expr TK_EQ . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expr                           shift and go to state 73
+
+state 54
+
+    (53) expr -> expr TK_LIKE . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expr                           shift and go to state 74
+
+state 55
+
+    (60) expr -> expr TK_NOT . TK_LIKE expr
+
+    TK_LIKE         shift and go to state 75
+
+
+state 56
+
+    (59) expr -> TK_NOT expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_AND          reduce using rule 59 (expr -> TK_NOT expr .)
+    TK_OR           reduce using rule 59 (expr -> TK_NOT expr .)
+    TK_COMMA        reduce using rule 59 (expr -> TK_NOT expr .)
+    TK_FROM         reduce using rule 59 (expr -> TK_NOT expr .)
+    TK_GROUP        reduce using rule 59 (expr -> TK_NOT expr .)
+    $end            reduce using rule 59 (expr -> TK_NOT expr .)
+    TK_LT           shift and go to state 48
+    TK_GT           shift and go to state 49
+    TK_LE           shift and go to state 50
+    TK_GE           shift and go to state 51
+    TK_NE           shift and go to state 52
+    TK_EQ           shift and go to state 53
+    TK_LIKE         shift and go to state 54
+    TK_NOT          shift and go to state 55
+
+  ! TK_LT           [ reduce using rule 59 (expr -> TK_NOT expr .) ]
+  ! TK_GT           [ reduce using rule 59 (expr -> TK_NOT expr .) ]
+  ! TK_LE           [ reduce using rule 59 (expr -> TK_NOT expr .) ]
+  ! TK_GE           [ reduce using rule 59 (expr -> TK_NOT expr .) ]
+  ! TK_NE           [ reduce using rule 59 (expr -> TK_NOT expr .) ]
+  ! TK_EQ           [ reduce using rule 59 (expr -> TK_NOT expr .) ]
+  ! TK_LIKE         [ reduce using rule 59 (expr -> TK_NOT expr .) ]
+  ! TK_NOT          [ reduce using rule 59 (expr -> TK_NOT expr .) ]
+  ! TK_AND          [ shift and go to state 46 ]
+  ! TK_OR           [ shift and go to state 47 ]
+
+
+state 57
 
     (7) columnlist -> columnlist TK_COMMA column .
 
@@ -512,190 +1037,791 @@ state 40
     TK_COMMA        reduce using rule 7 (columnlist -> columnlist TK_COMMA column .)
 
 
-state 41
-
-    (24) cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES . TK_LP itemlist TK_RP
-
-    TK_LP           shift and go to state 46
-
-
-state 42
-
-    (25) cmd -> TK_INSERT TK_INTO id inscollist_opt select .
-
-    $end            reduce using rule 25 (cmd -> TK_INSERT TK_INTO id inscollist_opt select .)
-
-
-state 43
-
-    (27) inscollist_opt -> TK_LP inscollist . TK_RP
-    (28) inscollist -> inscollist . TK_COMMA id
-
-    TK_RP           shift and go to state 47
-    TK_COMMA        shift and go to state 48
-
-
-state 44
-
-    (29) inscollist -> id .
-
-    TK_RP           reduce using rule 29 (inscollist -> id .)
-    TK_COMMA        reduce using rule 29 (inscollist -> id .)
-
-
-state 45
-
-    (23) seltablist -> stl_prefix id .
-
-    $end            reduce using rule 23 (seltablist -> stl_prefix id .)
-
-
-state 46
-
-    (24) cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP . itemlist TK_RP
-    (30) itemlist -> . itemlist TK_COMMA item
-    (31) itemlist -> . item
-    (32) item -> . TK_INT
-    (33) item -> . TK_PLUS TK_INT
-    (34) item -> . TK_MINUS TK_INT
-    (35) item -> . TK_STRING
-    (36) item -> . TK_NULL
-
-    TK_INT          shift and go to state 51
-    TK_PLUS         shift and go to state 52
-    TK_MINUS        shift and go to state 53
-    TK_STRING       shift and go to state 54
-    TK_NULL         shift and go to state 55
-
-    itemlist                       shift and go to state 49
-    item                           shift and go to state 50
-
-state 47
-
-    (27) inscollist_opt -> TK_LP inscollist TK_RP .
-
-    TK_VALUES       reduce using rule 27 (inscollist_opt -> TK_LP inscollist TK_RP .)
-    TK_SELECT       reduce using rule 27 (inscollist_opt -> TK_LP inscollist TK_RP .)
-
-
-state 48
-
-    (28) inscollist -> inscollist TK_COMMA . id
-    (13) id -> . TK_STRING
-    (38) id -> . TK_ID
-
-    TK_STRING       shift and go to state 22
-    TK_ID           shift and go to state 23
-
-    id                             shift and go to state 56
-
-state 49
-
-    (24) cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist . TK_RP
-    (30) itemlist -> itemlist . TK_COMMA item
-
-    TK_RP           shift and go to state 57
-    TK_COMMA        shift and go to state 58
-
-
-state 50
-
-    (31) itemlist -> item .
-
-    TK_RP           reduce using rule 31 (itemlist -> item .)
-    TK_COMMA        reduce using rule 31 (itemlist -> item .)
-
-
-state 51
-
-    (32) item -> TK_INT .
-
-    TK_RP           reduce using rule 32 (item -> TK_INT .)
-    TK_COMMA        reduce using rule 32 (item -> TK_INT .)
-
-
-state 52
-
-    (33) item -> TK_PLUS . TK_INT
-
-    TK_INT          shift and go to state 59
-
-
-state 53
-
-    (34) item -> TK_MINUS . TK_INT
-
-    TK_INT          shift and go to state 60
-
-
-state 54
-
-    (35) item -> TK_STRING .
-
-    TK_RP           reduce using rule 35 (item -> TK_STRING .)
-    TK_COMMA        reduce using rule 35 (item -> TK_STRING .)
-
-
-state 55
-
-    (36) item -> TK_NULL .
-
-    TK_RP           reduce using rule 36 (item -> TK_NULL .)
-    TK_COMMA        reduce using rule 36 (item -> TK_NULL .)
-
-
-state 56
-
-    (28) inscollist -> inscollist TK_COMMA id .
-
-    TK_RP           reduce using rule 28 (inscollist -> inscollist TK_COMMA id .)
-    TK_COMMA        reduce using rule 28 (inscollist -> inscollist TK_COMMA id .)
-
-
-state 57
-
-    (24) cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP .
-
-    $end            reduce using rule 24 (cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP .)
-
-
 state 58
 
-    (30) itemlist -> itemlist TK_COMMA . item
-    (32) item -> . TK_INT
-    (33) item -> . TK_PLUS TK_INT
-    (34) item -> . TK_MINUS TK_INT
-    (35) item -> . TK_STRING
-    (36) item -> . TK_NULL
+    (14) cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES . TK_LP itemlist TK_RP
 
-    TK_INT          shift and go to state 51
-    TK_PLUS         shift and go to state 52
-    TK_MINUS        shift and go to state 53
-    TK_STRING       shift and go to state 54
-    TK_NULL         shift and go to state 55
+    TK_LP           shift and go to state 76
 
-    item                           shift and go to state 61
 
 state 59
 
-    (33) item -> TK_PLUS TK_INT .
+    (15) cmd -> TK_INSERT TK_INTO id inscollist_opt select .
 
-    TK_RP           reduce using rule 33 (item -> TK_PLUS TK_INT .)
-    TK_COMMA        reduce using rule 33 (item -> TK_PLUS TK_INT .)
+    $end            reduce using rule 15 (cmd -> TK_INSERT TK_INTO id inscollist_opt select .)
 
 
 state 60
 
-    (34) item -> TK_MINUS TK_INT .
+    (17) inscollist_opt -> TK_LP inscollist . TK_RP
+    (18) inscollist -> inscollist . TK_COMMA id
 
-    TK_RP           reduce using rule 34 (item -> TK_MINUS TK_INT .)
-    TK_COMMA        reduce using rule 34 (item -> TK_MINUS TK_INT .)
+    TK_RP           shift and go to state 77
+    TK_COMMA        shift and go to state 78
 
 
 state 61
 
-    (30) itemlist -> itemlist TK_COMMA item .
+    (19) inscollist -> id .
 
-    TK_RP           reduce using rule 30 (itemlist -> itemlist TK_COMMA item .)
-    TK_COMMA        reduce using rule 30 (itemlist -> itemlist TK_COMMA item .)
+    TK_RP           reduce using rule 19 (inscollist -> id .)
+    TK_COMMA        reduce using rule 19 (inscollist -> id .)
+
+
+state 62
+
+    (29) oneselect -> TK_SELECT selcollist from where_opt groupby_opt .
+
+    $end            reduce using rule 29 (oneselect -> TK_SELECT selcollist from where_opt groupby_opt .)
+
+
+state 63
+
+    (40) groupby_opt -> TK_GROUP . TK_BY exprlist
+
+    TK_BY           shift and go to state 79
+
+
+state 64
+
+    (38) where_opt -> TK_WHERE expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_GROUP        reduce using rule 38 (where_opt -> TK_WHERE expr .)
+    $end            reduce using rule 38 (where_opt -> TK_WHERE expr .)
+    TK_AND          shift and go to state 46
+    TK_OR           shift and go to state 47
+    TK_LT           shift and go to state 48
+    TK_GT           shift and go to state 49
+    TK_LE           shift and go to state 50
+    TK_GE           shift and go to state 51
+    TK_NE           shift and go to state 52
+    TK_EQ           shift and go to state 53
+    TK_LIKE         shift and go to state 54
+    TK_NOT          shift and go to state 55
+
+
+state 65
+
+    (36) seltablist -> stl_prefix id .
+
+    TK_WHERE        reduce using rule 36 (seltablist -> stl_prefix id .)
+    TK_GROUP        reduce using rule 36 (seltablist -> stl_prefix id .)
+    $end            reduce using rule 36 (seltablist -> stl_prefix id .)
+
+
+state 66
+
+    (45) expr -> expr TK_AND expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_AND          reduce using rule 45 (expr -> expr TK_AND expr .)
+    TK_OR           reduce using rule 45 (expr -> expr TK_AND expr .)
+    TK_COMMA        reduce using rule 45 (expr -> expr TK_AND expr .)
+    TK_FROM         reduce using rule 45 (expr -> expr TK_AND expr .)
+    TK_GROUP        reduce using rule 45 (expr -> expr TK_AND expr .)
+    $end            reduce using rule 45 (expr -> expr TK_AND expr .)
+    TK_LT           shift and go to state 48
+    TK_GT           shift and go to state 49
+    TK_LE           shift and go to state 50
+    TK_GE           shift and go to state 51
+    TK_NE           shift and go to state 52
+    TK_EQ           shift and go to state 53
+    TK_LIKE         shift and go to state 54
+    TK_NOT          shift and go to state 55
+
+  ! TK_LT           [ reduce using rule 45 (expr -> expr TK_AND expr .) ]
+  ! TK_GT           [ reduce using rule 45 (expr -> expr TK_AND expr .) ]
+  ! TK_LE           [ reduce using rule 45 (expr -> expr TK_AND expr .) ]
+  ! TK_GE           [ reduce using rule 45 (expr -> expr TK_AND expr .) ]
+  ! TK_NE           [ reduce using rule 45 (expr -> expr TK_AND expr .) ]
+  ! TK_EQ           [ reduce using rule 45 (expr -> expr TK_AND expr .) ]
+  ! TK_LIKE         [ reduce using rule 45 (expr -> expr TK_AND expr .) ]
+  ! TK_NOT          [ reduce using rule 45 (expr -> expr TK_AND expr .) ]
+  ! TK_AND          [ shift and go to state 46 ]
+  ! TK_OR           [ shift and go to state 47 ]
+
+
+state 67
+
+    (46) expr -> expr TK_OR expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_OR           reduce using rule 46 (expr -> expr TK_OR expr .)
+    TK_COMMA        reduce using rule 46 (expr -> expr TK_OR expr .)
+    TK_FROM         reduce using rule 46 (expr -> expr TK_OR expr .)
+    TK_GROUP        reduce using rule 46 (expr -> expr TK_OR expr .)
+    $end            reduce using rule 46 (expr -> expr TK_OR expr .)
+    TK_AND          shift and go to state 46
+    TK_LT           shift and go to state 48
+    TK_GT           shift and go to state 49
+    TK_LE           shift and go to state 50
+    TK_GE           shift and go to state 51
+    TK_NE           shift and go to state 52
+    TK_EQ           shift and go to state 53
+    TK_LIKE         shift and go to state 54
+    TK_NOT          shift and go to state 55
+
+  ! TK_AND          [ reduce using rule 46 (expr -> expr TK_OR expr .) ]
+  ! TK_LT           [ reduce using rule 46 (expr -> expr TK_OR expr .) ]
+  ! TK_GT           [ reduce using rule 46 (expr -> expr TK_OR expr .) ]
+  ! TK_LE           [ reduce using rule 46 (expr -> expr TK_OR expr .) ]
+  ! TK_GE           [ reduce using rule 46 (expr -> expr TK_OR expr .) ]
+  ! TK_NE           [ reduce using rule 46 (expr -> expr TK_OR expr .) ]
+  ! TK_EQ           [ reduce using rule 46 (expr -> expr TK_OR expr .) ]
+  ! TK_LIKE         [ reduce using rule 46 (expr -> expr TK_OR expr .) ]
+  ! TK_NOT          [ reduce using rule 46 (expr -> expr TK_OR expr .) ]
+  ! TK_OR           [ shift and go to state 47 ]
+
+
+state 68
+
+    (47) expr -> expr TK_LT expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_AND          reduce using rule 47 (expr -> expr TK_LT expr .)
+    TK_OR           reduce using rule 47 (expr -> expr TK_LT expr .)
+    TK_LT           reduce using rule 47 (expr -> expr TK_LT expr .)
+    TK_GT           reduce using rule 47 (expr -> expr TK_LT expr .)
+    TK_LE           reduce using rule 47 (expr -> expr TK_LT expr .)
+    TK_GE           reduce using rule 47 (expr -> expr TK_LT expr .)
+    TK_NE           reduce using rule 47 (expr -> expr TK_LT expr .)
+    TK_EQ           reduce using rule 47 (expr -> expr TK_LT expr .)
+    TK_LIKE         reduce using rule 47 (expr -> expr TK_LT expr .)
+    TK_NOT          reduce using rule 47 (expr -> expr TK_LT expr .)
+    TK_COMMA        reduce using rule 47 (expr -> expr TK_LT expr .)
+    TK_FROM         reduce using rule 47 (expr -> expr TK_LT expr .)
+    TK_GROUP        reduce using rule 47 (expr -> expr TK_LT expr .)
+    $end            reduce using rule 47 (expr -> expr TK_LT expr .)
+
+  ! TK_AND          [ shift and go to state 46 ]
+  ! TK_OR           [ shift and go to state 47 ]
+  ! TK_LT           [ shift and go to state 48 ]
+  ! TK_GT           [ shift and go to state 49 ]
+  ! TK_LE           [ shift and go to state 50 ]
+  ! TK_GE           [ shift and go to state 51 ]
+  ! TK_NE           [ shift and go to state 52 ]
+  ! TK_EQ           [ shift and go to state 53 ]
+  ! TK_LIKE         [ shift and go to state 54 ]
+  ! TK_NOT          [ shift and go to state 55 ]
+
+
+state 69
+
+    (48) expr -> expr TK_GT expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_AND          reduce using rule 48 (expr -> expr TK_GT expr .)
+    TK_OR           reduce using rule 48 (expr -> expr TK_GT expr .)
+    TK_LT           reduce using rule 48 (expr -> expr TK_GT expr .)
+    TK_GT           reduce using rule 48 (expr -> expr TK_GT expr .)
+    TK_LE           reduce using rule 48 (expr -> expr TK_GT expr .)
+    TK_GE           reduce using rule 48 (expr -> expr TK_GT expr .)
+    TK_NE           reduce using rule 48 (expr -> expr TK_GT expr .)
+    TK_EQ           reduce using rule 48 (expr -> expr TK_GT expr .)
+    TK_LIKE         reduce using rule 48 (expr -> expr TK_GT expr .)
+    TK_NOT          reduce using rule 48 (expr -> expr TK_GT expr .)
+    TK_COMMA        reduce using rule 48 (expr -> expr TK_GT expr .)
+    TK_FROM         reduce using rule 48 (expr -> expr TK_GT expr .)
+    TK_GROUP        reduce using rule 48 (expr -> expr TK_GT expr .)
+    $end            reduce using rule 48 (expr -> expr TK_GT expr .)
+
+  ! TK_AND          [ shift and go to state 46 ]
+  ! TK_OR           [ shift and go to state 47 ]
+  ! TK_LT           [ shift and go to state 48 ]
+  ! TK_GT           [ shift and go to state 49 ]
+  ! TK_LE           [ shift and go to state 50 ]
+  ! TK_GE           [ shift and go to state 51 ]
+  ! TK_NE           [ shift and go to state 52 ]
+  ! TK_EQ           [ shift and go to state 53 ]
+  ! TK_LIKE         [ shift and go to state 54 ]
+  ! TK_NOT          [ shift and go to state 55 ]
+
+
+state 70
+
+    (49) expr -> expr TK_LE expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_AND          reduce using rule 49 (expr -> expr TK_LE expr .)
+    TK_OR           reduce using rule 49 (expr -> expr TK_LE expr .)
+    TK_LT           reduce using rule 49 (expr -> expr TK_LE expr .)
+    TK_GT           reduce using rule 49 (expr -> expr TK_LE expr .)
+    TK_LE           reduce using rule 49 (expr -> expr TK_LE expr .)
+    TK_GE           reduce using rule 49 (expr -> expr TK_LE expr .)
+    TK_NE           reduce using rule 49 (expr -> expr TK_LE expr .)
+    TK_EQ           reduce using rule 49 (expr -> expr TK_LE expr .)
+    TK_LIKE         reduce using rule 49 (expr -> expr TK_LE expr .)
+    TK_NOT          reduce using rule 49 (expr -> expr TK_LE expr .)
+    TK_COMMA        reduce using rule 49 (expr -> expr TK_LE expr .)
+    TK_FROM         reduce using rule 49 (expr -> expr TK_LE expr .)
+    TK_GROUP        reduce using rule 49 (expr -> expr TK_LE expr .)
+    $end            reduce using rule 49 (expr -> expr TK_LE expr .)
+
+  ! TK_AND          [ shift and go to state 46 ]
+  ! TK_OR           [ shift and go to state 47 ]
+  ! TK_LT           [ shift and go to state 48 ]
+  ! TK_GT           [ shift and go to state 49 ]
+  ! TK_LE           [ shift and go to state 50 ]
+  ! TK_GE           [ shift and go to state 51 ]
+  ! TK_NE           [ shift and go to state 52 ]
+  ! TK_EQ           [ shift and go to state 53 ]
+  ! TK_LIKE         [ shift and go to state 54 ]
+  ! TK_NOT          [ shift and go to state 55 ]
+
+
+state 71
+
+    (50) expr -> expr TK_GE expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_AND          reduce using rule 50 (expr -> expr TK_GE expr .)
+    TK_OR           reduce using rule 50 (expr -> expr TK_GE expr .)
+    TK_LT           reduce using rule 50 (expr -> expr TK_GE expr .)
+    TK_GT           reduce using rule 50 (expr -> expr TK_GE expr .)
+    TK_LE           reduce using rule 50 (expr -> expr TK_GE expr .)
+    TK_GE           reduce using rule 50 (expr -> expr TK_GE expr .)
+    TK_NE           reduce using rule 50 (expr -> expr TK_GE expr .)
+    TK_EQ           reduce using rule 50 (expr -> expr TK_GE expr .)
+    TK_LIKE         reduce using rule 50 (expr -> expr TK_GE expr .)
+    TK_NOT          reduce using rule 50 (expr -> expr TK_GE expr .)
+    TK_COMMA        reduce using rule 50 (expr -> expr TK_GE expr .)
+    TK_FROM         reduce using rule 50 (expr -> expr TK_GE expr .)
+    TK_GROUP        reduce using rule 50 (expr -> expr TK_GE expr .)
+    $end            reduce using rule 50 (expr -> expr TK_GE expr .)
+
+  ! TK_AND          [ shift and go to state 46 ]
+  ! TK_OR           [ shift and go to state 47 ]
+  ! TK_LT           [ shift and go to state 48 ]
+  ! TK_GT           [ shift and go to state 49 ]
+  ! TK_LE           [ shift and go to state 50 ]
+  ! TK_GE           [ shift and go to state 51 ]
+  ! TK_NE           [ shift and go to state 52 ]
+  ! TK_EQ           [ shift and go to state 53 ]
+  ! TK_LIKE         [ shift and go to state 54 ]
+  ! TK_NOT          [ shift and go to state 55 ]
+
+
+state 72
+
+    (51) expr -> expr TK_NE expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_AND          reduce using rule 51 (expr -> expr TK_NE expr .)
+    TK_OR           reduce using rule 51 (expr -> expr TK_NE expr .)
+    TK_NE           reduce using rule 51 (expr -> expr TK_NE expr .)
+    TK_EQ           reduce using rule 51 (expr -> expr TK_NE expr .)
+    TK_LIKE         reduce using rule 51 (expr -> expr TK_NE expr .)
+    TK_NOT          reduce using rule 51 (expr -> expr TK_NE expr .)
+    TK_COMMA        reduce using rule 51 (expr -> expr TK_NE expr .)
+    TK_FROM         reduce using rule 51 (expr -> expr TK_NE expr .)
+    TK_GROUP        reduce using rule 51 (expr -> expr TK_NE expr .)
+    $end            reduce using rule 51 (expr -> expr TK_NE expr .)
+    TK_LT           shift and go to state 48
+    TK_GT           shift and go to state 49
+    TK_LE           shift and go to state 50
+    TK_GE           shift and go to state 51
+
+  ! TK_LT           [ reduce using rule 51 (expr -> expr TK_NE expr .) ]
+  ! TK_GT           [ reduce using rule 51 (expr -> expr TK_NE expr .) ]
+  ! TK_LE           [ reduce using rule 51 (expr -> expr TK_NE expr .) ]
+  ! TK_GE           [ reduce using rule 51 (expr -> expr TK_NE expr .) ]
+  ! TK_AND          [ shift and go to state 46 ]
+  ! TK_OR           [ shift and go to state 47 ]
+  ! TK_NE           [ shift and go to state 52 ]
+  ! TK_EQ           [ shift and go to state 53 ]
+  ! TK_LIKE         [ shift and go to state 54 ]
+  ! TK_NOT          [ shift and go to state 55 ]
+
+
+state 73
+
+    (52) expr -> expr TK_EQ expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_AND          reduce using rule 52 (expr -> expr TK_EQ expr .)
+    TK_OR           reduce using rule 52 (expr -> expr TK_EQ expr .)
+    TK_NE           reduce using rule 52 (expr -> expr TK_EQ expr .)
+    TK_EQ           reduce using rule 52 (expr -> expr TK_EQ expr .)
+    TK_LIKE         reduce using rule 52 (expr -> expr TK_EQ expr .)
+    TK_NOT          reduce using rule 52 (expr -> expr TK_EQ expr .)
+    TK_COMMA        reduce using rule 52 (expr -> expr TK_EQ expr .)
+    TK_FROM         reduce using rule 52 (expr -> expr TK_EQ expr .)
+    TK_GROUP        reduce using rule 52 (expr -> expr TK_EQ expr .)
+    $end            reduce using rule 52 (expr -> expr TK_EQ expr .)
+    TK_LT           shift and go to state 48
+    TK_GT           shift and go to state 49
+    TK_LE           shift and go to state 50
+    TK_GE           shift and go to state 51
+
+  ! TK_LT           [ reduce using rule 52 (expr -> expr TK_EQ expr .) ]
+  ! TK_GT           [ reduce using rule 52 (expr -> expr TK_EQ expr .) ]
+  ! TK_LE           [ reduce using rule 52 (expr -> expr TK_EQ expr .) ]
+  ! TK_GE           [ reduce using rule 52 (expr -> expr TK_EQ expr .) ]
+  ! TK_AND          [ shift and go to state 46 ]
+  ! TK_OR           [ shift and go to state 47 ]
+  ! TK_NE           [ shift and go to state 52 ]
+  ! TK_EQ           [ shift and go to state 53 ]
+  ! TK_LIKE         [ shift and go to state 54 ]
+  ! TK_NOT          [ shift and go to state 55 ]
+
+
+state 74
+
+    (53) expr -> expr TK_LIKE expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_AND          reduce using rule 53 (expr -> expr TK_LIKE expr .)
+    TK_OR           reduce using rule 53 (expr -> expr TK_LIKE expr .)
+    TK_NE           reduce using rule 53 (expr -> expr TK_LIKE expr .)
+    TK_EQ           reduce using rule 53 (expr -> expr TK_LIKE expr .)
+    TK_LIKE         reduce using rule 53 (expr -> expr TK_LIKE expr .)
+    TK_NOT          reduce using rule 53 (expr -> expr TK_LIKE expr .)
+    TK_COMMA        reduce using rule 53 (expr -> expr TK_LIKE expr .)
+    TK_FROM         reduce using rule 53 (expr -> expr TK_LIKE expr .)
+    TK_GROUP        reduce using rule 53 (expr -> expr TK_LIKE expr .)
+    $end            reduce using rule 53 (expr -> expr TK_LIKE expr .)
+    TK_LT           shift and go to state 48
+    TK_GT           shift and go to state 49
+    TK_LE           shift and go to state 50
+    TK_GE           shift and go to state 51
+
+  ! TK_LT           [ reduce using rule 53 (expr -> expr TK_LIKE expr .) ]
+  ! TK_GT           [ reduce using rule 53 (expr -> expr TK_LIKE expr .) ]
+  ! TK_LE           [ reduce using rule 53 (expr -> expr TK_LIKE expr .) ]
+  ! TK_GE           [ reduce using rule 53 (expr -> expr TK_LIKE expr .) ]
+  ! TK_AND          [ shift and go to state 46 ]
+  ! TK_OR           [ shift and go to state 47 ]
+  ! TK_NE           [ shift and go to state 52 ]
+  ! TK_EQ           [ shift and go to state 53 ]
+  ! TK_LIKE         [ shift and go to state 54 ]
+  ! TK_NOT          [ shift and go to state 55 ]
+
+
+state 75
+
+    (60) expr -> expr TK_NOT TK_LIKE . expr
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expr                           shift and go to state 80
+
+state 76
+
+    (14) cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP . itemlist TK_RP
+    (20) itemlist -> . itemlist TK_COMMA item
+    (21) itemlist -> . item
+    (22) item -> . TK_INTEGER
+    (23) item -> . TK_PLUS TK_INTEGER
+    (24) item -> . TK_MINUS TK_INTEGER
+    (25) item -> . TK_STRING
+    (26) item -> . TK_NULL
+
+    TK_INTEGER      shift and go to state 83
+    TK_PLUS         shift and go to state 84
+    TK_MINUS        shift and go to state 85
+    TK_STRING       shift and go to state 86
+    TK_NULL         shift and go to state 87
+
+    itemlist                       shift and go to state 81
+    item                           shift and go to state 82
+
+state 77
+
+    (17) inscollist_opt -> TK_LP inscollist TK_RP .
+
+    TK_VALUES       reduce using rule 17 (inscollist_opt -> TK_LP inscollist TK_RP .)
+    TK_SELECT       reduce using rule 17 (inscollist_opt -> TK_LP inscollist TK_RP .)
+
+
+state 78
+
+    (18) inscollist -> inscollist TK_COMMA . id
+    (13) id -> . TK_STRING
+    (58) id -> . TK_ID
+
+    TK_STRING       shift and go to state 22
+    TK_ID           shift and go to state 23
+
+    id                             shift and go to state 88
+
+state 79
+
+    (40) groupby_opt -> TK_GROUP TK_BY . exprlist
+    (41) exprlist -> . exprlist TK_COMMA expritem
+    (42) exprlist -> . expritem
+    (43) expritem -> . expr
+    (44) expritem -> .
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_COMMA        reduce using rule 44 (expritem -> .)
+    $end            reduce using rule 44 (expritem -> .)
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    exprlist                       shift and go to state 89
+    expritem                       shift and go to state 90
+    expr                           shift and go to state 91
+
+state 80
+
+    (60) expr -> expr TK_NOT TK_LIKE expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_AND          reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .)
+    TK_OR           reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .)
+    TK_NE           reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .)
+    TK_EQ           reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .)
+    TK_LIKE         reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .)
+    TK_NOT          reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .)
+    TK_COMMA        reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .)
+    TK_FROM         reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .)
+    TK_GROUP        reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .)
+    $end            reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .)
+    TK_LT           shift and go to state 48
+    TK_GT           shift and go to state 49
+    TK_LE           shift and go to state 50
+    TK_GE           shift and go to state 51
+
+  ! TK_LT           [ reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .) ]
+  ! TK_GT           [ reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .) ]
+  ! TK_LE           [ reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .) ]
+  ! TK_GE           [ reduce using rule 60 (expr -> expr TK_NOT TK_LIKE expr .) ]
+  ! TK_AND          [ shift and go to state 46 ]
+  ! TK_OR           [ shift and go to state 47 ]
+  ! TK_NE           [ shift and go to state 52 ]
+  ! TK_EQ           [ shift and go to state 53 ]
+  ! TK_LIKE         [ shift and go to state 54 ]
+  ! TK_NOT          [ shift and go to state 55 ]
+
+
+state 81
+
+    (14) cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist . TK_RP
+    (20) itemlist -> itemlist . TK_COMMA item
+
+    TK_RP           shift and go to state 92
+    TK_COMMA        shift and go to state 93
+
+
+state 82
+
+    (21) itemlist -> item .
+
+    TK_RP           reduce using rule 21 (itemlist -> item .)
+    TK_COMMA        reduce using rule 21 (itemlist -> item .)
+
+
+state 83
+
+    (22) item -> TK_INTEGER .
+
+    TK_RP           reduce using rule 22 (item -> TK_INTEGER .)
+    TK_COMMA        reduce using rule 22 (item -> TK_INTEGER .)
+
+
+state 84
+
+    (23) item -> TK_PLUS . TK_INTEGER
+
+    TK_INTEGER      shift and go to state 94
+
+
+state 85
+
+    (24) item -> TK_MINUS . TK_INTEGER
+
+    TK_INTEGER      shift and go to state 95
+
+
+state 86
+
+    (25) item -> TK_STRING .
+
+    TK_RP           reduce using rule 25 (item -> TK_STRING .)
+    TK_COMMA        reduce using rule 25 (item -> TK_STRING .)
+
+
+state 87
+
+    (26) item -> TK_NULL .
+
+    TK_RP           reduce using rule 26 (item -> TK_NULL .)
+    TK_COMMA        reduce using rule 26 (item -> TK_NULL .)
+
+
+state 88
+
+    (18) inscollist -> inscollist TK_COMMA id .
+
+    TK_RP           reduce using rule 18 (inscollist -> inscollist TK_COMMA id .)
+    TK_COMMA        reduce using rule 18 (inscollist -> inscollist TK_COMMA id .)
+
+
+state 89
+
+    (40) groupby_opt -> TK_GROUP TK_BY exprlist .
+    (41) exprlist -> exprlist . TK_COMMA expritem
+
+    $end            reduce using rule 40 (groupby_opt -> TK_GROUP TK_BY exprlist .)
+    TK_COMMA        shift and go to state 96
+
+
+state 90
+
+    (42) exprlist -> expritem .
+
+    TK_COMMA        reduce using rule 42 (exprlist -> expritem .)
+    $end            reduce using rule 42 (exprlist -> expritem .)
+
+
+state 91
+
+    (43) expritem -> expr .
+    (45) expr -> expr . TK_AND expr
+    (46) expr -> expr . TK_OR expr
+    (47) expr -> expr . TK_LT expr
+    (48) expr -> expr . TK_GT expr
+    (49) expr -> expr . TK_LE expr
+    (50) expr -> expr . TK_GE expr
+    (51) expr -> expr . TK_NE expr
+    (52) expr -> expr . TK_EQ expr
+    (53) expr -> expr . TK_LIKE expr
+    (60) expr -> expr . TK_NOT TK_LIKE expr
+
+    TK_COMMA        reduce using rule 43 (expritem -> expr .)
+    $end            reduce using rule 43 (expritem -> expr .)
+    TK_AND          shift and go to state 46
+    TK_OR           shift and go to state 47
+    TK_LT           shift and go to state 48
+    TK_GT           shift and go to state 49
+    TK_LE           shift and go to state 50
+    TK_GE           shift and go to state 51
+    TK_NE           shift and go to state 52
+    TK_EQ           shift and go to state 53
+    TK_LIKE         shift and go to state 54
+    TK_NOT          shift and go to state 55
+
+
+state 92
+
+    (14) cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP .
+
+    $end            reduce using rule 14 (cmd -> TK_INSERT TK_INTO id inscollist_opt TK_VALUES TK_LP itemlist TK_RP .)
+
+
+state 93
+
+    (20) itemlist -> itemlist TK_COMMA . item
+    (22) item -> . TK_INTEGER
+    (23) item -> . TK_PLUS TK_INTEGER
+    (24) item -> . TK_MINUS TK_INTEGER
+    (25) item -> . TK_STRING
+    (26) item -> . TK_NULL
+
+    TK_INTEGER      shift and go to state 83
+    TK_PLUS         shift and go to state 84
+    TK_MINUS        shift and go to state 85
+    TK_STRING       shift and go to state 86
+    TK_NULL         shift and go to state 87
+
+    item                           shift and go to state 97
+
+state 94
+
+    (23) item -> TK_PLUS TK_INTEGER .
+
+    TK_RP           reduce using rule 23 (item -> TK_PLUS TK_INTEGER .)
+    TK_COMMA        reduce using rule 23 (item -> TK_PLUS TK_INTEGER .)
+
+
+state 95
+
+    (24) item -> TK_MINUS TK_INTEGER .
+
+    TK_RP           reduce using rule 24 (item -> TK_MINUS TK_INTEGER .)
+    TK_COMMA        reduce using rule 24 (item -> TK_MINUS TK_INTEGER .)
+
+
+state 96
+
+    (41) exprlist -> exprlist TK_COMMA . expritem
+    (43) expritem -> . expr
+    (44) expritem -> .
+    (45) expr -> . expr TK_AND expr
+    (46) expr -> . expr TK_OR expr
+    (47) expr -> . expr TK_LT expr
+    (48) expr -> . expr TK_GT expr
+    (49) expr -> . expr TK_LE expr
+    (50) expr -> . expr TK_GE expr
+    (51) expr -> . expr TK_NE expr
+    (52) expr -> . expr TK_EQ expr
+    (53) expr -> . expr TK_LIKE expr
+    (54) expr -> . TK_INTEGER
+    (55) expr -> . TK_FLOAT
+    (56) expr -> . TK_STRING
+    (57) expr -> . TK_ID
+    (59) expr -> . TK_NOT expr
+    (60) expr -> . expr TK_NOT TK_LIKE expr
+
+    TK_COMMA        reduce using rule 44 (expritem -> .)
+    $end            reduce using rule 44 (expritem -> .)
+    TK_INTEGER      shift and go to state 30
+    TK_FLOAT        shift and go to state 31
+    TK_STRING       shift and go to state 32
+    TK_ID           shift and go to state 33
+    TK_NOT          shift and go to state 34
+
+    expritem                       shift and go to state 98
+    expr                           shift and go to state 91
+
+state 97
+
+    (20) itemlist -> itemlist TK_COMMA item .
+
+    TK_RP           reduce using rule 20 (itemlist -> itemlist TK_COMMA item .)
+    TK_COMMA        reduce using rule 20 (itemlist -> itemlist TK_COMMA item .)
+
+
+state 98
+
+    (41) exprlist -> exprlist TK_COMMA expritem .
+
+    TK_COMMA        reduce using rule 41 (exprlist -> exprlist TK_COMMA expritem .)
+    $end            reduce using rule 41 (exprlist -> exprlist TK_COMMA expritem .)
 

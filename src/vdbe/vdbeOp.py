@@ -8,6 +8,7 @@
 ** The source tree contains an AWK script named renumberOps.awk that
 ** can be used to renumber these opcodes when new opcodes are inserted.
 """
+
 OP_Open          =      1
 OP_Close         =      2
 OP_Fetch         =      3
@@ -111,6 +112,40 @@ OP_Noop          =     88
 OP_MAX           =     88
 
 """
+** A translation from opcode numbers to opcode names.  Used for testing
+** and debugging only.
+**
+** If any of the numeric OP_ values for opcodes defined in sqliteVdbe.h
+** change, be sure to change this array to match.  You can use the
+** "opNames.awk" awk script which is part of the source tree to regenerate
+** this array, then copy and paste it into this file, if you want.
+"""
+zOpName = [ 0,
+  "Open",           "Close",          "Fetch",          "Fcnt",
+  "New",            "Put",            "Distinct",       "Found",
+  "NotFound",       "Delete",         "Field",          "KeyAsData",
+  "Key",            "Rewind",         "Next",           "Destroy",
+  "Reorganize",     "ResetIdx",       "NextIdx",        "PutIdx",
+  "DeleteIdx",      "MemLoad",        "MemStore",       "ListOpen",
+  "ListWrite",      "ListRewind",     "ListRead",       "ListClose",
+  "SortOpen",       "SortPut",        "SortMakeRec",    "SortMakeKey",
+  "Sort",           "SortNext",       "SortKey",        "SortCallback",
+  "SortClose",      "FileOpen",       "FileRead",       "FileField",
+  "FileClose",      "AggReset",       "AggFocus",       "AggIncr",
+  "AggNext",        "AggSet",         "AggGet",         "SetInsert",
+  "SetFound",       "SetNotFound",    "SetClear",       "MakeRecord",
+  "MakeKey",        "Goto",           "If",             "Halt",
+  "ColumnCount",    "ColumnName",     "Callback",       "Integer",
+  "String",         "Null",           "Pop",            "Dup",
+  "Pull",           "Add",            "AddImm",         "Subtract",
+  "Multiply",       "Divide",         "Min",            "Max",
+  "Like",           "Glob",           "Eq",             "Ne",
+  "Lt",             "Le",             "Gt",             "Ge",
+  "IsNull",         "NotNull",        "Negative",       "And",
+  "Or",             "Not",            "Concat",         "Noop",
+]
+
+"""
 ** SQL is translated into a sequence of instructions to be
 ** executed by a virtual machine.  Each instruction is an instance
 ** of the following structure.
@@ -121,3 +156,6 @@ class VdbeOp:
         self.p1: int = p1
         self.p2: int = p2
         self.p3: str = p3
+
+    def __str__(self):
+        return f"{zOpName[self.opcode]} ({self.p1}, {self.p2}, {self.p3})"

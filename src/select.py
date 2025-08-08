@@ -96,7 +96,23 @@ def selectInnerLoop(pParse : Parse, pEList : ExprList, srcTab : int, nColumn : i
         for i in range(nColumn):
             v.addOp(OP_Field, srcTab, i, 0, 0)
 
-    v.addOp(OP_Callback, nColumn, 0, 0, 0)
+    if pOrderBy:
+        pass
+    elif eDest == SRT_Union:
+        pass
+    elif eDest == SRT_Table:
+        v.addOp(OP_MakeRecord, nColumn, 0, 0, 0)
+        v.addOp(OP_New, iParm, 0, 0, 0)
+        v.addOp(OP_Pull, 1, 0, 0, 0)
+        v.addOp(OP_Put, iParm, 0, 0, 0)
+    elif eDest == SRT_Except:
+        pass
+    elif eDest == SRT_Set:
+        pass
+    elif eDest == SRT_Mem:
+        pass
+    else:
+        v.addOp(OP_Callback, nColumn, 0, 0, 0)
 
     return 0
     
@@ -206,6 +222,7 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
         #         if exprAnalyzeAggregates(pParse, pOrderBy.a[i].pExpr):
         #             return 1
 
+    # Begin generating code
     v = pParse.pVdbe
 
     if v is None:
