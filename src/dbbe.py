@@ -1,19 +1,21 @@
-import csv, os, random, time
+import csv, os, random, time, logging
 from src.gdbm import *
-from src.constant import MASTER_NAME
+from src.constant import MASTER_NAME, SQLITE_OK, SQLITE_READONLY, SQLITE_PERM, SQLITE_BUSY
+
+logging.basicConfig(level=logging.DEBUG)
 
 class BeFile:
-    def __init__(self):
+    def __init__(self, writeable, zName):
         # 실제 파일명
-        self.zName = None
+        self.zName = zName
         # 파일 객체 (csv.reader / csv.write 객체)
         self.dbf = None
         # 참조 횟수 (참조된? 참조중인?)
-        self.nRef = 0
+        self.nRef = 1
         # 종료 시 삭제 여부
         self.delOnClose = False
         # write를 위해 open 되었는지
-        self.writeable = False
+        self.writeable = writeable
         # 열린 파일 리스트 중 이전/다음 파일 (BeFile 객체, 연결 리스트)
         self.pPrev = None
         self.pNext = None
@@ -36,7 +38,7 @@ class Dbbe:
         # write 권한이 있는지
         self.write = writeFlag
         # 열린 파일 리스트 (BeFile 끼리의 연결 리스트)
-        self.pOpen = None
+        self.pOpen: BeFile = None
         # self.rc4 = rc4init()
 
     def __del__(self):
@@ -88,7 +90,7 @@ class DbbeCursor:
         # 이 커서가 포함된 DB
         self.pBe: Dbbe = None
         # 이 table의 실제 파일
-        self.pFile = BeFile()
+        self.pFile: BeFile = None
         # 최근에 사용한 key
         self.key = None
         # 최근에 사용한 data
@@ -112,38 +114,78 @@ class DbbeCursor:
         if not os.path.isdir(zName): return 0
 
     def closeCursor(self):
-        if self==0: return
+        # print(f"close file {self.pFile.zName}")
         self.pFile.nRef -= 1
         if self.pFile.nRef <= 0:
-            if self.pFile.dbf: self.pFile.dbf.close()
+            try:
+                if self.pFile.dbf:
+                    self.pFile.dbf.close()
+            except Exception as e:
+                print(e)
             # BeFile 객체의 앞뒤 연결 링크 삭제
-            if self.pFile.pPrev: self.pFile.pPrev.pNext = self.pFile.pNext
-            else: self.pBe.pOpen = self.pFile.pNext
-            if self.pFile.pNext: self.pFile.pNext.pPrev = self.pFile.pPrev
-        self = 0
-        return
+            if self.pFile.pPrev:
+                self.pFile.pPrev.pNext = self.pFile.pNext
+            else:
+                self.pBe.pOpen = self.pFile.pNext
+            if self.pFile.pNext:
+                self.pFile.pNext.pPrev = self.pFile.pPrev
 
-    def openCursor(self, pBe, zFile, writeable=False):
-        # (TODO) writeable==True 이면 쓸 수 writer 추가
-        # writeable==False 면 읽기 전용
-        # (ForTest) csv 파일을 읽도록 만들었음
-        if not writeable:
-            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile), "r")
-        else:
-            self.pFile.dbf = gdbm_open(os.path.join(pBe.zDir, zFile), "c")
+            if self.pFile.delOnClose:
+                logging.info(f"Remove File : {self.pFile.zName}")
+                os.remove(self.pFile.zName)
 
-        # pFile 객체 변수를 세탕하고 pBe.pOpen에 대입
-        self.pFile.writeable = writeable
-        self.pFile.zName = zFile
-        self.pFile.nRef = 1
-        self.pFile.pPrev = 0
-        if pBe.pOpen: pBe.pOpen.pPrev = self.pFile
-        self.pFile.pNext = pBe.pOpen
-        pBe.pOpen = self.pFile
+
+    def openCursor(self, pBe: Dbbe, zTable: str, writeable=False):
+        zFile = self.__getFileNameOfTable(pBe.zDir, zTable)
+        pFile = self.__findExistsCursor(pBe, zFile)
+        rc = SQLITE_OK
+
+        if not pFile: # table 경로에 대해 기존 커서가 없다면
+            fileMode = "c" if writeable else "w"
+            pFile = BeFile(writeable, zFile)
+
+            if zFile: # 테이블 이름이 존재한다면 -> 이 테이블에 대한 커서 열기
+                if (not writeable) or pBe.write:
+                    pFile.dbf = gdbm_open(zFile, fileMode)
+                else:
+                    pFile.dbf = None
+            else:
+                # 랜덤 테이블 이름 생성하고, (위에서 미리 해둠) 해당 파일명의 커서 생성
+                pFile.dbf = gdbm_open(zFile, fileMode)
+                pFile.delOnClose = True
+
+            # 파일 연결 리스트 세팅
+            if pBe.pOpen:
+                pBe.pOpen.pPrev = pFile
+            pFile.pNext = pBe.pOpen
+            pBe.pOpen = pFile
+
+            if pFile.dbf is None:
+                if not writeable and not os.path.exists(zFile):
+                    # 읽기 모드로 실행했는데, 실제 파일이 없는 경우는 상관없다. (파일의 지연 생성)
+                    rc = SQLITE_OK
+                elif not pBe.write:
+                    rc = SQLITE_READONLY
+                elif not os.access(zFile, os.R_OK | os.W_OK):
+                    rc = SQLITE_PERM
+                else:
+                    rc = SQLITE_BUSY
+
+        else: # pFile 커서가 이미 존재
+            pFile.nRef += 1
+            if writeable and not pFile.writeable:
+                rc = SQLITE_READONLY
 
         # ppCursr에 DbbeCursor 할당
         self.pBe = pBe
-        return 
+        self.pFile = pFile
+        self.readPending = False
+        self.needRewind = True
+
+        if rc != SQLITE_OK:
+            self.closeCursor()
+
+        return rc
     
     def new(self):
         if self.pFile == None or self.pFile.dbf == None: return 1
@@ -155,8 +197,8 @@ class DbbeCursor:
         return iKey
     
     def put(self, key, data):
-        if self.pFile==0 or self.pFile.dbf==0: return "SQLITE_ERROR"
-        print(key, data)
+        if self.pFile == 0 or self.pFile.dbf == 0:
+            return "SQLITE_ERROR"
         gdbm_store(self.pFile.dbf, key, data, GDBM_REPLACE)
 
     def nextKey(self):
@@ -196,16 +238,16 @@ class DbbeCursor:
     def readKey(self, offset=0):
         # if offset<0 or offset>=len(self.data): return ''
         return self.key
-    
+
     def fetch(self, key):
         self.key = key
         self.data = gdbm_fetch(self.pFile.dbf, key)
         # (TODO) 원본 코드에서는 pCursr->data.dptr!=0 으로 돼있음
         return (self.data!=None)
-    
+
     def test(self, key):
         return gdbm_exists(self.pFile.dbf, key)
-    
+
     # src/dbbe.c
     # int sqliteDbbeDelete(DbbeCursor *pCursr, int nKey, char *pKey)
     def delete(self, key):
@@ -214,7 +256,33 @@ class DbbeCursor:
         rc = gdbm_delete(self.pFile.dbf, key)
         return rc
 
+    def __getFileNameOfTable(self, directory: str, tableName: str):
+        if tableName:
+            return os.path.join(directory, tableName)
+        # TODO : 임시 파일 이름 랜덤 생성
+        return os.path.join(directory, "temp_file")
+
+    def __findExistsCursor(self, pBe: Dbbe, fileName: str):
+        """
+        :param pBe: 현재 데이터베이스의 파일 관리 객체
+        :param fileName: 검색할 파일명 (전체 경로)
+        :return: 파일 커서, 파일이 없다면 None 반환
+        """
+        pFile: BeFile = pBe.pOpen
+        while pFile and pFile.zName != fileName:
+            pFile = pFile.pNext
+
+        return pFile
+
+
 if __name__ == "__main__":
+    c1 = DbbeCursor()
+    c1.openCursor(Dbbe(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'), True), "tableA")
+    c2 = DbbeCursor()
+    c2.openCursor(Dbbe(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'), True), "tableB")
+
+    c1.closeCursor()
+    c2.closeCursor()
     pCursor = DbbeCursor()
     pCursor.openCursor(Dbbe(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'), False), "tableA")
     for _ in range(7):

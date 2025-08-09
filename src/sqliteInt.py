@@ -9,6 +9,13 @@ SRT_Set      = 3
 SRT_Union    = 5  
 SRT_Except   = 6  
 SRT_Table    = 7  
+FN_Unknown   = 0
+FN_Count     = 1
+FN_Min       = 2
+FN_Max       = 3
+FN_Sum       = 4
+FN_Avg       = 5
+FN_Fcnt      = 6
 
 """
     The number of entries in the in-memory hash array holding the database schema.
@@ -233,12 +240,12 @@ class Expr:
     iAgg: int
     pSelect: 'Select'
 
-    def __init__(self, op : int, pLeft : 'Expr', pRight : 'Expr', token : Token, opStr : str = None):
+    def __init__(self, op : int, pLeft : 'Expr', pRight : 'Expr', token : Token, opStr : str = None, pList : 'ExprList' = None):
         self.op = op
         self.pLeft = pLeft
         self.pRight = pRight
         self.token = token or Token("")
-        self.pList = None
+        self.pList = pList
         self.iTable = 0
         self.iColumn = 0
         self.iAgg = 0
@@ -408,7 +415,7 @@ class Parse:
         self.useAgg = 0
 
     def infoReset(self):
-        self.aAgg = 0
+        self.aAgg = None
         self.nAgg = 0
         self.iAggCount = -1
         self.useAgg = 0

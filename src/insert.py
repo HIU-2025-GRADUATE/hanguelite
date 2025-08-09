@@ -1,30 +1,28 @@
+from src.constant import SQLITE_OK
 from src.expr import exprCode
-from src.sqliteInt import Parse, ExprList, Select, IdList, Table
+from src.sqliteInt import Parse, ExprList, Select, IdList, Table, SRT_Table
 from src.vdbe.vdbe import Vdbe
-from src.vdbe.vdbeOp import OP_Open, OP_New, OP_Dup, OP_Null, OP_String, OP_Field, OP_MakeRecord, OP_Put, OP_Goto
+from src.vdbe.vdbeOp import OP_Open, OP_New, OP_Dup, OP_Null, OP_String, OP_Field, OP_MakeRecord, OP_Put, OP_Goto, \
+    OP_Next, OP_Rewind, OP_Noop
+from src.select import select as executeSelect
 
 
 def insert(parse: Parse, tableName: str, exprList: ExprList, select: Select, targetColumns: IdList):
     table: Table = parse.db.findTable(tableName)
-    if not table:
-        parse.nErr += 1
-        raise Exception(f"Table '{tableName}' not found")
 
-    if table.readOnly:
-        parse.nErr += 1
-        raise Exception(f"Table '{tableName}' is read-only")
+    validateTableWrite(table, parse, tableName)
 
     vdbe: Vdbe = parse.getVdbe()
-
     if not vdbe:
         return
 
+    # count column number
     if select:
         srcTable = parse.nTab
         parse.nTab += 1
         vdbe.addOp(OP_Open, srcTable, 1, 0, 0)
-        # TODO : select 구문 실행
-        nGivenColumn = 0 # TEST - select 실행 결과로 얻어와야 함
+        rc = executeSelect(parse, select, SRT_Table, srcTable)
+        nGivenColumn = select.pEList.nExpr
     else:
         srcTable = -1
         nGivenColumn = exprList.nExpr
@@ -51,6 +49,7 @@ def insert(parse: Parse, tableName: str, exprList: ExprList, select: Select, tar
                 parse.nErr += 1
                 raise Exception(f"column '{targetColumns.a[i].zName}' is not in table '{tableName}'")
 
+    # insert
     base = parse.nTab
     vdbe.addOp(OP_Open, base, 1, table.zName, 0)
     # TODO : index 파일 세팅
@@ -58,10 +57,10 @@ def insert(parse: Parse, tableName: str, exprList: ExprList, select: Select, tar
     #     sqliteVdbeAddOp(v, OP_Open, idx + base, 1, pIdx->zName, 0);
     # }
 
-    if srcTable != -1:
-        # sqliteVdbeAddOp(v, OP_Rewind, srcTab, 0, 0, 0);
-        # iBreak = sqliteVdbeMakeLabel(v);
-        # iCont = sqliteVdbeAddOp(v, OP_Next, srcTab, iBreak, 0, 0);
+    if srcTable >= 0:
+        vdbe.addOp(OP_Rewind, srcTable, 0, 0, 0)
+        iBreak = vdbe.makeLabel()
+        iCont = vdbe.addOp(OP_Next, srcTable, iBreak, 0, 0)
         pass
 
     # 레코드 구성
@@ -96,7 +95,16 @@ def insert(parse: Parse, tableName: str, exprList: ExprList, select: Select, tar
     # TODO : index 삽입 데이터 처리
 
     # TODO : table 삽입 시 반복 로직 추가
-    if srcTable != -1:
-        # sqliteVdbeAddOp(v, OP_Goto, 0, iCont, 0, 0);
-        # sqliteVdbeAddOp(v, OP_Noop, 0, 0, 0, iBreak);
-        pass
+    if srcTable >= 0:
+        vdbe.addOp(OP_Goto, 0, iCont, 0, 0)
+        vdbe.addOp(OP_Noop, 0, 0, 0, iBreak)
+
+
+def validateTableWrite(table: Table, parse: Parse, tableName: str):
+    if not table:
+        parse.nErr += 1
+        raise Exception(f"Table '{tableName}' not found")
+
+    if table.readOnly:
+        parse.nErr += 1
+        raise Exception(f"Table '{tableName}' is read-only")

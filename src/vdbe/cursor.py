@@ -11,6 +11,11 @@ from src.dbbe import DbbeCursor
 ** instance of the following structure.
 """
 class Cursor:
-    pCursor = DbbeCursor()  # /* The cursor structure of the backend */
-    index: int           # /* The next index to extract */
-    keyAsData: int       # /* The OP_Field command works on key instead of data */
+    def __init__(self):
+        self.pCursor = DbbeCursor()  # /* The cursor structure of the backend */
+        self.index: int = 0  # /* The next index to extract */
+        self.keyAsData: int = 0  # /* The OP_Field command works on key instead of data */
+
+
+    def __str__(self):
+        return f"cursor for {self.pCursor.pFile.zName}"
