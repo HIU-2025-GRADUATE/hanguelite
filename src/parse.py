@@ -1,4 +1,5 @@
 from ply import yacc
+from src.delete import deleteFrom
 from src.select import *
 from src.insert import *
 from src.tokenizer import tokens
@@ -342,6 +343,7 @@ def p_expr_function_star(p):
 """
 def p_delete_from(p):
     """cmd : TK_DELETE TK_FROM id where_opt"""
+    deleteFrom(pParse, p[3], p[4])
 
 def p_error(p):
     if p:
