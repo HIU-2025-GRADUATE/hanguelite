@@ -337,6 +337,12 @@ def p_expr_function_star(p):
     e.span = Token(p[1] + "(*)")
     p[0] = e
 
+"""
+    DELETE
+"""
+def p_delete_from(p):
+    """cmd : TK_DELETE TK_FROM id where_opt"""
+
 def p_error(p):
     if p:
         print(f"[SYNTAX ERROR] Unexpected token: {p.type} ({p.value}) at line {p.lineno}")
