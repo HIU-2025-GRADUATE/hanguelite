@@ -17,7 +17,11 @@ reserved = {
     'VALUES' : 'TK_VALUES',
     'NULL': 'TK_NULL',
     'GROUP' : 'TK_GROUP',
-    'BY': 'TK_BY'
+    'BY': 'TK_BY',
+    'HAVING' : 'TK_HAVING',
+    'ISNULL' : 'TK_ISNULL',
+    'NOTNULL' : 'TK_NOTNULL',
+    'BETWEEN' : 'TK_BETWEEN'
 }
 
 # 토큰 이름 목록: parse.y에서 사용되는 토큰들과 SQLite의 tokenize.c에 있는 키워드들
