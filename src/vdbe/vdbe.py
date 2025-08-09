@@ -4,6 +4,7 @@ from .vdbeOp import VdbeOp
 from src.vdbe.vdbeOp import *
 from src.vdbe.cursor import *
 from src.vdbe.agg import *
+from src.vdbe.set import *
 from ..constant import SQLITE_INTERNAL, SQLITE_OK
 from ..exception.exception import BadInstruction
 from src.util import *
@@ -66,7 +67,7 @@ class Vdbe:
     # Mem *aMem;         # /* The memory locations */
     self.agg: Agg = Agg()# /* Aggregate information */
     # int nSet;          # /* Number of sets allocated */
-    # Set *aSet;         # /* An array of sets */
+    self.aSet:list[Set] = list()         # /* An array of sets */
     # OP_Fetch 명령어 실행 횟수
     self.nFetch = 0
 
@@ -195,16 +196,10 @@ class Vdbe:
   ** NULLs are converted into an empty string.
   """
   def hardStringify(self, i: int):
-    try:
-      self.aStack[i] = str(float(self.aStack[i]))
-      return
-    except:
-      try:
-        self.aStack[i] = str(int(self.aStack[i]))
-        return
-      except:
-        self.aStack[i] = ""
-        return
+    if self.aStack[i] is None:
+      self.aStack[i] = ""
+    else:
+      self.aStack[i] = str(self.aStack[i])
 
   #define Stringify(P,I) ((P->aStack[I].flags & STK_Str)==0 ? hardStringify(P,I) : 0)
   # static int hardStringify(Vdbe *p, int i){
@@ -237,29 +232,11 @@ class Vdbe:
   #   p->aStack[i].flags &= ~(STK_Str|STK_Dyn);
   # }
 
-  # (TODO) 이하 Integerify, Readlify 부분은 문자열을 정수나 실수로 변환하는 함수이지만
-  # 파이썬에서는 float, int 함수로 대체 가능하기 때문에,,, 생략
-  # /*
-  # ** Convert the given stack entity into a integer if it isn't one
-  # ** already.
-  # **
-  # ** Any prior string or real representation is invalidated.
-  # ** NULLs are converted into 0.
-  # */
-  # #define Integerify(P,I) \
-  #     if(((P)->aStack[(I)].flags&STK_Int)==0){ hardIntegerify(P,I); }
-  # static void hardIntegerify(Vdbe *p, int i){
-  #   if( p->aStack[i].flags & STK_Real ){
-  #     p->aStack[i].i = p->aStack[i].r;
-  #     Release(p, i);
-  #   }else if( p->aStack[i].flags & STK_Str ){
-  #     p->aStack[i].i = atoi(p->zStack[i]);
-  #     Release(p, i);
-  #   }else{
-  #     p->aStack[i].i = 0;
-  #   }
-  #   p->aStack[i].flags = STK_Int;
-  # }
+  def hardIntegerify(self, i : int):
+    try:
+      self.aStack[i] = int(self.aStack[i])
+    except:
+      self.aStack[i] = 0
 
   # /*
   # ** Get a valid Real representation for the given stack element.
@@ -471,11 +448,11 @@ class Vdbe:
         # 스택의 top에서 p1 개의 원소를 삭제제
         elif pOp.opcode == OP_Pop:
           for _ in range(pOp.p1):
-            del self.aStack[-1]
+            self.aStack.pop()
 
         # 스택 위에서 P1 번째 원소를 복제해서 스택의 top에 추가
         elif pOp.opcode == OP_Dup:
-          self.aStack.append(self.aStack[-(pOp.p1+1)])
+          self.aStack.append(self.aStack[-(pOp.p1 + 1)])
 
         # 스택 위에서 P1 번째 스택을 빼서 top에 추가
         # Pull 0 0 0 는 no-op
@@ -613,7 +590,8 @@ class Vdbe:
 
         # 스택의 top 원소에 p1을 더함
         elif pOp.opcode == OP_AddImm:
-          self.aStack[-1]+=pOp.p1
+          self.hardIntegerify(len(self.aStack) - 1)
+          self.aStack[-1] += pOp.p1
 
         # 스택의 top에서 원소 두개를 꺼내서 비교 연산 -> true이면 Goto p2
         # NOS (comp) TOS
@@ -634,12 +612,13 @@ class Vdbe:
           if len(self.aStack) < 2:
             raise RuntimeError("Not Enough Stack Element")
 
-          tos = str(self.aStack[-1])
-          del self.aStack[-1]
-          nos = str(self.aStack[-1])
-          del self.aStack[-1]
+          self.hardStringify(len(self.aStack) - 1)
+          self.hardStringify(len(self.aStack) - 2)
 
-          res = likeCompare(tos, nos)
+          res = likeCompare(self.aStack[-1], self.aStack[-2])
+          self.aStack.pop()
+          self.aStack.pop()
+          
           if pOp.p1:
             res = not res
           if res:
@@ -685,21 +664,16 @@ class Vdbe:
         # */
         # (TODO) 여기를 논리 구조상 Not으로 처리했는데 bitwise Not으로 바꿔야하나?
         elif pOp.opcode == OP_Not:
-          if type(self.aStack[-1]) == str:
-            try:
-              self.aStack[-1] = int(self.aStack[-1])
-            except:
-              self.aStack[-1] = 0
+          self.hardIntegerify(len(self.aStack) - 1)
           self.aStack[-1] = not self.aStack[-1]
 
         elif pOp.opcode == OP_Noop:
           pass
 
         elif pOp.opcode == OP_If:
+          self.hardIntegerify(len(self.aStack) - 1)
           c = self.aStack.pop()
 
-          if type(c) is str:
-            c = len(c)>0
           if c:
             pc = pOp.p2 - 1
 
@@ -1031,13 +1005,36 @@ class Vdbe:
           pass
 
         elif pOp.opcode == OP_SetInsert:
-          pass
+          i = pOp.p1
+          if len(self.aSet) <= i:
+            while len(self.aSet) <= i:
+              self.aSet.append(None)
+            self.aSet[i] = Set()
+
+          if pOp.p3:
+            self.aSet[i].setInsert(pOp.p3)
+          else:
+            self.hardStringify(len(self.aStack) - 1)
+            self.aSet[i].setInsert(self.aStack[-1])
+            self.aStack.pop()
 
         elif pOp.opcode == OP_SetFound:
-          pass
+          i = pOp.p1
+          self.hardStringify(len(self.aStack) - 1)
+
+          if 0 <= i < len(self.aSet) and self.aSet[i].setTest(self.aStack[-1]):
+            pc = pOp.p2 - 1
+
+          self.aStack.pop()
 
         elif pOp.opcode == OP_SetNotFound:
-          pass
+          i = pOp.p1
+          self.hardStringify(len(self.aStack) - 1)
+
+          if 0 <= i < len(self.aSet) and not self.aSet[i].setTest(self.aStack[-1]):
+            pc = pOp.p2 - 1
+
+          self.aStack.pop()
 
         pc+=1
 
