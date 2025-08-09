@@ -54,7 +54,7 @@ def likeCompare(pattern : str, target : str):
             if j >= len(target):
                 return 0
         else:
-            if j >= len(target) or c != target[j].lower:
+            if j >= len(target) or c != target[j].lower():
                 return 0
         i += 1
         j += 1
