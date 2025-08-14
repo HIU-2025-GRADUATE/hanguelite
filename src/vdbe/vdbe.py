@@ -4,7 +4,6 @@ from .vdbeOp import VdbeOp
 from src.vdbe.vdbeOp import *
 from src.vdbe.cursor import *
 from src.vdbe.agg import *
-from src.vdbe.set import *
 from ..constant import SQLITE_INTERNAL, SQLITE_OK
 from ..exception.exception import BadInstruction
 from src.util import *
@@ -67,7 +66,7 @@ class Vdbe:
     # Mem *aMem;         # /* The memory locations */
     self.agg: Agg = Agg()# /* Aggregate information */
     # int nSet;          # /* Number of sets allocated */
-    self.aSet:list[Set] = list()         # /* An array of sets */
+    self.aSet:list[set] = list()         # /* An array of sets */
     # OP_Fetch 명령어 실행 횟수
     self.nFetch = 0
 
@@ -1009,20 +1008,20 @@ class Vdbe:
           if len(self.aSet) <= i:
             while len(self.aSet) <= i:
               self.aSet.append(None)
-            self.aSet[i] = Set()
+            self.aSet[i] = set()
 
           if pOp.p3:
-            self.aSet[i].setInsert(pOp.p3)
+            self.aSet[i].add(pOp.p3.lower())
           else:
             self.hardStringifyAt(len(self.aStack) - 1)
-            self.aSet[i].setInsert(self.aStack[-1])
+            self.aSet[i].add(self.aStack[-1].lower())
             self.aStack.pop()
 
         elif pOp.opcode == OP_SetFound:
           i = pOp.p1
           self.hardStringifyAt(len(self.aStack) - 1)
 
-          if 0 <= i < len(self.aSet) and self.aSet[i].setTest(self.aStack[-1]):
+          if 0 <= i < len(self.aSet) and self.aStack[-1].lower() in self.aSet[i]:
             pc = pOp.p2 - 1
 
           self.aStack.pop()
@@ -1031,7 +1030,7 @@ class Vdbe:
           i = pOp.p1
           self.hardStringifyAt(len(self.aStack) - 1)
 
-          if 0 <= i < len(self.aSet) and not self.aSet[i].setTest(self.aStack[-1]):
+          if 0 <= i < len(self.aSet) and not self.aStack[-1].lower() in self.aSet[i]:
             pc = pOp.p2 - 1
 
           self.aStack.pop()
