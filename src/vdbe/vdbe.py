@@ -195,14 +195,14 @@ class Vdbe:
   **
   ** NULLs are converted into an empty string.
   """
-  def hardStringify(self, i: int):
+  def hardStringifyAt(self, i: int):
     if self.aStack[i] is None:
       self.aStack[i] = ""
     else:
       self.aStack[i] = str(self.aStack[i])
 
-  #define Stringify(P,I) ((P->aStack[I].flags & STK_Str)==0 ? hardStringify(P,I) : 0)
-  # static int hardStringify(Vdbe *p, int i){
+  #define Stringify(P,I) ((P->aStack[I].flags & STK_Str)==0 ? hardStringifyAt(P,I) : 0)
+  # static int hardStringifyAt(Vdbe *p, int i){
   #   char zBuf[30];
   #   int fg = p->aStack[i].flags;
   #   if( fg & STK_Real ){
@@ -232,7 +232,7 @@ class Vdbe:
   #   p->aStack[i].flags &= ~(STK_Str|STK_Dyn);
   # }
 
-  def hardIntegerify(self, i : int):
+  def hardIntegerifyAt(self, i : int):
     try:
       self.aStack[i] = int(self.aStack[i])
     except:
@@ -244,7 +244,7 @@ class Vdbe:
   # ** Any prior string or integer representation is retained.
   # ** NULLs are converted into 0.0.
   # */
-  def hardRealify(self, i : int):
+  def hardRealifyAt(self, i : int):
     try:
       self.aStack[i] = float(self.aStack[i])
     except:
@@ -508,8 +508,8 @@ class Vdbe:
               a = int(a)
               b = int(b)
             except:
-              self.hardRealify(len(self.aStack) - 1)
-              self.hardRealify(len(self.aStack) - 2)
+              self.hardRealifyAt(len(self.aStack) - 1)
+              self.hardRealifyAt(len(self.aStack) - 2)
               a = self.aStack[-1]
               b = self.aStack[-2]
 
@@ -548,8 +548,8 @@ class Vdbe:
             copy = float(tos) > float(nos)
 
           else:
-            self.hardStringify(len(self.aStack) - 1)
-            self.hardStringify(len(self.aStack) - 2)
+            self.hardStringifyAt(len(self.aStack) - 1)
+            self.hardStringifyAt(len(self.aStack) - 2)
             copy = compare(self.aStack[-1], self.aStack[-2]) > 0
 
           if copy:
@@ -579,8 +579,8 @@ class Vdbe:
             copy = float(tos) < float(nos)
 
           else:
-            self.hardStringify(len(self.aStack) - 1)
-            self.hardStringify(len(self.aStack) - 2)
+            self.hardStringifyAt(len(self.aStack) - 1)
+            self.hardStringifyAt(len(self.aStack) - 2)
             copy = compare(self.aStack[-1], self.aStack[-2]) < 0
 
           if copy:
@@ -590,7 +590,7 @@ class Vdbe:
 
         # 스택의 top 원소에 p1을 더함
         elif pOp.opcode == OP_AddImm:
-          self.hardIntegerify(len(self.aStack) - 1)
+          self.hardIntegerifyAt(len(self.aStack) - 1)
           self.aStack[-1] += pOp.p1
 
         # 스택의 top에서 원소 두개를 꺼내서 비교 연산 -> true이면 Goto p2
@@ -612,8 +612,8 @@ class Vdbe:
           if len(self.aStack) < 2:
             raise RuntimeError("Not Enough Stack Element")
 
-          self.hardStringify(len(self.aStack) - 1)
-          self.hardStringify(len(self.aStack) - 2)
+          self.hardStringifyAt(len(self.aStack) - 1)
+          self.hardStringifyAt(len(self.aStack) - 2)
 
           res = likeCompare(self.aStack[-1], self.aStack[-2])
           self.aStack.pop()
@@ -664,14 +664,14 @@ class Vdbe:
         # */
         # (TODO) 여기를 논리 구조상 Not으로 처리했는데 bitwise Not으로 바꿔야하나?
         elif pOp.opcode == OP_Not:
-          self.hardIntegerify(len(self.aStack) - 1)
+          self.hardIntegerifyAt(len(self.aStack) - 1)
           self.aStack[-1] = not self.aStack[-1]
 
         elif pOp.opcode == OP_Noop:
           pass
 
         elif pOp.opcode == OP_If:
-          self.hardIntegerify(len(self.aStack) - 1)
+          self.hardIntegerifyAt(len(self.aStack) - 1)
           c = self.aStack.pop()
 
           if c:
@@ -1014,13 +1014,13 @@ class Vdbe:
           if pOp.p3:
             self.aSet[i].setInsert(pOp.p3)
           else:
-            self.hardStringify(len(self.aStack) - 1)
+            self.hardStringifyAt(len(self.aStack) - 1)
             self.aSet[i].setInsert(self.aStack[-1])
             self.aStack.pop()
 
         elif pOp.opcode == OP_SetFound:
           i = pOp.p1
-          self.hardStringify(len(self.aStack) - 1)
+          self.hardStringifyAt(len(self.aStack) - 1)
 
           if 0 <= i < len(self.aSet) and self.aSet[i].setTest(self.aStack[-1]):
             pc = pOp.p2 - 1
@@ -1029,7 +1029,7 @@ class Vdbe:
 
         elif pOp.opcode == OP_SetNotFound:
           i = pOp.p1
-          self.hardStringify(len(self.aStack) - 1)
+          self.hardStringifyAt(len(self.aStack) - 1)
 
           if 0 <= i < len(self.aSet) and not self.aSet[i].setTest(self.aStack[-1]):
             pc = pOp.p2 - 1
