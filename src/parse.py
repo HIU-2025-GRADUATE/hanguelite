@@ -125,13 +125,13 @@ def p_ins_col_list_one(p):
 def p_item_list(p):
     """itemlist : itemlist TK_COMMA item"""
     exprList: ExprList = p[1]
-    exprList.exprListAppend(p[3], None)
+    exprList.append(p[3], None)
     p[0] = exprList
 
 def p_item_list_one(p):
     """itemlist : item"""
     exprList = ExprList()
-    exprList.exprListAppend(p[1], None)
+    exprList.append(p[1], None)
     p[0] = exprList
 
 def p_item_int(p):
@@ -191,7 +191,7 @@ def p_selcollist(p):
     """selcollist : sclp expr"""
     if p[1] is None:
         p[1] = ExprList()
-    p[1].exprListAppend(p[2], None)
+    p[1].append(p[2], None)
     p[0] = p[1]
 
 def p_sclp_comma(p):
@@ -245,13 +245,13 @@ def p_having_opt(p):
 
 def p_exprlist_comma(p):
     """exprlist : exprlist TK_COMMA expritem"""
-    p[1].exprListAppend(p[3], None)
+    p[1].append(p[3], None)
     p[0] = p[1]
 
 def p_exprlist(p):
     """exprlist : expritem"""
     exprList = ExprList()
-    exprList.exprListAppend(p[1], None)
+    exprList.append(p[1], None)
     p[0] = exprList
 
 def p_expritem(p):
@@ -313,8 +313,8 @@ def p_expr_not_null(p):
 def p_expr_between(p):
     """expr : expr TK_BETWEEN expr TK_AND expr"""
     exprList = ExprList()
-    exprList.exprListAppend(p[3], None)
-    exprList.exprListAppend(p[5], None)
+    exprList.append(p[3], None)
+    exprList.append(p[5], None)
     e = Expr(op=TK_BETWEEN, pLeft=p[1], pRight=None, token=None, pList=exprList)
     e.span = Token(p[1].span.z + " BETWEEN " + p[3].span.z + " AND " + p[5].span.z)
     p[0] = e
@@ -322,8 +322,8 @@ def p_expr_between(p):
 def p_expr_not_between(p):
     """expr : expr TK_NOT TK_BETWEEN expr TK_AND expr"""
     exprList = ExprList()
-    exprList.exprListAppend(p[4], None)
-    exprList.exprListAppend(p[6], None)
+    exprList.append(p[4], None)
+    exprList.append(p[6], None)
     e = Expr(op=TK_BETWEEN, pLeft=p[1], pRight=None, token=None, pList=exprList)
     e = Expr(TK_NOT, e, None, None)
     e.span = Token(p[1].span.z + " NOT BETWEEN " + p[4].span.z + " AND " + p[6].span.z)

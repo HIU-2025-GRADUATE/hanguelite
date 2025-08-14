@@ -33,7 +33,7 @@ def fillInColumnList(pParse : Parse, p : Select):
 
         if pEList is None:
             pEList = ExprList()
-        pEList.exprListAppend(pExpr, None);
+        pEList.append(pExpr, None);
       
     
     p.pEList = pEList;

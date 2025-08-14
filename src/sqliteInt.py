@@ -280,7 +280,7 @@ class ExprList:
         self.a = []
         self.nExpr = 0
     
-    def exprListAppend(self, pExpr : Expr, pName : Token):
+    def append(self, pExpr : Expr, pName : Token):
         item = ExprListItem()
         item.pExpr = pExpr
         item.zName = ""
