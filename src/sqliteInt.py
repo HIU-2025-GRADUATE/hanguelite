@@ -320,6 +320,13 @@ class IdList:
 
         self.nId += 1
 
+    def addAlias(self, pToken: Token):
+        if self.nId > 0:
+            if pToken.z[0] in ("'", '"'):
+                pToken.z = pToken.z[1:-1].replace(pToken.z[0] * 2, pToken.z[0])
+            
+            self.a[-1].zAlias = pToken.z
+
 
 class WhereInfo:
     pParse: 'Parse'
