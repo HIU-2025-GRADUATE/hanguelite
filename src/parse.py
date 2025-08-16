@@ -211,12 +211,26 @@ def p_stl_prefix_empty(p):
     # Empty production for stl_prefix, return 0.
     p[0] = None
 
+def p_stl_prefix(p):
+    """stl_prefix : seltablist TK_COMMA"""
+    # Empty production for stl_prefix, return 0.
+    p[0] = p[1]
+
 def p_seltablist(p):
     """seltablist : stl_prefix id"""
     # Append the identifier to the prefix list.
     if p[1] is None:
         p[1] = IdList()
     p[1].idListAppend(p[2])
+    p[0] = p[1]
+
+def p_seltablist_alias(p):
+    """seltablist : stl_prefix id TK_AS id"""
+    # Append the identifier to the prefix list.
+    if p[1] is None:
+        p[1] = IdList()
+    p[1].idListAppend(p[2])
+    p[1].addAlias(p[4])
     p[0] = p[1]
 
 def p_where_opt_empty(p):
@@ -336,6 +350,12 @@ def p_expr_function_star(p):
     e = Expr(op=TK_FUNCTION, pLeft=None, pRight=None, token=Token(p[1]))
     e.span = Token(p[1] + "(*)")
     p[0] = e
+
+def p_expr_dot(p):
+    """expr : id TK_DOT id"""
+    e1 = Expr(TK_ID, None, None, p[1])
+    e2 = Expr(TK_ID, None, None, p[3])
+    p[0] = Expr(TK_DOT, e1, e2, None, p[2])
 
 def p_error(p):
     if p:
