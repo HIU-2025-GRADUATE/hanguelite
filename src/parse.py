@@ -337,6 +337,10 @@ def p_expr_function_star(p):
     e.span = Token(p[1] + "(*)")
     p[0] = e
 
+def p_drop_table(p):
+    """cmd : TK_DROP TK_TABLE id"""
+    dropTable(pParse, p[3])
+
 def p_error(p):
     if p:
         print(f"[SYNTAX ERROR] Unexpected token: {p.type} ({p.value}) at line {p.lineno}")

@@ -128,3 +128,6 @@ def addColumn(parse: Parse, columnName: Token):
     column = Column(columnName.z)
     table.aCol.append(column)
     table.nCol += 1
+
+def dropTable(parse: Parse, tableName: Token):
+    pass
