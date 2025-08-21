@@ -66,6 +66,18 @@ class Index:
         self.isUnique = 0
         self.pNext = None
 
+class Token:
+    z: str
+    n: int
+
+    def __init__(self, token: str):
+        self.z = token
+        self.n = len(token)
+
+    def __str__(self):
+        return self.z
+
+
 class sqlite:
     pBe: Dbbe
     flags: int
@@ -101,7 +113,6 @@ class sqlite:
             return None
 
         return db
-
 
     def findTable(self, tableName: str) -> Table:
         h = hashNoCase(tableName, 0) % N_HASH
@@ -148,8 +159,6 @@ class sqlite:
         # execute master table create sql
         from main import runParser
         return runParser(parse, argv[0])
-
-
 
     def initialize(self):
         """ main.c : sqliteInit() """
@@ -214,18 +223,6 @@ class sqlite:
             self.flags |= SQLITE_Initialized
 
         return rc
-
-
-class Token:
-    z: str
-    n: int
-
-    def __init__(self, token: str):
-        self.z = token
-        self.n = len(token)
-
-    def __str__(self):
-        return self.z
 
 
 class Expr:
@@ -428,6 +425,15 @@ class Parse:
             self.pVdbe = v
 
         return v
+
+    def getTableFromToken(self, tableName: Token):
+        table: Table = self.db.findTable(tableName.z)
+
+        if not table:
+            print(f"no such table: {tableName.z}")
+            return
+
+        return table
 
     @staticmethod
     def empty():
