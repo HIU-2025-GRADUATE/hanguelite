@@ -1269,3 +1269,5 @@ def opcode(zName: str) -> int:
 #   return 0;
 # }
 
+def ADDR(x: int):
+  return -1-x
