@@ -18,6 +18,11 @@ reserved = {
     'NULL': 'TK_NULL',
     'GROUP' : 'TK_GROUP',
     'BY': 'TK_BY',
+    'HAVING' : 'TK_HAVING',
+    'ISNULL' : 'TK_ISNULL',
+    'NOTNULL' : 'TK_NOTNULL',
+    'BETWEEN' : 'TK_BETWEEN',
+    'DROP': 'TK_DROP',
     'ORDER' : 'TK_ORDER',
     'ASC' : 'TK_ASC',
     'DESC' : 'TK_DESC'

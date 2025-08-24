@@ -14,7 +14,7 @@ precedence = (
     ('left', 'TK_OR'),
     ('left', 'TK_AND'),
     ('right', 'TK_NOT'),
-    ('left', 'TK_EQ', 'TK_NE', 'TK_LIKE'),
+    ('left', 'TK_EQ', 'TK_NE', 'TK_ISNULL', 'TK_NOTNULL', 'TK_LIKE', 'TK_BETWEEN', 'TK_IN'),
     ('left', 'TK_GT', 'TK_GE', 'TK_LT', 'TK_LE'),
 )
 
@@ -125,13 +125,13 @@ def p_ins_col_list_one(p):
 def p_item_list(p):
     """itemlist : itemlist TK_COMMA item"""
     exprList: ExprList = p[1]
-    exprList.exprListAppend(p[3], None)
+    exprList.append(p[3], None)
     p[0] = exprList
 
 def p_item_list_one(p):
     """itemlist : item"""
     exprList = ExprList()
-    exprList.exprListAppend(p[1], None)
+    exprList.append(p[1], None)
     p[0] = exprList
 
 def p_item_int(p):
@@ -180,7 +180,7 @@ def p_select(p):
 def p_oneselect(p):
     """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt orderby_opt"""
     # Create a new SELECT structure using the parsed select list and from clause.
-    p[0] = Select(p[2], p[3], p[4], p[5], None, p[7], 0)
+    p[0] = Select(p[2], p[3], p[4], p[5], p[6], p[7], 0)
 
 def p_selcollist_star(p):
     """selcollist : TK_STAR"""
@@ -191,7 +191,7 @@ def p_selcollist(p):
     """selcollist : sclp expr"""
     if p[1] is None:
         p[1] = ExprList()
-    p[1].exprListAppend(p[2], None)
+    p[1].append(p[2], None)
     p[0] = p[1]
 
 def p_sclp_comma(p):
@@ -235,6 +235,14 @@ def p_groupby_opt(p):
     """groupby_opt : TK_GROUP TK_BY exprlist"""
     p[0] = p[3] 
 
+def p_having_opt_empty(p):
+    """having_opt :"""
+    p[0] = None  
+
+def p_having_opt(p):
+    """having_opt : TK_HAVING expr"""
+    p[0] = p[2] 
+
 def p_orderby_opt_empty(p):
     """orderby_opt :"""
     p[0] = None  
@@ -274,13 +282,13 @@ def p_sortorder_empty(p):
 
 def p_exprlist_comma(p):
     """exprlist : exprlist TK_COMMA expritem"""
-    p[1].exprListAppend(p[3], None)
+    p[1].append(p[3], None)
     p[0] = p[1]
 
 def p_exprlist(p):
     """exprlist : expritem"""
     exprList = ExprList()
-    exprList.exprListAppend(p[1], None)
+    exprList.append(p[1], None)
     p[0] = exprList
 
 def p_expritem(p):
@@ -326,6 +334,57 @@ def p_expr_eq(p):
 def p_expr_like(p):
     """expr : expr TK_LIKE expr"""
     p[0] = Expr(TK_LIKE, p[1], p[3], None, p[2])
+
+def p_expr_is_null(p):
+    """expr : expr TK_ISNULL"""
+    e = Expr(TK_ISNULL, p[1], None, None)
+    e.span = Token(p[1].span.z + " " + p[2])
+    p[0] = e
+
+def p_expr_not_null(p):
+    """expr : expr TK_NOTNULL"""
+    e = Expr(TK_NOTNULL, p[1], None, None)
+    e.span = Token(p[1].span.z + " " + p[2])
+    p[0] = e
+
+def p_expr_between(p):
+    """expr : expr TK_BETWEEN expr TK_AND expr"""
+    exprList = ExprList()
+    exprList.append(p[3], None)
+    exprList.append(p[5], None)
+    e = Expr(op=TK_BETWEEN, pLeft=p[1], pRight=None, token=None, pList=exprList)
+    e.span = Token(p[1].span.z + " BETWEEN " + p[3].span.z + " AND " + p[5].span.z)
+    p[0] = e
+
+def p_expr_not_between(p):
+    """expr : expr TK_NOT TK_BETWEEN expr TK_AND expr"""
+    exprList = ExprList()
+    exprList.append(p[4], None)
+    exprList.append(p[6], None)
+    e = Expr(op=TK_BETWEEN, pLeft=p[1], pRight=None, token=None, pList=exprList)
+    e = Expr(TK_NOT, e, None, None)
+    e.span = Token(p[1].span.z + " NOT BETWEEN " + p[4].span.z + " AND " + p[6].span.z)
+    p[0] = e
+
+def p_expr_in(p):
+    """expr : expr TK_IN TK_LP exprlist TK_RP"""
+    e = Expr(op=TK_IN, pLeft=p[1], pRight=None, token=None, pList=p[4])
+    result = ','.join(item.pExpr.span.z for item in p[4].a if item.pExpr and item.pExpr.span)
+    e.span = Token(p[1].span.z + " IN (" + result + ")")
+    p[0] = e
+
+def p_expr_not_in(p):
+    """expr : expr TK_NOT TK_IN TK_LP exprlist TK_RP"""
+    e = Expr(op=TK_IN, pLeft=p[1], pRight=None, token=None, pList=p[5])
+    e = Expr(TK_NOT, e, None, None)
+    result = ','.join(item.pExpr.span.z for item in p[5].a if item.pExpr and item.pExpr.span)
+    e.span = Token(p[1].span.z + " NOT IN (" + result + ")")
+    p[0] = e
+
+def p_expr_par(p):
+    """expr : TK_LP expr TK_RP"""
+    p[1].span = Token("(" + p[1].span.z + ")")
+    p[0] = p[1]
 
 def p_expr_integer(p):
     """expr : TK_INTEGER"""
@@ -373,6 +432,10 @@ def p_expr_function_star(p):
     e = Expr(op=TK_FUNCTION, pLeft=None, pRight=None, token=Token(p[1]))
     e.span = Token(p[1] + "(*)")
     p[0] = e
+
+def p_drop_table(p):
+    """cmd : TK_DROP TK_TABLE id"""
+    dropTable(pParse, p[3])
 
 def p_error(p):
     if p:

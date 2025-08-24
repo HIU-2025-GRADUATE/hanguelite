@@ -68,6 +68,40 @@ def exprResolveIds(pParse : Parse, pTabList : IdList, pExpr : Expr):
         pExpr.pLeft = None
         pExpr.pRight = None
         pExpr.op = TK_COLUMN
+
+    elif pExpr.op == TK_IN:
+        v = pParse.pVdbe
+        if v is None:
+            v = pParse.pVdbe = Vdbe(pParse.db.pBe)
+
+        if exprResolveIds(pParse, pTabList, pExpr.pLeft):
+            return 1
+        
+        # if pExpr.pSelect:
+        #     v.addOp(OP_Open, pExpr.iTable, 1, None, 0)
+        #     if select(pParse, pExpr.pSelect, SRT_Set, pExpr.iTable)
+        if pExpr.pList:
+            iSet = pExpr.iTable = pParse.nSet
+            pParse.nSet += 1
+
+            for i in range(pExpr.pList.nExpr):
+                pE2 = pExpr.pList.a[i].pExpr
+                if not isConstant(pE2):
+                    # sqliteSetString(pParse.zErrMsg, "right-hand side of IN operator must be constant", None)
+                    pParse.nErr += 1
+                    return 1
+                if exprCheck(pParse, pE2, 0, None):
+                    return 1
+
+            for i in range(pExpr.pList.nExpr):
+                pE2 = pExpr.pList.a[i].pExpr
+                if pE2.op in (TK_FLOAT, TK_INTEGER, TK_STRING):
+                    addr = v.addOp(OP_SetInsert, iSet, 0, pE2.token.z, 0)
+                    v.dequoteP3(addr)
+                else:
+                    exprCode(pParse, pE2)
+                    v.addOp(OP_SetInsert, iSet, 0, None, 0)
+
     else:
         if pExpr.pLeft and exprResolveIds(pParse, pTabList, pExpr.pLeft):
             return 1
@@ -104,6 +138,10 @@ def exprCode(pParse : Parse, pExpr : Expr):
         op = OP_Like
     elif pExpr.op == TK_NOT:   
         op = OP_Not        
+    elif pExpr.op == TK_ISNULL:   
+        op = OP_IsNull
+    elif pExpr.op == TK_NOTNULL:   
+        op = OP_NotNull 
 
     if pExpr.op == TK_COLUMN:
         if pParse.useAgg:
@@ -142,6 +180,13 @@ def exprCode(pParse : Parse, pExpr : Expr):
         exprCode(pParse, pExpr.pLeft)
         v.addOp(op, 0, 0, 0, 0)
 
+    elif pExpr.op in (TK_ISNULL, TK_NOTNULL):
+        v.addOp(OP_Integer, 1, 0, None, 0)
+        exprCode(pParse, pExpr.pLeft)
+        dest = v.currentAddr() + 2
+        v.addOp(op, 0, dest, None, 0)
+        v.addOp(OP_AddImm, -1, 0, None, 0)
+
     elif pExpr.op == TK_SELECT:
         v.addOp(OP_MemLoad, pExpr.iColumn, 0, 0, 0)
 
@@ -165,6 +210,23 @@ def exprCode(pParse : Parse, pExpr : Expr):
                 if i > 0:
                     v.addOp(op, 0, 0, None, 0)
 
+    elif pExpr.op == TK_IN:
+        v.addOp(OP_Integer, 1, 0, None, 0)
+        exprCode(pParse, pExpr.pLeft)
+        addr = v.currentAddr()
+        if pExpr.pSelect:
+            v.addOp(OP_Found, pExpr.iTable, addr + 2, None, 0)
+        else:
+            v.addOp(OP_SetFound, pExpr.iTable, addr + 2, None, 0)
+        v.addOp(OP_AddImm, -1, 0, None, 0)
+
+    elif pExpr.op == TK_BETWEEN:
+        lbl = v.makeLabel()
+        v.addOp(OP_Integer, 0, 0, None, 0)
+        exprIfFalse(pParse, pExpr, lbl)
+        v.addOp(OP_AddImm, 1, 0, None, 0)
+        v.resolveLabel(lbl)
+
 def exprIfTrue(pParse : Parse, pExpr : Expr, dest : int):
     v = pParse.pVdbe
     op = 0
@@ -183,6 +245,10 @@ def exprIfTrue(pParse : Parse, pExpr : Expr, dest : int):
         op = OP_Eq
     elif pExpr.op == TK_LIKE:    
         op = OP_Like
+    elif pExpr.op == TK_ISNULL:     
+        op = OP_IsNull
+    elif pExpr.op == TK_NOTNULL:   
+        op = OP_NotNull
 
     if pExpr.op == TK_AND:
         d2 = v.makeLabel()
@@ -202,9 +268,31 @@ def exprIfTrue(pParse : Parse, pExpr : Expr, dest : int):
         exprCode(pParse, pExpr.pRight)
         v.addOp(op, 0, dest, 0, 0)
 
+    elif pExpr.op in (TK_ISNULL, TK_NOTNULL):
+        exprCode(pParse, pExpr.pLeft)
+        v.addOp(op, 0, dest, None, 0)
+
+    elif pExpr.op == TK_IN:
+        exprCode(pParse, pExpr.pLeft)
+        if pExpr.pSelect:
+            v.addOp(OP_Found, pExpr.iTable, dest, None, 0)
+        else:
+            v.addOp(OP_SetFound, pExpr.iTable, dest, None, 0)
+
+    elif pExpr.op == TK_BETWEEN:
+        lbl = v.makeLabel()
+        exprCode(pParse, pExpr.pLeft)
+        v.addOp(OP_Dup, 0, 0, None, 0)
+        exprCode(pParse, pExpr.pList.a[0].pExpr)
+        v.addOp(OP_Lt, 0, lbl, None, 0)
+        exprCode(pParse, pExpr.pList.a[1].pExpr)
+        v.addOp(OP_Le, 0, dest, None, 0)
+        v.addOp(OP_Integer, 0, 0, None, 0)
+        v.addOp(OP_Pop, 1, 0, None, lbl)
+
     else:
         exprCode(pParse, pExpr)
-        v.addOp(OP_If, 0, dest, 0, 0)
+        v.addOp(OP_If, 0, dest, None, 0)
 
 def exprIfFalse(pParse : Parse, pExpr : Expr, dest : int):
     v = pParse.pVdbe
@@ -224,6 +312,10 @@ def exprIfFalse(pParse : Parse, pExpr : Expr, dest : int):
         op = OP_Ne
     elif pExpr.op == TK_LIKE:   
         op = OP_Like
+    elif pExpr.op == TK_ISNULL:     
+        op = OP_NotNull
+    elif pExpr.op == TK_NOTNULL:   
+        op = OP_IsNull
 
     if pExpr.op == TK_AND:
         exprIfFalse(pParse, pExpr.pLeft, dest)
@@ -248,10 +340,32 @@ def exprIfFalse(pParse : Parse, pExpr : Expr, dest : int):
         exprCode(pParse, pExpr.pRight)
         v.addOp(op, 1, dest, 0, 0)
 
+    elif pExpr.op in (TK_ISNULL, TK_NOTNULL):
+        exprCode(pParse, pExpr.pLeft)
+        v.addOp(op, 0, dest, None, 0)
+
+    elif pExpr.op == TK_IN:
+        exprCode(pParse, pExpr.pLeft)
+        if pExpr.pSelect:
+            v.addOp(OP_NotFound, pExpr.iTable, dest, None, 0)
+        else:
+            v.addOp(OP_SetNotFound, pExpr.iTable, dest, None, 0)
+
+    elif pExpr.op == TK_BETWEEN:
+        exprCode(pParse, pExpr.pLeft)
+        v.addOp(OP_Dup, 0, 0, None, 0)
+        exprCode(pParse, pExpr.pList.a[0].pExpr)
+        addr = v.currentAddr()
+        v.addOp(OP_Ge, 0, addr + 3, None, 0)
+        v.addOp(OP_Pop, 1, 0, None, 0)
+        v.addOp(OP_Goto, 0, dest, None, 0)
+        exprCode(pParse, pExpr.pList.a[1].pExpr)
+        v.addOp(OP_Gt, 0, dest, None, 0)
+
     else:
         exprCode(pParse, pExpr)
-        v.addOp(OP_Not, 0, 0, 0, 0)
-        v.addOp(OP_If, 0, dest, 0, 0)
+        v.addOp(OP_Not, 0, 0, None, 0)
+        v.addOp(OP_If, 0, dest, None, 0)
 
 def exprCheck(pParse: Parse, pExpr: Expr, allowAgg: int, pIsAgg: list[int]):
     nErr = 0
@@ -451,4 +565,18 @@ def exprCompare(pA: Expr, pB: Expr):
         if pA.token.z.lower() != pB.token.z.lower():
             return False
 
+    return True
+
+def isConstant(p: Expr):
+    if p.op in (TK_ID, TK_COLUMN, TK_DOT):
+        return False
+    else:
+        if p.pLeft and not isConstant(p.pLeft):
+            return False
+        if p.pRight and not isConstant(p.pRight):
+            return False
+        if p.pList:
+            for i in range(p.pList.nExpr):
+                if not isConstant(p.pList.a[i].pExpr):
+                    return False
     return True
