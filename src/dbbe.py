@@ -1,6 +1,7 @@
 import csv, os, random, time, logging
 from src.gdbm import *
 from src.constant import MASTER_NAME, SQLITE_OK, SQLITE_READONLY, SQLITE_PERM, SQLITE_BUSY
+from src.util import *
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -40,6 +41,9 @@ class Dbbe:
         # 열린 파일 리스트 (BeFile 끼리의 연결 리스트)
         self.pOpen: BeFile = None
         # self.rc4 = rc4init()
+
+        # 열려있는 temporary file 목록
+        self.apTemp = list()
 
     def __del__(self):
         del self.zDir
@@ -84,6 +88,70 @@ class Dbbe:
         """
 
         return Dbbe(databaseName, writeFlag)
+    
+    # void sqliteDbbeCloseTempFile(Dbbe *pBe, FILE *f)
+    # Vdbe 클래스 내부의 mutable list Vdbe.apList에 접근하기 위해 인터페이스 수정
+    # openTempFile로 열었던 temporary file을 close
+    def closeTempFile(self, apList, idx):
+        for i in range(len(self.apTemp)):
+            if self.apTemp[i] == apList[idx]:
+                absPath = os.path.abspath(apList[idx].name)
+                self.apTemp[i].close()
+                self.apTemp[i] = 0
+                apList[idx].close()
+                apList[idx] = 0
+                os.unlink(absPath)
+                break
+
+    # int sqliteDbbeOpenTempFile(Dbbe *pBe, FILE **ppFile)
+    # Vdbe 클래스 내부의 mutable list Vdbe.apList에 접근하기 위해 인터페이스 수정
+    # temporary 파일 open, 종료 시에 반드시 삭제되어야함
+    def openTempFile(self, apList, idx):
+        rc = SQLITE_OK
+
+        i=0
+        for j in range(0, len(self.apTemp)):
+            if self.apTemp[j]==0:
+                i=j
+                break
+
+        if i >= len(self.apTemp):
+            self.apTemp.append(0)
+
+        while True:
+            randNum = ''.join(str(random.randint(0, 9)) for _ in range(16))
+            zFile = "_temp_file_"+randNum
+            if zFile not in os.listdir(self.zDir):
+                break
+
+        zFile = os.path.join(self.zDir, zFile)
+        apList[idx] = open(zFile, 'w', encoding='utf-8')
+        self.apTemp[i] = apList[idx]
+
+        if self.apTemp == 0:
+            rc = SQLITE_ERROR
+
+        return rc
+        
+    
+    # static char *sqliteFileOfTable(Dbbe *pBe, const char *zTable)
+    # SQL table 이름 혹은 인덱스 값에 해당하는 file 이름으로 변환함
+    def fileOfTable(self, zTable):
+        fileList = os.listdir(self.zDir)
+        if zTable+'.dat' in fileList:
+            zFile = os.path.join(self.zDir, zTable)
+        else:
+            zFile = None
+        return zFile
+
+    # 테이블 명이 zTable에 해당하는 파일을 디스크에서 삭제
+    def dropTable(self, zTable):
+        zFile = self.fileOfTable(zTable)
+        if zFile is None:
+            return
+        for ext in ['.bak', '.dat', '.dir']:
+            os.unlink(zFile + ext)
+        del zFile
 
 class DbbeCursor:
     def __init__(self):

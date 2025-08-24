@@ -128,3 +128,54 @@ def addColumn(parse: Parse, columnName: Token):
     column = Column(columnName.z)
     table.aCol.append(column)
     table.nCol += 1
+
+def dropTable(parse: Parse, tableName: Token):
+    table: Table = parse.getTableFromToken(tableName)
+    if not table:
+        return
+    if table.readOnly:
+        raise Exception(f"table '{table.zName}' is read-only")
+
+    vdbe = parse.getVdbe()
+    if not vdbe:
+        return
+
+    dropTableOps = [
+        VdbeOp( OP_Open, 0, 1, MASTER_NAME ),
+        VdbeOp( OP_ListOpen, 0, 0 ),
+        VdbeOp(OP_String, 0, 0, table.zName ),
+        VdbeOp(OP_Next, 0, ADDR(10)),
+        VdbeOp(OP_Dup, 0, 0),
+        VdbeOp(OP_Field, 0, 2),
+        VdbeOp(OP_Ne, 0, ADDR(3)),
+        VdbeOp(OP_Key, 0, 0),
+        VdbeOp(OP_ListWrite, 0, 0),
+        VdbeOp(OP_Goto, 0, ADDR(3)),
+        VdbeOp(OP_ListRewind, 0, 0),
+        VdbeOp(OP_ListRead, 0, ADDR(14)),
+        VdbeOp(OP_Delete, 0, 0),
+        VdbeOp(OP_Goto, 0, ADDR(11)),
+        VdbeOp(OP_Destroy, 0, 0, table.zName),
+        VdbeOp(OP_Close, 0, 0),
+    ]
+
+    vdbe.addOpList(len(dropTableOps), dropTableOps)
+
+    # TODO : index drop
+
+    """
+    remove the in-memory table structure
+    """
+    if not parse.explain:
+        h = hashNoCase(table.zName, 0) % N_HASH
+        if parse.db.apTblHash[h] == table:
+            parse.db.apTblHash[h] = table.pHash
+        else:
+            p = parse.db.apTblHash[h]
+            while p and p.pHash != table:
+                p = p.pHash
+
+            if p and p.pHash == table:
+                p.pHash = table.pHash
+
+        parse.db.nTable -= 1
