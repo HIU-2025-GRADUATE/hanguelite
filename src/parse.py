@@ -178,9 +178,9 @@ def p_select(p):
     p[0] = p[1]
 
 def p_oneselect(p):
-    """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt"""
+    """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt orderby_opt"""
     # Create a new SELECT structure using the parsed select list and from clause.
-    p[0] = Select(p[2], p[3], p[4], p[5], p[6], None, 0)
+    p[0] = Select(p[2], p[3], p[4], p[5], p[6], p[7], 0)
 
 def p_selcollist_star(p):
     """selcollist : TK_STAR"""
@@ -242,6 +242,43 @@ def p_having_opt_empty(p):
 def p_having_opt(p):
     """having_opt : TK_HAVING expr"""
     p[0] = p[2] 
+
+def p_orderby_opt_empty(p):
+    """orderby_opt :"""
+    p[0] = None  
+
+def p_orderby_opt(p):
+    """orderby_opt : TK_ORDER TK_BY sortlist"""
+    p[0] = p[3] 
+
+def p_sortlist_comma(p):
+    """sortlist : sortlist TK_COMMA sortitem sortorder"""
+    exprList = p[1].append(p[3], None)
+    exprList.a[exprList.nExpr - 1].sortOrder = p[4]
+    p[0] = exprList
+
+def p_sortlist(p):
+    """sortlist : sortitem sortorder"""
+    exprList = ExprList()
+    exprList.append(p[1], None)
+    exprList.a[0].sortOrder = p[2]
+    p[0] = exprList
+
+def p_sortitem(p):
+    """sortitem : expr"""
+    p[0] = p[1]
+
+def p_sortorder_asc(p):
+    """sortorder : TK_ASC"""
+    p[0] = 0
+
+def p_sortorder_desc(p):
+    """sortorder : TK_DESC"""
+    p[0] = 1
+
+def p_sortorder_empty(p):
+    """sortorder :"""
+    p[0] = 0
 
 def p_exprlist_comma(p):
     """exprlist : exprlist TK_COMMA expritem"""
