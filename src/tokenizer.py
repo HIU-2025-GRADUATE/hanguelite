@@ -35,8 +35,8 @@ tokens = (
     'TK_STRING', 'TK_LP', 'TK_RP', 'TK_COMMA', 'TK_INTEGER', 
     'TK_FLOAT', 'TK_LT', 'TK_GT', 'TK_LE', 'TK_GE', 'TK_NE', 
     'TK_EQ', 'TK_PLUS', 'TK_MINUS',
-    "TK_SELECT_KR", "TK_FROM_KR", "TK_WHERE_KR", "TK_GROUP_BY_KR",
-    "TK_HAVING_KR", "TK_ORDER_KR", "TK_ASC_KR", "TK_DESC_KR",
+    "TK_SELECT_KR", "TK_FROM_KR", "TK_WHERE_PRE_KR", "TK_WHERE_POST_KR", "TK_GROUP_BY_PRE_KR", "TK_GROUP_BY_POST_KR",
+    "TK_HAVING_PRE_KR", "TK_HAVING_POST_KR", "TK_ORDER_BY_KR", "TK_ASC_KR", "TK_DESC_KR", "TK_COL_LIST_POST_KR"
 ) + tuple(reserved.values())
 
 # 정규표현식 규칙
@@ -55,11 +55,13 @@ t_TK_GT                     = r'>'
 t_TK_PLUS                   = r'\+'
 t_TK_MINUS                  = r'-'
 t_TK_FROM_KR                = r"테이블에서"
-t_TK_WHERE_KR               = r"일\s*때"
-t_TK_GROUP_BY_KR            = r"(으로|로)\s*묶고"
-t_TK_HAVING_KR              = r"그중에서"
-t_TK_HAVING_PARTICLE_KR     = r"인"
-t_TK_COL_LIST_PARTICLE_KR   = r"(을|를)"
+t_TK_WHERE_PRE_KR           = r"조건이"
+t_TK_WHERE_POST_KR          = r"일\s*때"
+t_TK_GROUP_BY_PRE_KR        = r"그룹을"
+t_TK_GROUP_BY_POST_KR       = r"(으로|로)\s*묶고"
+t_TK_HAVING_PRE_KR          = r"그중에서"
+t_TK_HAVING_POST_KR         = r"인"
+t_TK_COL_LIST_POST_KR       = r"(을|를)"
 t_TK_ASC_KR                 = r"오름차순"
 t_TK_DESC_KR                = r"내림차순"
 t_TK_ORDER_BY_KR            = r"정렬해서"
