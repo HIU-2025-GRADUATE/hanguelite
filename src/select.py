@@ -33,7 +33,7 @@ def fillInColumnList(pParse : Parse, p : Select):
 
         if pEList is None:
             pEList = ExprList()
-        pEList.exprListAppend(pExpr, None);
+        pEList.append(pExpr, None);
       
     
     p.pEList = pEList;
@@ -165,8 +165,8 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
         for i in range(pGroupBy.nExpr):
             exprResolveInSelect(pParse, pGroupBy.a[i].pExpr)
 
-    # if pHaving:
-    #     sqliteExprResolveInSelect(pParse, pHaving)
+    if pHaving:
+        exprResolveInSelect(pParse, pHaving)
 
     for i in range(pEList.nExpr):
         if exprResolveIds(pParse, pTabList, pEList.a[i].pExpr):
@@ -196,15 +196,15 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
             # if sqliteExprCheck(pParse, pE, isAgg, None):
             #     return 1
 
-    # if pHaving:
-    #     if not pGroupBy:
-    #         pParse.zErrMsg = "a GROUP BY clause is required before HAVING"
-    #         pParse.nErr += 1
-    #         return 1
-    #     if sqliteExprResolveIds(pParse, pTabList, pHaving):
-    #         return 1
-    #     if sqliteExprCheck(pParse, pHaving, isAgg, None):
-    #         return 1
+    if pHaving:
+        if pGroupBy is None:
+            pParse.zErrMsg = "a GROUP BY clause is required before HAVING"
+            pParse.nErr += 1
+            return 1
+        if exprResolveIds(pParse, pTabList, pHaving):
+            return 1
+        if exprCheck(pParse, pHaving, isAgg[0], None):
+            return 1
 
     if isAgg[0] == 1:
         assert pParse.nAgg == 0 and pParse.iAggCount < 0
@@ -215,8 +215,8 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
             for i in range(pGroupBy.nExpr):
                 if exprAnalyzeAggregates(pParse, pGroupBy.a[i].pExpr):
                     return 1
-        # if pHaving and exprAnalyzeAggregates(pParse, pHaving):
-        #     return 1
+        if pHaving and exprAnalyzeAggregates(pParse, pHaving):
+            return 1
         # if pOrderBy:
         #     for i in range(pOrderBy.nExpr):
         #         if exprAnalyzeAggregates(pParse, pOrderBy.a[i].pExpr):
@@ -313,8 +313,8 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
         startagg = v.addOp(OP_AggNext, 0, endagg, None, 0)
         pParse.useAgg = 1
 
-        # if pHaving:
-        #     exprIfFalse(pParse, pHaving, startagg)
+        if pHaving:
+            exprIfFalse(pParse, pHaving, startagg)
 
         if selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
                         startagg, endagg):
