@@ -34,24 +34,36 @@ tokens = (
     'TK_STAR', 'TK_ID', 'TK_DOT', 'TK_COLUMN', 'TK_IGNORE',
     'TK_STRING', 'TK_LP', 'TK_RP', 'TK_COMMA', 'TK_INTEGER', 
     'TK_FLOAT', 'TK_LT', 'TK_GT', 'TK_LE', 'TK_GE', 'TK_NE', 
-    'TK_EQ', 'TK_PLUS', 'TK_MINUS'
+    'TK_EQ', 'TK_PLUS', 'TK_MINUS',
+    "TK_SELECT_KR", "TK_FROM_KR", "TK_WHERE_KR", "TK_GROUP_BY_KR",
+    "TK_HAVING_KR", "TK_ORDER_KR", "TK_ASC_KR", "TK_DESC_KR",
 ) + tuple(reserved.values())
 
 # 정규표현식 규칙
-t_TK_STAR       = r'\*'
-t_TK_DOT        = r'\.'
-t_TK_IGNORE     = r' \t\n'
-t_TK_LP         = r'\('
-t_TK_RP         = r'\)'
-t_TK_COMMA      = r','
-t_TK_LE         = r'<='
-t_TK_GE         = r'>='
-t_TK_NE         = r'<>'
-t_TK_EQ         = r'='
-t_TK_LT         = r'<'
-t_TK_GT         = r'>'
-t_TK_PLUS       = r'\+'
-t_TK_MINUS      = r'-'
+t_TK_STAR                   = r'\*'
+t_TK_DOT                    = r'\.'
+t_TK_IGNORE                 = r' \t\n'
+t_TK_LP                     = r'\('
+t_TK_RP                     = r'\)'
+t_TK_COMMA                  = r','
+t_TK_LE                     = r'<='
+t_TK_GE                     = r'>='
+t_TK_NE                     = r'<>'
+t_TK_EQ                     = r'='
+t_TK_LT                     = r'<'
+t_TK_GT                     = r'>'
+t_TK_PLUS                   = r'\+'
+t_TK_MINUS                  = r'-'
+t_TK_FROM_KR                = r"테이블에서"
+t_TK_WHERE_KR               = r"일\s*때"
+t_TK_GROUP_BY_KR            = r"(으로|로)\s*묶고"
+t_TK_HAVING_KR              = r"그중에서"
+t_TK_HAVING_PARTICLE_KR     = r"인"
+t_TK_COL_LIST_PARTICLE_KR   = r"(을|를)"
+t_TK_ASC_KR                 = r"오름차순으로"
+t_TK_DESC_KR                = r"내림차순으로"
+t_TK_ORDER_BY_KR            = r"정렬해서"
+t_TK_SELECT_KR              = r"찾아줘"
 
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
