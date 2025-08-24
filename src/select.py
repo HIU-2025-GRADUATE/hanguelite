@@ -33,7 +33,7 @@ def fillInColumnList(pParse : Parse, p : Select):
 
         if pEList is None:
             pEList = ExprList()
-        pEList.exprListAppend(pExpr, None);
+        pEList.append(pExpr, None);
       
     
     p.pEList = pEList;
@@ -97,7 +97,15 @@ def selectInnerLoop(pParse : Parse, pEList : ExprList, srcTab : int, nColumn : i
             v.addOp(OP_Field, srcTab, i, 0, 0)
 
     if pOrderBy:
-        pass
+        zSortOrder = []
+        v.addOp(OP_SortMakeRec, nColumn, 0, None, 0)
+        for i in range(pOrderBy.nExpr):
+            zSortOrder.append("-" if pOrderBy.a[i].sortOrder else "+")
+            exprCode(pParse, pOrderBy.a[i].pExpr)
+
+        v.addOp(OP_SortMakeKey, pOrderBy.nExpr, 0, "".join(zSortOrder), 0)
+        v.addOp(OP_SortPut, 0, 0, None, 0)
+
     elif eDest == SRT_Union:
         pass
     elif eDest == SRT_Table:
@@ -115,7 +123,15 @@ def selectInnerLoop(pParse : Parse, pEList : ExprList, srcTab : int, nColumn : i
         v.addOp(OP_Callback, nColumn, 0, 0, 0)
 
     return 0
-    
+
+def generateSortTail(v: Vdbe, nColumn: int):
+    end = v.makeLabel()
+    v.addOp(OP_Sort, 0, 0, None, 0)
+    addr = v.addOp(OP_SortNext, 0, end, None, 0)
+    v.addOp(OP_SortCallback, nColumn, 0, None, 0)
+    v.addOp(OP_Goto, 0, addr, None, 0)
+    v.addOp(OP_SortClose, 0, 0, None, end)
+
 def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     isAgg = [0]
     distinct = -1
@@ -157,16 +173,16 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     if pWhere:
         exprResolveInSelect(pParse, pWhere)
 
-    # if pOrderBy:
-    #     for i in range(pOrderBy.nExpr):
-    #         sqliteExprResolveInSelect(pParse, pOrderBy.a[i].pExpr)
+    if pOrderBy:
+        for i in range(pOrderBy.nExpr):
+            exprResolveInSelect(pParse, pOrderBy.a[i].pExpr)
 
     if pGroupBy:
         for i in range(pGroupBy.nExpr):
             exprResolveInSelect(pParse, pGroupBy.a[i].pExpr)
 
-    # if pHaving:
-    #     sqliteExprResolveInSelect(pParse, pHaving)
+    if pHaving:
+        exprResolveInSelect(pParse, pHaving)
 
     for i in range(pEList.nExpr):
         if exprResolveIds(pParse, pTabList, pEList.a[i].pExpr):
@@ -180,13 +196,13 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     #     if sqliteExprCheck(pParse, pWhere, 0, None):
     #         return 1
 
-    # if pOrderBy:
-    #     for i in range(pOrderBy.nExpr):
-    #         pE = pOrderBy.a[i].pExpr
-    #         if sqliteExprResolveIds(pParse, pTabList, pE):
-    #             return 1
-    #         if sqliteExprCheck(pParse, pE, isAgg, None):
-    #             return 1
+    if pOrderBy:
+        for i in range(pOrderBy.nExpr):
+            pE = pOrderBy.a[i].pExpr
+            if exprResolveIds(pParse, pTabList, pE):
+                return 1
+            if exprCheck(pParse, pE, isAgg[0], None):
+                return 1
 
     if pGroupBy:
         for i in range(pGroupBy.nExpr):
@@ -196,15 +212,15 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
             # if sqliteExprCheck(pParse, pE, isAgg, None):
             #     return 1
 
-    # if pHaving:
-    #     if not pGroupBy:
-    #         pParse.zErrMsg = "a GROUP BY clause is required before HAVING"
-    #         pParse.nErr += 1
-    #         return 1
-    #     if sqliteExprResolveIds(pParse, pTabList, pHaving):
-    #         return 1
-    #     if sqliteExprCheck(pParse, pHaving, isAgg, None):
-    #         return 1
+    if pHaving:
+        if pGroupBy is None:
+            pParse.zErrMsg = "a GROUP BY clause is required before HAVING"
+            pParse.nErr += 1
+            return 1
+        if exprResolveIds(pParse, pTabList, pHaving):
+            return 1
+        if exprCheck(pParse, pHaving, isAgg[0], None):
+            return 1
 
     if isAgg[0] == 1:
         assert pParse.nAgg == 0 and pParse.iAggCount < 0
@@ -215,12 +231,12 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
             for i in range(pGroupBy.nExpr):
                 if exprAnalyzeAggregates(pParse, pGroupBy.a[i].pExpr):
                     return 1
-        # if pHaving and exprAnalyzeAggregates(pParse, pHaving):
-        #     return 1
-        # if pOrderBy:
-        #     for i in range(pOrderBy.nExpr):
-        #         if exprAnalyzeAggregates(pParse, pOrderBy.a[i].pExpr):
-        #             return 1
+        if pHaving and exprAnalyzeAggregates(pParse, pHaving):
+            return 1
+        if pOrderBy:
+            for i in range(pOrderBy.nExpr):
+                if exprAnalyzeAggregates(pParse, pOrderBy.a[i].pExpr):
+                    return 1
 
     # Begin generating code
     v = pParse.pVdbe
@@ -233,8 +249,8 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
     #     pParse.nErr += 1
     #     return 1
 
-    # if pOrderBy:
-    #     sqliteVdbeAddOp(v, OP_SortOpen, 0, 0, None, None)
+    if pOrderBy:
+        v.addOp(OP_SortOpen, 0, 0, None, 0)
 
     if eDest == SRT_Callback:
         generateColumnNames(pParse, pTabList, pEList)
@@ -313,8 +329,8 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
         startagg = v.addOp(OP_AggNext, 0, endagg, None, 0)
         pParse.useAgg = 1
 
-        # if pHaving:
-        #     exprIfFalse(pParse, pHaving, startagg)
+        if pHaving:
+            exprIfFalse(pParse, pHaving, startagg)
 
         if selectInnerLoop(pParse, pEList, 0, 0, pOrderBy, distinct, eDest, iParm,
                         startagg, endagg):
@@ -324,5 +340,8 @@ def select(pParse : Parse, p : Select, eDest : int, iParm : int):
         v.addOp(OP_Noop, 0, 0, None, endagg)
         pParse.useAgg = 0
 
+    if pOrderBy:
+        generateSortTail(v, pEList.nExpr)
+        
     pParse.nTab = base
     return 0
