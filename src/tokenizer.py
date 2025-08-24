@@ -25,7 +25,8 @@ reserved = {
     'DROP': 'TK_DROP',
     'ORDER' : 'TK_ORDER',
     'ASC' : 'TK_ASC',
-    'DESC' : 'TK_DESC'
+    'DESC' : 'TK_DESC',
+    'AS' : 'TK_AS'
 }
 
 # 토큰 이름 목록: parse.y에서 사용되는 토큰들과 SQLite의 tokenize.c에 있는 키워드들
