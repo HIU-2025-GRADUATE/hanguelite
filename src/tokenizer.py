@@ -26,7 +26,9 @@ reserved = {
     'ORDER' : 'TK_ORDER',
     'ASC' : 'TK_ASC',
     'DESC' : 'TK_DESC',
-    'AS' : 'TK_AS'
+    'AS' : 'TK_AS',
+    '테이블을' : 'TK_테이블을',
+    '만들어줘' : 'TK_만들어줘',
 }
 
 # 토큰 이름 목록: parse.y에서 사용되는 토큰들과 SQLite의 tokenize.c에 있는 키워드들
