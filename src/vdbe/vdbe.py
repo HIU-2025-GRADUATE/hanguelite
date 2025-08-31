@@ -4,6 +4,7 @@ from .vdbeOp import VdbeOp
 from src.vdbe.vdbeOp import *
 from src.vdbe.cursor import *
 from src.vdbe.agg import *
+from src.vdbe.sorter import *
 from ..constant import SQLITE_INTERNAL, SQLITE_OK
 from ..exception.exception import BadInstruction
 from src.util import *
@@ -57,6 +58,7 @@ class Vdbe:
     # FILE **apList;     # /* An open file for each list */
     # int nSort;         # /* Number of slots in apSort[] */
     # Sorter **apSort;   # /* An open sorter list */
+    self.apSort = list()
     # FILE *pFile;       # /* At most one open file handler */
     # int nField;        # /* Number of file fields */
     # char **azField;    # /* Data for each file field */
@@ -1024,11 +1026,11 @@ class Vdbe:
         elif pOp.opcode == OP_Sort:
           j = pOp.p1
           # Number of buckets used for merge-sort.
-          NSORT = 30  
+          NSORT = 30
           if j <len(self.apSort):
-            apSorter = list(NSORT)
+            apSorter = [0]*NSORT
 
-            while self.apSort[j]:
+            while self.apSort[j]!=0:
               pElem = self.apSort[j]
               self.apSort[j] = pElem.pNext
               pElem.pNext = 0
@@ -1047,16 +1049,20 @@ class Vdbe:
             for i in range(NSORT):
               pElem = Merge(apSorter[i], pElem)
 
-            self.apSort[i] = pElem
+            self.apSort[j] = pElem
 
         # p1 sorter의 topmost 원소의 데이터를 스택에 push 후, sorter에서 원소 삭제
         elif pOp.opcode == OP_SortNext:
           i = pOp.p1
-          if i < 0 or i >= len(self.apSort):
+          if i < 0:
+            continue
+          if i < len(self.apSort) and self.apSort[i] != 0:
             pSorter = self.apSort[i]
             self.apSort[i] = pSorter.pNext
             self.aStack.append(pSorter.pData)
             del pSorter
+          else:
+            pc = pOp.p2 - 1
 
         # p1 sorter의 topmost 원소의 key를 스택에 push
         # sorter는 건들지 않음
@@ -1072,6 +1078,9 @@ class Vdbe:
           record = self.aStack.pop()
           if xCallback != None:
             xCallback(pOp.p1, record, [])
+          else:
+            print("### CALLBACK DEBUGGING ###")
+            print(record)
 
         # p1 sorter를 닫고 모든 원소를 삭제
         elif pOp.opcode == OP_SortClose:
