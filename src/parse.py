@@ -179,8 +179,8 @@ def p_select(p):
 
 def p_oneselect(p):
     # """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt orderby_opt"""
-    """oneselect : from where_opt groupby_opt having_opt selcollist TK_COL_LIST_POST_KR TK_SELECT_KR"""
-    p[0] = Select(p[5], p[1], p[2], p[3], p[4], None, 0)
+    """oneselect : from where_opt groupby_opt having_opt selcollist TK_COL_LIST_POST_KR orderby_opt TK_SELECT_KR"""
+    p[0] = Select(p[5], p[1], p[2], p[3], p[4], p[7], 0)
 
 def p_selcollist_star(p):
     """selcollist : TK_STAR"""
