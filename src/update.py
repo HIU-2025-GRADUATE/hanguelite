@@ -1,8 +1,10 @@
-from src.expr import exprResolveInSelect
+from src.expr import exprResolveInSelect, exprResolveIds, exprCheck, exprCode
 from src.sqliteInt import Parse, ExprList, Expr, IdList, Token, Table, WhereInfo
 from src.vdbe.vdbe import Vdbe
 from src.vdbe.vdbeOp import OP_ListOpen, OP_ListWrite, OP_ListRewind, OP_Open, OP_Field, OP_MakeRecord, OP_Put, OP_Goto, \
     OP_ListClose, OP_ListRead, OP_Dup, OP_Fetch
+from src.where import whereBegin, whereEnd
+
 
 class UpdateCleanUp(Exception):
     pass
@@ -34,15 +36,15 @@ def update(pParse: Parse, tableName: Token, setList: ExprList, whereOpt: Expr):
             exprResolveInSelect(pParse, setList.a[i].pExpr)
 
         if whereOpt:
-            if pParse.exprResolveIds(tableList, whereOpt):
+            if exprResolveIds(pParse, tableList, whereOpt):
                 raise UpdateCleanUp()
-            if pParse.exprCheck(whereOpt, 0, 0):
+            if exprCheck(pParse, whereOpt, 0, None):
                 raise UpdateCleanUp()
 
         for i in range(setList.nExpr):
-            if pParse.exprResolveIds(tableList, setList.a[i].pExpr):
+            if exprResolveIds(pParse, tableList, setList.a[i].pExpr):
                 raise UpdateCleanUp()
-            if pParse.exprCheck(setList.a[i].pExpr, 0, 0):
+            if exprCheck(pParse, setList.a[i].pExpr, 0, None):
                 raise UpdateCleanUp()
 
             for j in range(table.nCol):
@@ -81,7 +83,7 @@ def update(pParse: Parse, tableName: Token, setList: ExprList, whereOpt: Expr):
 
         # Begin the Database Scan
         v.addOp(OP_ListOpen, 0, 0, 0, 0)
-        whereInfo: WhereInfo = pParse.whereBegin(tableList, whereOpt, 1)
+        whereInfo: WhereInfo = whereBegin(pParse, tableList, whereOpt, 1)
         if not whereInfo:
             raise UpdateCleanUp()
 
@@ -89,7 +91,7 @@ def update(pParse: Parse, tableName: Token, setList: ExprList, whereOpt: Expr):
         v.addOp(OP_ListWrite, 0, 0, 0, 0)
 
         # end the database scan loop
-        whereInfo.whereEnd()
+        whereEnd(whereInfo)
 
         # Rewind the list of records that need to be updated
         # and open every index that needs updating.
@@ -117,7 +119,7 @@ def update(pParse: Parse, tableName: Token, setList: ExprList, whereOpt: Expr):
             if j < 0:
                 v.addOp(OP_Field, base, i, 0, 0)
             else:
-                pParse.exprCode(setList.a[i].pExpr)
+                exprCode(pParse, setList.a[j].pExpr)
 
         # TODO :new index 삽입
 
@@ -130,6 +132,7 @@ def update(pParse: Parse, tableName: Token, setList: ExprList, whereOpt: Expr):
         v.addOp(OP_Goto, 0, addr, 0, 0)
         v.addOp(OP_ListClose, 0, 0, 0, end)
     except Exception as e:
+        raise e
         print(e)
     finally:
         # sqliteFree(apIdx);
