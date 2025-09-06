@@ -90,6 +90,15 @@ def p_id_from_string(p):
     p[0] = p[1]
 
 """
+    CREATE_KOR
+"""
+def p_command_create_kor(p):
+    """cmd : id TK_LP columnlist TK_RP TK_TABLE_KOR TK_CREATE_KOR """
+    createQuery = " ".join(map(str, p[1:]))
+    startTable(pParse, p[1])
+    endTable(pParse, createQuery)
+
+"""
     INSERT
 """
 def p_command_insert_value(p):

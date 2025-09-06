@@ -27,8 +27,6 @@ reserved = {
     'ASC' : 'TK_ASC',
     'DESC' : 'TK_DESC',
     'AS' : 'TK_AS',
-    '테이블을' : 'TK_테이블을',
-    '만들어줘' : 'TK_만들어줘',
 }
 
 # 토큰 이름 목록: parse.y에서 사용되는 토큰들과 SQLite의 tokenize.c에 있는 키워드들
@@ -36,7 +34,7 @@ tokens = (
     'TK_STAR', 'TK_ID', 'TK_DOT', 'TK_COLUMN', 'TK_IGNORE',
     'TK_STRING', 'TK_LP', 'TK_RP', 'TK_COMMA', 'TK_INTEGER', 
     'TK_FLOAT', 'TK_LT', 'TK_GT', 'TK_LE', 'TK_GE', 'TK_NE', 
-    'TK_EQ', 'TK_PLUS', 'TK_MINUS'
+    'TK_EQ', 'TK_PLUS', 'TK_MINUS', 'TK_TABLE_KOR', 'TK_CREATE_KOR',
 ) + tuple(reserved.values())
 
 # 정규표현식 규칙
@@ -54,6 +52,8 @@ t_TK_LT         = r'<'
 t_TK_GT         = r'>'
 t_TK_PLUS       = r'\+'
 t_TK_MINUS      = r'-'
+t_TK_TABLE_KOR  = r'테이블을'
+t_TK_CREATE_KOR = r'만들어줘'
 
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
