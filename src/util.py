@@ -54,7 +54,7 @@ def likeCompare(pattern : str, target : str):
             if j >= len(target):
                 return 0
         else:
-            if j >= len(target) or c != target[j].lower:
+            if j >= len(target) or c != target[j].lower():
                 return 0
         i += 1
         j += 1
@@ -214,3 +214,44 @@ def compare(a_text: str, b_text: str):
     if res == 0:
         res = _private_str_cmp(a_text, b_text, use_case=True)
     return res
+
+
+# ** 이 루틴은 정렬에 사용됩니다. 각 키는 하나 이상의 널로 종료된
+# ** 문자열 리스트입니다. 리스트는 연속된 두 개의 널 문자로 종료됩니다.
+# ** 예를 들어, 다음 텍스트는 세 개의 문자열을 가진 키입니다:
+# **
+# **            +one\000-two\000+three\000\000
+# **
+# ** 두 인수는 동일한 개수의 문자열을 가집니다. 이 루틴은 첫 번째 인수가
+# ** 두 번째 인수보다 작으면 음수, 같으면 0, 크면 양수를 반환합니다.
+# ** (결과는 a-b입니다).
+# **
+# ** 모든 문자열은 '+' 또는 '-' 문자로 시작합니다. 문자가 '-'이면
+# ** 반환값의 부호를 반전시킵니다. 이는 내림차순 정렬을 구현하기 위한 것입니다.
+# int sqliteSortCompare(const char *a, const char *b)
+def sortCompare(a, b) -> int:
+    res = 0
+    firstA = a[0]
+    while res == 0 and a and b:
+        lenA = a.find('\000')
+        lenB = b.find('\000')
+        res = compare(a[1:lenA], b[1:lenB])
+        if res == 0:
+            a = a[lenA+1:]
+            b = b[lenA+1:]
+
+    if firstA == '-':
+        res = -res
+    
+    return res
+
+if __name__ == "__main__":
+    tests = [
+        ("file1.txt", "file2.txt", False),
+        ("item10",    "item2",    False),
+        ("a-1.5",     "a-1.10",   False),
+        ("Hello",     "hello",    False),
+        ("Hello",     "hello",    True),
+    ]
+    for a, b, uc in tests:
+        print(a, b, uc, "->", _private_str_cmp(a, b, uc))

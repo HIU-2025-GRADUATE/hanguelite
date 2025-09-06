@@ -66,7 +66,7 @@ class Vdbe:
     # Mem *aMem;         # /* The memory locations */
     self.agg: Agg = Agg()# /* Aggregate information */
     # int nSet;          # /* Number of sets allocated */
-    # Set *aSet;         # /* An array of sets */
+    self.aSet:list[set] = list()         # /* An array of sets */
     # OP_Fetch 명령어 실행 횟수
     self.nFetch = 0
 
@@ -194,20 +194,14 @@ class Vdbe:
   **
   ** NULLs are converted into an empty string.
   """
-  def hardStringify(self, i: int):
-    try:
-      self.aStack[i] = str(float(self.aStack[i]))
-      return
-    except:
-      try:
-        self.aStack[i] = str(int(self.aStack[i]))
-        return
-      except:
-        self.aStack[i] = ""
-        return
+  def hardStringifyAt(self, i: int):
+    if self.aStack[i] is None:
+      self.aStack[i] = ""
+    else:
+      self.aStack[i] = str(self.aStack[i])
 
-  #define Stringify(P,I) ((P->aStack[I].flags & STK_Str)==0 ? hardStringify(P,I) : 0)
-  # static int hardStringify(Vdbe *p, int i){
+  #define Stringify(P,I) ((P->aStack[I].flags & STK_Str)==0 ? hardStringifyAt(P,I) : 0)
+  # static int hardStringifyAt(Vdbe *p, int i){
   #   char zBuf[30];
   #   int fg = p->aStack[i].flags;
   #   if( fg & STK_Real ){
@@ -237,29 +231,11 @@ class Vdbe:
   #   p->aStack[i].flags &= ~(STK_Str|STK_Dyn);
   # }
 
-  # (TODO) 이하 Integerify, Readlify 부분은 문자열을 정수나 실수로 변환하는 함수이지만
-  # 파이썬에서는 float, int 함수로 대체 가능하기 때문에,,, 생략
-  # /*
-  # ** Convert the given stack entity into a integer if it isn't one
-  # ** already.
-  # **
-  # ** Any prior string or real representation is invalidated.
-  # ** NULLs are converted into 0.
-  # */
-  # #define Integerify(P,I) \
-  #     if(((P)->aStack[(I)].flags&STK_Int)==0){ hardIntegerify(P,I); }
-  # static void hardIntegerify(Vdbe *p, int i){
-  #   if( p->aStack[i].flags & STK_Real ){
-  #     p->aStack[i].i = p->aStack[i].r;
-  #     Release(p, i);
-  #   }else if( p->aStack[i].flags & STK_Str ){
-  #     p->aStack[i].i = atoi(p->zStack[i]);
-  #     Release(p, i);
-  #   }else{
-  #     p->aStack[i].i = 0;
-  #   }
-  #   p->aStack[i].flags = STK_Int;
-  # }
+  def hardIntegerifyAt(self, i : int):
+    try:
+      self.aStack[i] = int(self.aStack[i])
+    except:
+      self.aStack[i] = 0
 
   # /*
   # ** Get a valid Real representation for the given stack element.
@@ -267,7 +243,7 @@ class Vdbe:
   # ** Any prior string or integer representation is retained.
   # ** NULLs are converted into 0.0.
   # */
-  def hardRealify(self, i : int):
+  def hardRealifyAt(self, i : int):
     try:
       self.aStack[i] = float(self.aStack[i])
     except:
@@ -471,11 +447,11 @@ class Vdbe:
         # 스택의 top에서 p1 개의 원소를 삭제제
         elif pOp.opcode == OP_Pop:
           for _ in range(pOp.p1):
-            del self.aStack[-1]
+            self.aStack.pop()
 
         # 스택 위에서 P1 번째 원소를 복제해서 스택의 top에 추가
         elif pOp.opcode == OP_Dup:
-          self.aStack.append(self.aStack[-(pOp.p1+1)])
+          self.aStack.append(self.aStack[-(pOp.p1 + 1)])
 
         # 스택 위에서 P1 번째 스택을 빼서 top에 추가
         # Pull 0 0 0 는 no-op
@@ -531,8 +507,8 @@ class Vdbe:
               a = int(a)
               b = int(b)
             except:
-              self.hardRealify(len(self.aStack) - 1)
-              self.hardRealify(len(self.aStack) - 2)
+              self.hardRealifyAt(len(self.aStack) - 1)
+              self.hardRealifyAt(len(self.aStack) - 2)
               a = self.aStack[-1]
               b = self.aStack[-2]
 
@@ -571,8 +547,8 @@ class Vdbe:
             copy = float(tos) > float(nos)
 
           else:
-            self.hardStringify(len(self.aStack) - 1)
-            self.hardStringify(len(self.aStack) - 2)
+            self.hardStringifyAt(len(self.aStack) - 1)
+            self.hardStringifyAt(len(self.aStack) - 2)
             copy = compare(self.aStack[-1], self.aStack[-2]) > 0
 
           if copy:
@@ -602,8 +578,8 @@ class Vdbe:
             copy = float(tos) < float(nos)
 
           else:
-            self.hardStringify(len(self.aStack) - 1)
-            self.hardStringify(len(self.aStack) - 2)
+            self.hardStringifyAt(len(self.aStack) - 1)
+            self.hardStringifyAt(len(self.aStack) - 2)
             copy = compare(self.aStack[-1], self.aStack[-2]) < 0
 
           if copy:
@@ -613,7 +589,8 @@ class Vdbe:
 
         # 스택의 top 원소에 p1을 더함
         elif pOp.opcode == OP_AddImm:
-          self.aStack[-1]+=pOp.p1
+          self.hardIntegerifyAt(len(self.aStack) - 1)
+          self.aStack[-1] += pOp.p1
 
         # 스택의 top에서 원소 두개를 꺼내서 비교 연산 -> true이면 Goto p2
         # NOS (comp) TOS
@@ -634,12 +611,13 @@ class Vdbe:
           if len(self.aStack) < 2:
             raise RuntimeError("Not Enough Stack Element")
 
-          tos = str(self.aStack[-1])
-          del self.aStack[-1]
-          nos = str(self.aStack[-1])
-          del self.aStack[-1]
+          self.hardStringifyAt(len(self.aStack) - 1)
+          self.hardStringifyAt(len(self.aStack) - 2)
 
-          res = likeCompare(tos, nos)
+          res = likeCompare(self.aStack[-1], self.aStack[-2])
+          self.aStack.pop()
+          self.aStack.pop()
+          
           if pOp.p1:
             res = not res
           if res:
@@ -685,21 +663,16 @@ class Vdbe:
         # */
         # (TODO) 여기를 논리 구조상 Not으로 처리했는데 bitwise Not으로 바꿔야하나?
         elif pOp.opcode == OP_Not:
-          if type(self.aStack[-1]) == str:
-            try:
-              self.aStack[-1] = int(self.aStack[-1])
-            except:
-              self.aStack[-1] = 0
+          self.hardIntegerifyAt(len(self.aStack) - 1)
           self.aStack[-1] = not self.aStack[-1]
 
         elif pOp.opcode == OP_Noop:
           pass
 
         elif pOp.opcode == OP_If:
+          self.hardIntegerifyAt(len(self.aStack) - 1)
           c = self.aStack.pop()
 
-          if type(c) is str:
-            c = len(c)>0
           if c:
             pc = pOp.p2 - 1
 
@@ -894,74 +867,275 @@ class Vdbe:
           if self.aCsr[pOp.p1].pCursor.nextKey() == 0: pc = pOp.p2-1            #16 => makeLabel 없어서 하드 코딩
           else: self.nFetch+=1
 
+        # p1 커서의 다음 커서를 처음 커서 (0번) 으로 리셋
         elif pOp.opcode == OP_ResetIdx:
-          pass
+          i = pOp.p1
+          if i >= 0 and i < self.nCursor:
+            self.aCsr[i].index = 0
 
+        # 
         elif pOp.opcode == OP_NextIdx:
-          pass
+          i = pOp.p1
+          self.aStack.append(0)
+          if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+            nIdx = self.aCsr[i].pCursor.dataLength()
+            aIdx = self.aCsr[i].pCursor.readData(0)
 
+            if nIdx > 1:
+              # TODO k = *(aIdx++)
+              k = aIdx[1]
+              if k > nIdx-1:
+                k = nIdx - 1
+            else:
+              k = nIdx
+            
+            for j in range(self.aCsr[i].index, k):
+              if aIdx[j] != 0:
+                self.aStack[-1]=aIdx[j]
+                break
+
+            if j >= k:
+              j = -1
+              pc = pOp.p2-1
+              self.aStack.pop()
+            
+            self.aCsr[i].index = j+1
+
+        # 스택의 top은 SQL index 키, 그 다음 값은 SQL table entry 키인 정수 값
+        # tos의 인덱스 키와 일치하는 레코드를 p1 커서에서 찾고 없다면 새 레코드를 생성
+        # 그 후 해당 레코드의 데이터에 정수 테이블 키를 추가하고 p1 커서 파일에 작성
         elif pOp.opcode == OP_PutIdx:
           pass
-
+        
+        # 스택의 top은 SQL index 키, 그 다음 값은 SQL table entry 키인 정수 값
+        # p1 커서에서 tos에 있는 인덱스 키와 일치하는 레코드를 찾고
+        # 해당 레코드에 포함된 정수 테이블 키 목록에서 nos 키 값과 일치하는 항목을 제거하고
+        # 수정된 데이터를 동일한 키로 p1 파일에 다시 작성
+        # 만약 해당 작업으로 p1 커서의 데이터에서 마지막 정수 테이블 키까지 모두 제거되면
+        # p1 커서에서 대응되는 레코드도 삭제
         elif pOp.opcode == OP_DeleteIdx:
           pass
 
+        # 파일 이름이 p3 인 파일을 디스크에서 삭제
         elif pOp.opcode == OP_Destroy:
-          pass
+          self.pBe.dropTable(pOp.p3)
 
+        # 정수 키를 저장할 temporary file 을 open
+        # p1 값을 이후 interaction 에서 해당 파일에 접근하기 위한 인덱스로 사용
+        # 이미 p1 인덱스에 파일이 열려있다면 닫고 새로운 파일을 생성
         elif pOp.opcode == OP_ListOpen:
-          pass
+          i = pOp.p1
+          if i >= len(self.apList):
+            for j in range(len(self.apList), i+1):
+              self.apList.append(0)
+          elif self.apList:
+            self.pBe.closeTempFile(self.apList, i)
+          
+          rc = self.pBe.openTempFile(self.apList, i)
 
+        # 스택의 top을 pop해서 p1 번째 임시 파일에 쓰기
+        # (TODO) 원본 코드는 int 크기를 기준으로 데이터를 구분하지만 여기선 \n 으로 작성
         elif pOp.opcode == OP_ListWrite:
-          pass
+          i = pOp.p1
+          if i < len(self.apList) and self.apList[i] != 0:
+            val = self.aStack.pop()
+            self.apList[i].write(str(val)+'\n')
 
+        # p1 임시 파일 객체의 커서를 처음으로 되돌림
         elif pOp.opcode == OP_ListRewind:
-          pass
+          i = pOp.p1
+          if i < len(self.apList) and self.apList[i] != 0:
+            self.apList[i].seek(0)
 
+        # p1 임시 파일에서 정수 값 하나를 읽어 스택에 push
+        # 만약 파일이 비어있다면 아무 동작하지 않고 p2로 jump
         elif pOp.opcode == OP_ListRead:
-          pass
+          i = pOp.p1
+          if i < 0 or i > len(self.apList) or self.apList[i] == 0:
+            # (TODO) continue 아니고 bad_instruction 오류로 수정해야함
+            continue
 
+          val = self.apList[i].readline()
+          if val == '':
+            pc = pOp.p2-1
+          else:
+            self.aStack.append(int(val))
+
+        # p1 번째 임시 파일을 닫고 내용을 삭제
         elif pOp.opcode == OP_ListClose:
-          pass
+          i = pOp.p1
+          if i < len(self.apList) and self.apList[i] != 0:
+            self.pBe.closeTempFile(self.apList, i)
+            self.apList[i] = 0
 
+        # p1 인덱스에 sorter 객체 생성
         elif pOp.opcode == OP_SortOpen:
-          pass
+          i = pOp.p1
+          if i >= len(self.apSort):
+            for j in range(len(self.apSort), i+1):
+              self.apSort.append(0)
 
+        # tos 값은 key, nos 값은 data 로 취급하여 둘 다 스택에서 pop
+        # 그 후 sorter에 집어넣음
         elif pOp.opcode == OP_SortPut:
-          pass
+          i = pOp.p1
+          key = str(self.aStack.pop())
+          data = str(self.aStack.pop())
+          if i < 0 or i >= len(self.apSort):
+            # (TODO) continue 아니고 bad_instruction 오류 발생해야함
+            continue
+          
+          pSorter = Sorter()
+          pSorter.pNext = self.apSort[i]
+          self.apSort[i] = pSorter
+          pSorter.nKey = len(key)
+          pSorter.zKey = key
+          pSorter.nData = len(data)
+          pSorter.pData = data
 
+        # 스택의 top에서부터 p1개 원소는 callback 인자로 사용
+        # 이 원소들을 하나의 레코드로 결합하여 Sorter에 저장 후 나중에 SortCallback에 전달
         elif pOp.opcode == OP_SortMakeRec:
-          pass
+          nField = pOp.p1
+          azArg = list()
+          for _ in range(nField):
+            val = self.aStack.pop()
+            azArg.insert(0, val)
+          self.aStack.append(azArg)
 
+        # 스택의 top부터 여러 개의 원소를 정렬 키(sort key)로 반환
+        # 소비될 원소의 개수는 문자열 p3의 문자 수와 동일함
+        # p3의 각 문자를 스택 원소에 하나씩 연결하는데
+        # 첫 번째 문자는 가장 낮은 원소에, 마지막 문자는 스택의 최상단 원소에 붙음
+        # 모든 스택 요소는 \000 문자로 구분되며, 연속된 \000 이 등장하면 종료
         elif pOp.opcode == OP_SortMakeKey:
-          pass
+          nField = len(pOp.p3)
+          zNewKey = ''
+          for i in range(nField):
+            j = len(self.aStack) - nField + i
+            zNewKey += str(pOp.p3[i]) + str(self.aStack[j])+'\000'
 
+          for _ in range(nField):
+            self.aStack.pop()
+          
+          self.aStack.append(zNewKey)
+
+        # merge sort로 sorter에 있는 모든 원소를 정렬
         elif pOp.opcode == OP_Sort:
-          pass
+          j = pOp.p1
+          # Number of buckets used for merge-sort.
+          NSORT = 30  
+          if j <len(self.apSort):
+            apSorter = list(NSORT)
 
+            while self.apSort[j]:
+              pElem = self.apSort[j]
+              self.apSort[j] = pElem.pNext
+              pElem.pNext = 0
+              for i in range(NSORT-1):
+                if apSorter[i] == 0:
+                  apSorter[i] = pElem
+                  break
+                else:
+                  pElem = Merge(apSorter[i], pElem)
+                  apSorter[i] = 0
+
+              if i >= NSORT-1:
+                apSorter[NSORT-1] = Merge(apSorter[NSORT-1], pElem)
+            
+            pElem = 0
+            for i in range(NSORT):
+              pElem = Merge(apSorter[i], pElem)
+
+            self.apSort[i] = pElem
+
+        # p1 sorter의 topmost 원소의 데이터를 스택에 push 후, sorter에서 원소 삭제
         elif pOp.opcode == OP_SortNext:
-          pass
+          i = pOp.p1
+          if i < 0 or i >= len(self.apSort):
+            pSorter = self.apSort[i]
+            self.apSort[i] = pSorter.pNext
+            self.aStack.append(pSorter.pData)
+            del pSorter
 
+        # p1 sorter의 topmost 원소의 key를 스택에 push
+        # sorter는 건들지 않음
         elif pOp.opcode == OP_SortKey:
-          pass
+          i = pOp.p1
+          if i < 0 or i >= len(self.apSort):
+            pSorter = self.apSort[i]
+            self.aStack.append(pSorter.zKey)
 
+        # 스택의 top에는 SortMakeRec에 의해 생성된 callback record가 존재
+        # 해당 값을 pop 해서 callback을 실행
         elif pOp.opcode == OP_SortCallback:
-          pass
+          record = self.aStack.pop()
+          if xCallback != None:
+            xCallback(pOp.p1, record, [])
 
+        # p1 sorter를 닫고 모든 원소를 삭제
         elif pOp.opcode == OP_SortClose:
-          pass
+          i = pOp.p1
+          if i < len(self.apSort):
+            pSorter = self.apSort[i]
+            while pSorter != 0:
+              self.apSort[i] = pSorter.pNext
+              del pSorter
+              pSorter - self.apSort[i]
 
+        # 이름이 p3인 파일을 읽기 모드로 open
+        # 만약 p3가 'stdin'이면 표준 입력을 받음
         elif pOp.opcode == OP_FileOpen:
-          pass
+          if self.pFile:
+            if self.pFile != sys.stdin:
+              self.pFile.close()
+            self.pFile = 0
 
+          if pOp.p3 == 'stdin':
+            self.pFile = sys.stdin
+          else:
+            self.pFile = open(pOp.p3, 'r')
+
+          if self.pFile == 0:
+            rc = SQLITE_ERROR
+            
+        # FileOpen으로 열었던 파일을 닫습니다
+        # 이전에 FileOpen을 하지 않았다면 no-op
         elif pOp.opcode == OP_FileClose:
-          pass
+          if self.pFile:
+            if self.pFile != sys.stdin:
+              self.pFile.close()
+            self.pFile = 0
 
+        # 열린 파일에서 한 줄의 입력을 받음, 만약 EOF에 도달했다면 p2로 jump
+        # 새로운 줄을 읽으면 p3를 구분자로 사용
+        # 입력 한 줄에 p1 개의 필드가 존재, 초과 시 무시되고 부족하면 빈 문자열로 간주
+        # (TODO) 미완성... 로직이 너무 길고 복잡해
         elif pOp.opcode == OP_FileRead:
+          if self.pFile == 0:
+            # (TODO) goto fileread_jump;
+            continue
+
+          nField = pOp.p1
+
+          if nField != self.nField or self.azField == 0:
+            if self.azField == 0:
+              self.nField = 0
+              # (TODO) goto fileread_jump;
+              continue
+            self.nField = nField
+
+          
           pass
 
+        # 가장 최근에 읽은 줄에서 p1 번째 필드를 스택에 push
         elif pOp.opcode == OP_FileField:
-          pass
+          i = pOp.p1
+          if i >= 0 and i < self.nField and self.azField:
+            z = self.azField[i]
+          else:
+            z = ''
+          self.aStack.append(z)
 
         elif pOp.opcode == OP_MemStore:
           pass
@@ -1031,13 +1205,36 @@ class Vdbe:
           pass
 
         elif pOp.opcode == OP_SetInsert:
-          pass
+          i = pOp.p1
+          if len(self.aSet) <= i:
+            while len(self.aSet) <= i:
+              self.aSet.append(None)
+            self.aSet[i] = set()
+
+          if pOp.p3:
+            self.aSet[i].add(pOp.p3.lower())
+          else:
+            self.hardStringifyAt(len(self.aStack) - 1)
+            self.aSet[i].add(self.aStack[-1].lower())
+            self.aStack.pop()
 
         elif pOp.opcode == OP_SetFound:
-          pass
+          i = pOp.p1
+          self.hardStringifyAt(len(self.aStack) - 1)
+
+          if 0 <= i < len(self.aSet) and self.aStack[-1].lower() in self.aSet[i]:
+            pc = pOp.p2 - 1
+
+          self.aStack.pop()
 
         elif pOp.opcode == OP_SetNotFound:
-          pass
+          i = pOp.p1
+          self.hardStringifyAt(len(self.aStack) - 1)
+
+          if 0 <= i < len(self.aSet) and not self.aStack[-1].lower() in self.aSet[i]:
+            pc = pOp.p2 - 1
+
+          self.aStack.pop()
 
         pc+=1
 
@@ -1068,3 +1265,5 @@ def opcode(zName: str) -> int:
 #   return 0;
 # }
 
+def ADDR(x: int):
+  return -1-x
