@@ -64,7 +64,7 @@ t_TK_HAVING_POST_KR         = r"인"
 t_TK_COL_LIST_POST_KR       = r"(을|를)"
 t_TK_ASC_KR                 = r"오름차순"
 t_TK_DESC_KR                = r"내림차순"
-t_TK_ORDER_BY_KR            = r"정렬해서"
+t_TK_ORDER_BY_KR            = r"(으로|로)\s*정렬해서"
 t_TK_SELECT_KR              = r"찾아줘"
 
 def t_ID(t):
