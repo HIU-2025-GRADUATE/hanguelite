@@ -846,31 +846,35 @@ class Vdbe:
         # 파이썬은 자료형 크기의 제한이 없으므로 일단 전체 키를 가져오는 것을 기본으로 한다.
         elif pOp.opcode == OP_Key:
           i = pOp.p1
-          if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor != 0:
+          if 0 <= i < self.nCursor and self.aCsr[i].pCursor is not None:
             z = self.aCsr[i].pCursor.readKey() # byte 형식의 키를 읽어온다.
             self.aStack.append(z)
 
         elif pOp.opcode == OP_Rewind:
-          if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
+          if pOp.p1 < 0 or pOp.p1 >= self.nCursor or self.aCsr[pOp.p1] == 0:
+            continue
           self.aCsr[pOp.p1].pCursor.rewind()
 
         # p1 커서의 dbf 에서 가리키고 있는 레코드의 다음 레코드를 가리키도록 이동
         elif pOp.opcode == OP_Next:
-          if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
-          if self.aCsr[pOp.p1].pCursor.nextKey() == 0: pc = pOp.p2-1            #16 => makeLabel 없어서 하드 코딩
-          else: self.nFetch+=1
+          if pOp.p1 < 0 or pOp.p1 >= self.nCursor or self.aCsr[pOp.p1] == 0:
+            continue
+
+          if self.aCsr[pOp.p1].pCursor.nextKey() == 0:
+            pc = pOp.p2-1
+          else:
+            self.nFetch += 1
 
         # p1 커서의 다음 커서를 처음 커서 (0번) 으로 리셋
         elif pOp.opcode == OP_ResetIdx:
           i = pOp.p1
-          if i >= 0 and i < self.nCursor:
+          if 0 <= i < self.nCursor:
             self.aCsr[i].index = 0
 
-        # 
         elif pOp.opcode == OP_NextIdx:
           i = pOp.p1
           self.aStack.append(0)
-          if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          if 0 <= i < self.nCursor and self.aCsr[i].pCursor is not None:
             nIdx = self.aCsr[i].pCursor.dataLength()
             aIdx = self.aCsr[i].pCursor.readData(0)
 
@@ -878,13 +882,13 @@ class Vdbe:
               # TODO k = *(aIdx++)
               k = aIdx[1]
               if k > nIdx-1:
-                k = nIdx - 1
+                k = nIdx-1
             else:
               k = nIdx
             
             for j in range(self.aCsr[i].index, k):
               if aIdx[j] != 0:
-                self.aStack[-1]=aIdx[j]
+                self.aStack[-1] = aIdx[j]
                 break
 
             if j >= k:
