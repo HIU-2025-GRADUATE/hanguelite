@@ -133,7 +133,6 @@ def update(pParse: Parse, tableName: Token, setList: ExprList, whereOpt: Expr):
         v.addOp(OP_ListClose, 0, 0, 0, end)
     except Exception as e:
         raise e
-        print(e)
     finally:
         # sqliteFree(apIdx);
         # sqliteFree(aXRef);
