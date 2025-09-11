@@ -422,19 +422,15 @@ class Vdbe:
         # print(self.aStack)
 
         if pOp.opcode == OP_Goto:
-          # 특정 위치로 이동
           pc = pOp.p2 - 1
 
         elif pOp.opcode == OP_Halt:
-          # 종료
           pc = len(self.aOp)-1
 
         elif pOp.opcode == OP_Integer:
-          # P1 정수 값을 스택에 추가
           self.aStack.append(pOp.p1)
 
         elif pOp.opcode == OP_String:
-          # P3 문자열 값을 스택에 추가
           self.aStack.append(pOp.p3)
 
         # NULL 값을 스택에 추가
