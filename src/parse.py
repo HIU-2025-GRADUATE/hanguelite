@@ -60,7 +60,7 @@ def p_create_table_args(p):
     p[0] = " ".join(p[1:])
     createQuery += p[0]
     endTable(pParse, createQuery)
-    columnToAdd.clear()
+    columnToAdd.clear() # KOR_CREATE
 
 def p_columnlist_multiple(p):
     """columnlist : columnlist TK_COMMA column"""
@@ -76,9 +76,8 @@ def p_column(p):
 
 def p_columnid(p):
     """columnid : id"""
-    addColumn(pParse, p[1])
-    columnName: Token = p[1]
-    print("add column ", columnName.z)
+    addColumn(pParse, p[1]) # ENG CREATE
+    columnName: Token = p[1] # KOR CREATE
     columnToAdd.append(Column(columnName.z))
     p[0] = p[1]
 
@@ -103,12 +102,10 @@ def p_command_create_kor(p):
     startTable(pParse, p[1])
     # column 세팅
     for column in columnToAdd:
-        print(column.zName)
         table: Table = pParse.pNewTable
         table.aCol.append(column)
         table.nCol += 1
     endTable(pParse, createQuery)
-    print("clear columnToAdd")
     columnToAdd.clear()
 
 """
