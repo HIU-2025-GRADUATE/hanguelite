@@ -815,6 +815,7 @@ class Vdbe:
         elif pOp.opcode == OP_Put:
           print("cursor id:", pOp.p1)
           if pOp.p1 < 0 or pOp.p1 >= self.nCursor or self.aCsr[pOp.p1] == 0:
+            pc += 1
             continue
           data = self.aStack[-1]
           key = self.aStack[-2]
@@ -842,6 +843,7 @@ class Vdbe:
         # 만약 조회하는 커서의 KeyAsData 값이 1 이라면 데이터 대신 키 값을 읽어옴
         elif pOp.opcode == OP_Field:
           if pOp.p1 < 0 or pOp.p1 >= self.nCursor or self.aCsr[pOp.p1].pCursor == 0:
+            pc += 1
             continue
           if self.aCsr[pOp.p1].keyAsData:
             z = self.aCsr[pOp.p1].pCursor.readKey()
@@ -860,12 +862,16 @@ class Vdbe:
           pass
 
         elif pOp.opcode == OP_Rewind:
-          if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
+          if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: 
+            pc += 1
+            continue
           self.aCsr[pOp.p1].pCursor.rewind()
 
         # p1 커서의 dbf 에서 가리키고 있는 레코드의 다음 레코드를 가리키도록 이동
         elif pOp.opcode == OP_Next:
-          if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
+          if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: 
+            pc += 1
+            continue
           if self.aCsr[pOp.p1].pCursor.nextKey() == 0: pc = pOp.p2-1            #16 => makeLabel 없어서 하드 코딩
           else: self.nFetch+=1
 
@@ -955,6 +961,7 @@ class Vdbe:
           i = pOp.p1
           if i < 0 or i > len(self.apList) or self.apList[i] == 0:
             # (TODO) continue 아니고 bad_instruction 오류로 수정해야함
+            pc += 1
             continue
 
           val = self.apList[i].readline()
@@ -985,6 +992,7 @@ class Vdbe:
           data = str(self.aStack.pop())
           if i < 0 or i >= len(self.apSort):
             # (TODO) continue 아니고 bad_instruction 오류 발생해야함
+            pc += 1
             continue
           
           pSorter = Sorter()
@@ -1030,7 +1038,7 @@ class Vdbe:
           if j <len(self.apSort):
             apSorter = [0]*NSORT
 
-            while self.apSort[j]!=0:
+            while self.apSort[j] != 0:
               pElem = self.apSort[j]
               self.apSort[j] = pElem.pNext
               pElem.pNext = 0
@@ -1055,6 +1063,7 @@ class Vdbe:
         elif pOp.opcode == OP_SortNext:
           i = pOp.p1
           if i < 0:
+            pc += 1
             continue
           if i < len(self.apSort) and self.apSort[i] != 0:
             pSorter = self.apSort[i]
@@ -1123,6 +1132,7 @@ class Vdbe:
         elif pOp.opcode == OP_FileRead:
           if self.pFile == 0:
             # (TODO) goto fileread_jump;
+            pc += 1
             continue
 
           nField = pOp.p1
