@@ -961,8 +961,7 @@ class Vdbe:
           i = pOp.p1
           if i < 0 or i > len(self.apList) or self.apList[i] == 0:
             # (TODO) continue 아니고 bad_instruction 오류로 수정해야함
-            pc += 1
-            continue
+            raise BadInstruction(f"illegal operation at {pc}")
 
           val = self.apList[i].readline()
           if val == '':
@@ -992,8 +991,7 @@ class Vdbe:
           data = str(self.aStack.pop())
           if i < 0 or i >= len(self.apSort):
             # (TODO) continue 아니고 bad_instruction 오류 발생해야함
-            pc += 1
-            continue
+            raise BadInstruction(f"illegal operation at {pc}")
           
           pSorter = Sorter()
           pSorter.pNext = self.apSort[i]
@@ -1036,7 +1034,7 @@ class Vdbe:
           # Number of buckets used for merge-sort.
           NSORT = 30
           if j <len(self.apSort):
-            apSorter = [0]*NSORT
+            apSorter = [0] * NSORT
 
             while self.apSort[j] != 0:
               pElem = self.apSort[j]
@@ -1063,8 +1061,7 @@ class Vdbe:
         elif pOp.opcode == OP_SortNext:
           i = pOp.p1
           if i < 0:
-            pc += 1
-            continue
+            raise BadInstruction(f"illegal operation at {pc}")
           if i < len(self.apSort) and self.apSort[i] != 0:
             pSorter = self.apSort[i]
             self.apSort[i] = pSorter.pNext
