@@ -476,6 +476,8 @@ class Vdbe:
           for _ in range(argc):
             args.append(self.aStack.pop())
 
+          args.reverse()
+          
           if xCallback != None:
             print(f"call callback with args: {args}")
             xCallback(argc, args, [])
