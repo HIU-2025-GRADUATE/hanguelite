@@ -16,7 +16,7 @@ def update(pParse: Parse, tableName: Token, setList: ExprList, whereOpt: Expr):
         tableList.idListAppend(tableName)
 
         for i in range(tableList.nId):
-            tableList.a[i].pTab = pParse.db.findTable(tableName.z)
+            tableList.a[i].pTab = pParse.db.findTable(tableList.a[i].zName)
 
             if tableList.a[i].pTab is None:
                 pParse.nErr += 1

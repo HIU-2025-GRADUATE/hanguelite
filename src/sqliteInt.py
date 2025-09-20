@@ -1,5 +1,5 @@
 from src.util import hashNoCase
-from src.constant import SQLITE_OK, SQLITE_Initialized, SQLITE_BUSY
+from src.constant import SQLITE_OK, SQLITE_Initialized, SQLITE_BUSY, MASTER_NAME
 from src.tokenToConstant import *
 from src.vdbe.vdbe import *
 
