@@ -175,7 +175,9 @@ def p_command_update(p):
 
 def p_set_list(p):
     """setlist : setlist TK_COMMA id TK_EQ expr"""
-    p[0] = p[1].append(p[5], p[3])
+    exprList = p[1]
+    exprList.append(p[5], p[3])
+    p[0] = exprList
 
 def p_set_list_single(p):
     """setlist : id TK_EQ expr"""
