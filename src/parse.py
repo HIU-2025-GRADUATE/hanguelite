@@ -9,6 +9,7 @@ from src.tokenizer import tokens
 
 pParse: Parse = None
 createQuery: str = ""
+columnToAdd: [Column] = list()
 
 precedence = (
     ('left', 'TK_OR'),
@@ -59,6 +60,7 @@ def p_create_table_args(p):
     p[0] = " ".join(p[1:])
     createQuery += p[0]
     endTable(pParse, createQuery)
+    columnToAdd.clear() # KOR_CREATE
 
 def p_columnlist_multiple(p):
     """columnlist : columnlist TK_COMMA column"""
@@ -74,7 +76,9 @@ def p_column(p):
 
 def p_columnid(p):
     """columnid : id"""
-    addColumn(pParse, p[1])
+    addColumn(pParse, p[1]) # ENG CREATE
+    columnName: Token = p[1] # KOR CREATE
+    columnToAdd.append(Column(columnName.z))
     p[0] = p[1]
 
 def p_type(p):
@@ -88,6 +92,21 @@ def p_typename(p):
 def p_id_from_string(p):
     """id : TK_STRING"""
     p[0] = p[1]
+
+"""
+    CREATE_KOR
+"""
+def p_command_create_kor(p):
+    """cmd : id TK_LP columnlist TK_RP TK_TABLE_KOR TK_CREATE_KOR """
+    createQuery = " ".join(map(str, p[1:]))
+    startTable(pParse, p[1])
+    # column 세팅
+    for column in columnToAdd:
+        table: Table = pParse.pNewTable
+        table.aCol.append(column)
+        table.nCol += 1
+    endTable(pParse, createQuery)
+    columnToAdd.clear()
 
 """
     INSERT
