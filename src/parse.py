@@ -220,9 +220,10 @@ def p_select(p):
     p[0] = p[1]
 
 def p_oneselect(p):
-    # """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt orderby_opt"""
-    """oneselect : from where_opt groupby_opt having_opt selcollist TK_COL_LIST_POST_KR orderby_opt TK_SELECT_KR"""
-    p[0] = Select(p[5], p[1], p[2], p[3], p[4], p[7], 0)
+    """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt orderby_opt"""
+    p[0] = Select(p[2], p[3], p[4], p[5], p[6], p[7], 0)
+    # """oneselect : from where_opt groupby_opt having_opt selcollist TK_COL_LIST_POST_KR orderby_opt TK_SELECT_KR"""
+    # p[0] = Select(p[5], p[1], p[2], p[3], p[4], p[7], 0)
 
 def p_selcollist_star(p):
     """selcollist : TK_STAR"""
@@ -245,8 +246,10 @@ def p_sclp_empty(p):
     p[0] = None
 
 def p_from(p):
-    """from : seltablist TK_FROM_KR"""
-    p[0] = p[1]
+    """ from : TK_FROM seltablist """
+    p[0] = p[2]
+    # """from : seltablist TK_FROM_KR"""
+    # p[0] = p[1]
 
 def p_stl_prefix_empty(p):
     """stl_prefix :"""
@@ -280,7 +283,8 @@ def p_where_opt_empty(p):
     p[0] = None  
 
 def p_where_opt_expr(p):
-    """where_opt : TK_WHERE_PRE_KR expr TK_WHERE_POST_KR"""
+    """where_opt : TK_WHERE expr"""
+    # """where_opt : TK_WHERE_PRE_KR expr TK_WHERE_POST_KR"""
     p[0] = p[2]  
 
 def p_groupby_opt_empty(p):

@@ -28,7 +28,7 @@ def deleteFrom(parse: Parse, tableName: Token, where: Expr):
         exprResolveInSelect(parse, where)
         if exprResolveIds(parse, tableList, where):
             return
-        if exprCheck(parse, where, 0, []):
+        if exprCheck(parse, where, 0, None):
             return
 
     """ ************************* """
