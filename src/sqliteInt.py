@@ -1,5 +1,5 @@
 from src.util import hashNoCase
-from src.constant import SQLITE_OK, SQLITE_Initialized, SQLITE_BUSY
+from src.constant import SQLITE_OK, SQLITE_Initialized, SQLITE_BUSY, MASTER_NAME
 from src.tokenToConstant import *
 from src.vdbe.vdbe import *
 
@@ -66,6 +66,18 @@ class Index:
         self.isUnique = 0
         self.pNext = None
 
+class Token:
+    z: str
+    n: int
+
+    def __init__(self, token: str):
+        self.z = token
+        self.n = len(token)
+
+    def __str__(self):
+        return self.z
+
+
 class sqlite:
     pBe: Dbbe
     flags: int
@@ -101,7 +113,6 @@ class sqlite:
             return None
 
         return db
-
 
     def findTable(self, tableName: str) -> Table:
         h = hashNoCase(tableName, 0) % N_HASH
@@ -148,8 +159,6 @@ class sqlite:
         # execute master table create sql
         from main import runParser
         return runParser(parse, argv[0])
-
-
 
     def initialize(self):
         """ main.c : sqliteInit() """
@@ -216,18 +225,6 @@ class sqlite:
         return rc
 
 
-class Token:
-    z: str
-    n: int
-
-    def __init__(self, token: str):
-        self.z = token
-        self.n = len(token)
-
-    def __str__(self):
-        return self.z
-
-
 class Expr:
     op: int
     pLeft: 'Expr'
@@ -280,7 +277,7 @@ class ExprList:
         self.a = []
         self.nExpr = 0
     
-    def exprListAppend(self, pExpr : Expr, pName : Token):
+    def append(self, pExpr : Expr, pName : Token):
         item = ExprListItem()
         item.pExpr = pExpr
         item.zName = ""
@@ -319,6 +316,13 @@ class IdList:
             self.a[self.nId].zName = pToken.z[:pToken.n].strip()
 
         self.nId += 1
+
+    def addAlias(self, pToken: Token):
+        if self.nId > 0:
+            if pToken.z[0] in ("'", '"'):
+                pToken.z = pToken.z[1:-1].replace(pToken.z[0] * 2, pToken.z[0])
+            
+            self.a[-1].zAlias = pToken.z
 
 
 class WhereInfo:
@@ -428,6 +432,15 @@ class Parse:
             self.pVdbe = v
 
         return v
+
+    def getTableFromToken(self, tableName: Token):
+        table: Table = self.db.findTable(tableName.z)
+
+        if not table:
+            print(f"no such table: {tableName.z}")
+            return
+
+        return table
 
     @staticmethod
     def empty():
