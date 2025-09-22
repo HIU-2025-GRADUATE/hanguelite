@@ -1,6 +1,7 @@
 from ply import yacc
 from src.select import *
 from src.insert import *
+from src.update import *
 from src.tokenizer import tokens
 
 # 전역 파서 컨텍스트 등 (예: pParse, SRT_Callback 등)
@@ -181,6 +182,27 @@ def p_item_str(p):
 def p_item_null(p):
     """item : TK_NULL"""
     p[0] = Expr(TK_NULL, None, None, None)
+
+"""
+    UPDATE
+"""
+def p_command_update(p):
+    """cmd : TK_UPDATE id TK_SET setlist where_opt"""
+    table, setList, whereOpt = p[2], p[4], p[5]
+    update(pParse, table, setList, whereOpt)
+    p[0] = p[1]
+
+def p_set_list(p):
+    """setlist : setlist TK_COMMA id TK_EQ expr"""
+    exprList = p[1]
+    exprList.append(p[5], p[3])
+    p[0] = exprList
+
+def p_set_list_single(p):
+    """setlist : id TK_EQ expr"""
+    exprList = ExprList()
+    exprList.append(p[3], p[1])
+    p[0] = exprList
 
 """
     SELECT
