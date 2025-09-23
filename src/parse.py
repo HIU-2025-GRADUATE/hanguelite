@@ -219,9 +219,9 @@ def p_select(p):
     p[0] = p[1]
 
 def p_oneselect(p):
-    # """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt orderby_opt"""
-    """oneselect : from where_opt groupby_opt having_opt selcollist TK_COL_LIST_POST_KR orderby_opt TK_SELECT_KR"""
-    p[0] = Select(p[5], p[1], p[2], p[3], p[4], p[7], 0)
+    """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt orderby_opt"""
+    # Create a new SELECT structure using the parsed select list and from clause.
+    p[0] = Select(p[2], p[3], p[4], p[5], p[6], p[7], 0)
 
 def p_selcollist_star(p):
     """selcollist : TK_STAR"""
@@ -244,8 +244,8 @@ def p_sclp_empty(p):
     p[0] = None
 
 def p_from(p):
-    """from : seltablist TK_FROM_KR"""
-    p[0] = p[1]
+    """from : TK_FROM seltablist"""
+    p[0] = p[2]
 
 def p_stl_prefix_empty(p):
     """stl_prefix :"""
@@ -279,32 +279,32 @@ def p_where_opt_empty(p):
     p[0] = None  
 
 def p_where_opt_expr(p):
-    """where_opt : TK_WHERE_PRE_KR expr TK_WHERE_POST_KR"""
-    p[0] = p[2]  
+    """where_opt : TK_WHERE expr"""
+    p[0] = p[2]
 
 def p_groupby_opt_empty(p):
     """groupby_opt :"""
     p[0] = None  
 
 def p_groupby_opt(p):
-    """groupby_opt : TK_GROUP_BY_PRE_KR exprlist TK_GROUP_BY_POST_KR"""
-    p[0] = p[2] 
+    """groupby_opt : TK_GROUP TK_BY exprlist"""
+    p[0] = p[3]
 
 def p_having_opt_empty(p):
     """having_opt :"""
     p[0] = None  
 
 def p_having_opt(p):
-    """having_opt : TK_HAVING_PRE_KR expr TK_HAVING_POST_KR"""
-    p[0] = p[2] 
+    """having_opt : TK_HAVING expr"""
+    p[0] = p[2]
 
 def p_orderby_opt_empty(p):
     """orderby_opt :"""
     p[0] = None  
 
 def p_orderby_opt(p):
-    """orderby_opt : sortlist TK_ORDER_BY_KR"""
-    p[0] = p[1] 
+    """orderby_opt : TK_ORDER TK_BY sortlist"""
+    p[0] = p[3]
 
 def p_sortlist_comma(p):
     """sortlist : sortlist TK_COMMA sortitem sortorder"""
@@ -324,11 +324,11 @@ def p_sortitem(p):
     p[0] = p[1]
 
 def p_sortorder_asc(p):
-    """sortorder : TK_ASC_KR"""
+    """sortorder : TK_ASC"""
     p[0] = 0
 
 def p_sortorder_desc(p):
-    """sortorder : TK_DESC_KR"""
+    """sortorder : TK_DESC"""
     p[0] = 1
 
 def p_sortorder_empty(p):
@@ -493,7 +493,48 @@ def p_expr_dot(p):
     e1 = Expr(TK_ID, None, None, p[1])
     e2 = Expr(TK_ID, None, None, p[3])
     p[0] = Expr(TK_DOT, e1, e2, None, p[2])
-    
+
+"""
+    SELECT_KOR
+"""
+
+def p_oneselect_kor(p):
+    # """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt orderby_opt"""
+    """oneselect : from where_opt groupby_opt having_opt selcollist TK_COL_LIST_POST_KR orderby_opt TK_SELECT_KR"""
+    p[0] = Select(p[5], p[1], p[2], p[3], p[4], p[7], 0)
+
+def p_from_kor(p):
+    """from : seltablist TK_FROM_KR"""
+    p[0] = p[1]
+
+def p_where_opt_expr_kor(p):
+    """where_opt : TK_WHERE_PRE_KR expr TK_WHERE_POST_KR"""
+    p[0] = p[2]
+
+def p_groupby_opt_kor(p):
+    """groupby_opt : TK_GROUP_BY_PRE_KR exprlist TK_GROUP_BY_POST_KR"""
+    p[0] = p[2] 
+
+def p_having_opt_kor(p):
+    """having_opt : TK_HAVING_PRE_KR expr TK_HAVING_POST_KR"""
+    p[0] = p[2]
+
+def p_orderby_opt_kor(p):
+    """orderby_opt : sortlist TK_ORDER_BY_KR"""
+    p[0] = p[1] 
+
+def p_sortorder_asc_kor(p):
+    """sortorder : TK_ASC_KR"""
+    p[0] = 0
+
+def p_sortorder_desc_kor(p):
+    """sortorder : TK_DESC_KR"""
+    p[0] = 1
+
+"""
+    DROP
+"""
+
 def p_drop_table(p):
     """cmd : TK_DROP TK_TABLE id"""
     dropTable(pParse, p[3])
