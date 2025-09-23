@@ -1,7 +1,6 @@
-import csv, os, random, time, logging
+import random, time, logging
 from src.gdbm import *
-from src.constant import MASTER_NAME, SQLITE_OK, SQLITE_READONLY, SQLITE_PERM, SQLITE_BUSY
-from src.util import *
+from src.constant import SQLITE_OK, SQLITE_READONLY, SQLITE_PERM, SQLITE_BUSY, SQLITE_ERROR
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -109,10 +108,10 @@ class Dbbe:
     def openTempFile(self, apList, idx):
         rc = SQLITE_OK
 
-        i=0
-        for j in range(0, len(self.apTemp)):
-            if self.apTemp[j]==0:
-                i=j
+        i = 0
+        for j in range(len(self.apTemp)):
+            if self.apTemp[j] == 0:
+                i = j
                 break
 
         if i >= len(self.apTemp):
@@ -120,12 +119,12 @@ class Dbbe:
 
         while True:
             randNum = ''.join(str(random.randint(0, 9)) for _ in range(16))
-            zFile = "_temp_file_"+randNum
+            zFile = "_temp_file_" + randNum
             if zFile not in os.listdir(self.zDir):
                 break
 
         zFile = os.path.join(self.zDir, zFile)
-        apList[idx] = open(zFile, 'w', encoding='utf-8')
+        apList[idx] = open(zFile, 'w+', encoding='utf-8')
         self.apTemp[i] = apList[idx]
 
         if self.apTemp == 0:
@@ -209,7 +208,7 @@ class DbbeCursor:
         rc = SQLITE_OK
 
         if not pFile: # table 경로에 대해 기존 커서가 없다면
-            fileMode = "c" if writeable else "w"
+            fileMode = "c" if writeable else "c"
             pFile = BeFile(writeable, zFile)
 
             if zFile: # 테이블 이름이 존재한다면 -> 이 테이블에 대한 커서 열기
@@ -256,11 +255,13 @@ class DbbeCursor:
         return rc
     
     def new(self):
-        if self.pFile == None or self.pFile.dbf == None: return 1
+        if self.pFile == None or self.pFile.dbf == None:
+            return 1
         while 1:
             random.seed(time.time())
             iKey = f"{random.getrandbits(64):016x}"
-            if gdbm_exists(self.pFile.dbf, iKey): continue
+            if gdbm_exists(self.pFile.dbf, iKey):
+                continue
             break
         return iKey
     
@@ -270,7 +271,7 @@ class DbbeCursor:
         gdbm_store(self.pFile.dbf, key, data, GDBM_REPLACE)
 
     def nextKey(self):
-        if self.pFile==0 or self.pFile.dbf==0:
+        if self.pFile == 0 or self.pFile.dbf == 0:
             self.readPending = False
             return 0
         if self.needRewind:
@@ -297,7 +298,8 @@ class DbbeCursor:
         if self.readPending and self.pFile and self.pFile.dbf:
             self.data = gdbm_fetch(self.pFile.dbf, self.key)
             self.readPending = False
-        if offset<0 or offset>=len(self.data): return ''
+        if offset < 0 or offset >= len(self.data):
+            return ''
         return self.data[offset]
     
     # src/dbbe.c

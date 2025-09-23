@@ -1,6 +1,7 @@
 from ply import yacc
 from src.select import *
 from src.insert import *
+from src.update import *
 from src.tokenizer import tokens
 
 # 전역 파서 컨텍스트 등 (예: pParse, SRT_Callback 등)
@@ -9,6 +10,7 @@ from src.tokenizer import tokens
 
 pParse: Parse = None
 createQuery: str = ""
+columnToAdd: [Column] = list()
 
 precedence = (
     ('left', 'TK_OR'),
@@ -59,6 +61,7 @@ def p_create_table_args(p):
     p[0] = " ".join(p[1:])
     createQuery += p[0]
     endTable(pParse, createQuery)
+    columnToAdd.clear() # KOR_CREATE
 
 def p_columnlist_multiple(p):
     """columnlist : columnlist TK_COMMA column"""
@@ -74,7 +77,9 @@ def p_column(p):
 
 def p_columnid(p):
     """columnid : id"""
-    addColumn(pParse, p[1])
+    addColumn(pParse, p[1]) # ENG CREATE
+    columnName: Token = p[1] # KOR CREATE
+    columnToAdd.append(Column(columnName.z))
     p[0] = p[1]
 
 def p_type(p):
@@ -88,6 +93,21 @@ def p_typename(p):
 def p_id_from_string(p):
     """id : TK_STRING"""
     p[0] = p[1]
+
+"""
+    CREATE_KOR
+"""
+def p_command_create_kor(p):
+    """cmd : id TK_LP columnlist TK_RP TK_TABLE_KOR TK_CREATE_KOR """
+    createQuery = " ".join(map(str, p[1:]))
+    startTable(pParse, p[1])
+    # column 세팅
+    for column in columnToAdd:
+        table: Table = pParse.pNewTable
+        table.aCol.append(column)
+        table.nCol += 1
+    endTable(pParse, createQuery)
+    columnToAdd.clear()
 
 """
     INSERT
@@ -164,6 +184,27 @@ def p_item_null(p):
     p[0] = Expr(TK_NULL, None, None, None)
 
 """
+    UPDATE
+"""
+def p_command_update(p):
+    """cmd : TK_UPDATE id TK_SET setlist where_opt"""
+    table, setList, whereOpt = p[2], p[4], p[5]
+    update(pParse, table, setList, whereOpt)
+    p[0] = p[1]
+
+def p_set_list(p):
+    """setlist : setlist TK_COMMA id TK_EQ expr"""
+    exprList = p[1]
+    exprList.append(p[5], p[3])
+    p[0] = exprList
+
+def p_set_list_single(p):
+    """setlist : id TK_EQ expr"""
+    exprList = ExprList()
+    exprList.append(p[3], p[1])
+    p[0] = exprList
+
+"""
     SELECT
 """
 def p_cmd(p):
@@ -178,9 +219,9 @@ def p_select(p):
     p[0] = p[1]
 
 def p_oneselect(p):
-    """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt orderby_opt"""
-    # Create a new SELECT structure using the parsed select list and from clause.
-    p[0] = Select(p[2], p[3], p[4], p[5], p[6], p[7], 0)
+    # """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt orderby_opt"""
+    """oneselect : from where_opt groupby_opt having_opt selcollist TK_COL_LIST_POST_KR orderby_opt TK_SELECT_KR"""
+    p[0] = Select(p[5], p[1], p[2], p[3], p[4], p[7], 0)
 
 def p_selcollist_star(p):
     """selcollist : TK_STAR"""
@@ -203,8 +244,8 @@ def p_sclp_empty(p):
     p[0] = None
 
 def p_from(p):
-    """from : TK_FROM seltablist"""
-    p[0] = p[2]
+    """from : seltablist TK_FROM_KR"""
+    p[0] = p[1]
 
 def p_stl_prefix_empty(p):
     """stl_prefix :"""
@@ -238,7 +279,7 @@ def p_where_opt_empty(p):
     p[0] = None  
 
 def p_where_opt_expr(p):
-    """where_opt : TK_WHERE expr"""
+    """where_opt : TK_WHERE_PRE_KR expr TK_WHERE_POST_KR"""
     p[0] = p[2]  
 
 def p_groupby_opt_empty(p):
@@ -246,15 +287,15 @@ def p_groupby_opt_empty(p):
     p[0] = None  
 
 def p_groupby_opt(p):
-    """groupby_opt : TK_GROUP TK_BY exprlist"""
-    p[0] = p[3] 
+    """groupby_opt : TK_GROUP_BY_PRE_KR exprlist TK_GROUP_BY_POST_KR"""
+    p[0] = p[2] 
 
 def p_having_opt_empty(p):
     """having_opt :"""
     p[0] = None  
 
 def p_having_opt(p):
-    """having_opt : TK_HAVING expr"""
+    """having_opt : TK_HAVING_PRE_KR expr TK_HAVING_POST_KR"""
     p[0] = p[2] 
 
 def p_orderby_opt_empty(p):
@@ -262,8 +303,8 @@ def p_orderby_opt_empty(p):
     p[0] = None  
 
 def p_orderby_opt(p):
-    """orderby_opt : TK_ORDER TK_BY sortlist"""
-    p[0] = p[3] 
+    """orderby_opt : sortlist TK_ORDER_BY_KR"""
+    p[0] = p[1] 
 
 def p_sortlist_comma(p):
     """sortlist : sortlist TK_COMMA sortitem sortorder"""
@@ -283,11 +324,11 @@ def p_sortitem(p):
     p[0] = p[1]
 
 def p_sortorder_asc(p):
-    """sortorder : TK_ASC"""
+    """sortorder : TK_ASC_KR"""
     p[0] = 0
 
 def p_sortorder_desc(p):
-    """sortorder : TK_DESC"""
+    """sortorder : TK_DESC_KR"""
     p[0] = 1
 
 def p_sortorder_empty(p):

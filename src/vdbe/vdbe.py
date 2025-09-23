@@ -1,6 +1,4 @@
-import logging
 from src.dbbe import *
-from .vdbeOp import VdbeOp
 from src.vdbe.vdbeOp import *
 from src.vdbe.cursor import *
 from src.vdbe.agg import *
@@ -54,7 +52,7 @@ class Vdbe:
     # char **zStack;     # /* Text or binary values of the stack */
     # char **azColName;  # /* Becomes the 4th parameter to callbacks */
     # int nList;         # /* Number of slots in apList[] */
-    # FILE **apList;     # /* An open file for each list */
+    self.apList = list()     # /* An open file for each list */
     # int nSort;         # /* Number of slots in apSort[] */
     # Sorter **apSort;   # /* An open sorter list */
     # FILE *pFile;       # /* At most one open file handler */
@@ -423,19 +421,15 @@ class Vdbe:
         # print(zOpName[pOp.opcode], pOp.p1, pOp.p2, pOp.p3)
         # print(self.aStack)
 
-        # 특정 위치로 이동
         if pOp.opcode == OP_Goto:
-          pc = pOp.p2 - 1                   #7 => makeLabel 없어서 하드 코딩
+          pc = pOp.p2 - 1
 
-        # 종료
         elif pOp.opcode == OP_Halt:
           pc = len(self.aOp)-1
 
-        # P1 정수 값을 스택에 추가
         elif pOp.opcode == OP_Integer:
           self.aStack.append(pOp.p1)
 
-        # P3 문자열 값을 스택에 추가
         elif pOp.opcode == OP_String:
           self.aStack.append(pOp.p3)
 
@@ -775,8 +769,8 @@ class Vdbe:
         elif pOp.opcode == OP_Fetch:
           i = pOp.p1
           key = self.aStack.pop()
-          if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
-            self.aCsr[i].fetch(key)
+          if  0 <= i < self.nCursor and self.aCsr[i].pCursor is not None:
+            self.aCsr[i].pCursor.fetch(key)
             self.nFetch += 1
 
         # 이 vdbe에서 실행된 OP_Fetch의 횟수를 스택에 push
@@ -849,37 +843,40 @@ class Vdbe:
             z = self.aCsr[pOp.p1].pCursor.readData(pOp.p2)
           self.aStack.append(z)
 
-        # 스택에 최근 사용한 키의 앞에서 4 byte 만큼을 push
-        # (TODO) c언어에서는 int 크기를 맞춘거 같은데
-        # 여기서도 앞에 8글자로 제한해서 작성하였음 -> 바꿔도 상관없을듯...
+        # 최근 사용한 키를 가져온다.
+        # 원본에서는 cursor 의 keyAsData 속성에 따라 일부만 가져오거나 전체를 가져올 수 있다.
+        # 파이썬은 자료형 크기의 제한이 없으므로 일단 전체 키를 가져오는 것을 기본으로 한다.
         elif pOp.opcode == OP_Key:
           i = pOp.p1
-          if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
-            z = self.aCsr[i].pCursor.readKey()[:8]
+          if 0 <= i < self.nCursor and self.aCsr[i].pCursor is not None:
+            z = self.aCsr[i].pCursor.readKey() # byte 형식의 키를 읽어온다.
             self.aStack.append(z)
-          pass
 
         elif pOp.opcode == OP_Rewind:
-          if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
+          if pOp.p1 < 0 or pOp.p1 >= self.nCursor or self.aCsr[pOp.p1] == 0:
+            continue
           self.aCsr[pOp.p1].pCursor.rewind()
 
         # p1 커서의 dbf 에서 가리키고 있는 레코드의 다음 레코드를 가리키도록 이동
         elif pOp.opcode == OP_Next:
-          if pOp.p1<0 or pOp.p1>=self.nCursor or self.aCsr[pOp.p1]==0: continue
-          if self.aCsr[pOp.p1].pCursor.nextKey() == 0: pc = pOp.p2-1            #16 => makeLabel 없어서 하드 코딩
-          else: self.nFetch+=1
+          if pOp.p1 < 0 or pOp.p1 >= self.nCursor or self.aCsr[pOp.p1] == 0:
+            continue
+
+          if self.aCsr[pOp.p1].pCursor.nextKey() == 0:
+            pc = pOp.p2-1
+          else:
+            self.nFetch += 1
 
         # p1 커서의 다음 커서를 처음 커서 (0번) 으로 리셋
         elif pOp.opcode == OP_ResetIdx:
           i = pOp.p1
-          if i >= 0 and i < self.nCursor:
+          if 0 <= i < self.nCursor:
             self.aCsr[i].index = 0
 
-        # 
         elif pOp.opcode == OP_NextIdx:
           i = pOp.p1
           self.aStack.append(0)
-          if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
+          if 0 <= i < self.nCursor and self.aCsr[i].pCursor is not None:
             nIdx = self.aCsr[i].pCursor.dataLength()
             aIdx = self.aCsr[i].pCursor.readData(0)
 
@@ -887,13 +884,13 @@ class Vdbe:
               # TODO k = *(aIdx++)
               k = aIdx[1]
               if k > nIdx-1:
-                k = nIdx - 1
+                k = nIdx-1
             else:
               k = nIdx
             
             for j in range(self.aCsr[i].index, k):
               if aIdx[j] != 0:
-                self.aStack[-1]=aIdx[j]
+                self.aStack[-1] = aIdx[j]
                 break
 
             if j >= k:
@@ -961,7 +958,9 @@ class Vdbe:
           if val == '':
             pc = pOp.p2-1
           else:
-            self.aStack.append(int(val))
+            import ast
+            b = ast.literal_eval(val) # 문자열로 된 byte 형식 데이터를 파이썬 byte 객체로 변환
+            self.aStack.append(b)
 
         # p1 번째 임시 파일을 닫고 내용을 삭제
         elif pOp.opcode == OP_ListClose:
@@ -1247,8 +1246,6 @@ class Vdbe:
       print(e)
       return rc
     except Exception as e:
-      print("vdbe.py")
-      print(e)
       raise e
 
 """
