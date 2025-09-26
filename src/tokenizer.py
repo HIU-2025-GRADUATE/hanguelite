@@ -29,6 +29,7 @@ reserved = {
     'AS' : 'TK_AS',
     'UPDATE': 'TK_UPDATE',
     'SET': 'TK_SET',
+    'DELETE': 'TK_DELETE',
 }
 
 # 토큰 이름 목록: parse.y에서 사용되는 토큰들과 SQLite의 tokenize.c에 있는 키워드들
