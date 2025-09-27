@@ -13,7 +13,7 @@ def fillInColumnList(pParse : Parse, p : Select):
     
     pTabList.a[i].pTab = findTable(pParse.db, pTabList.a[i].zName);  
     if pTabList.a[i].pTab == None: 
-    #   sqliteSetString(&pParse.zErrMsg, "no such table: ", .a[i].zName, 0);
+      raise Exception("no such table: " + pTabList.a[i].zName)
       pParse.nErr += 1
       return 1
     

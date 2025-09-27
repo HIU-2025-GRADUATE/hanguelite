@@ -1,4 +1,5 @@
 from ply import yacc
+from src.delete import deleteFrom
 from src.select import *
 from src.insert import *
 from src.update import *
@@ -292,7 +293,7 @@ def p_groupby_opt(p):
 
 def p_having_opt_empty(p):
     """having_opt :"""
-    p[0] = None  
+    p[0] = None
 
 def p_having_opt(p):
     """having_opt : TK_HAVING expr"""
@@ -300,7 +301,7 @@ def p_having_opt(p):
 
 def p_orderby_opt_empty(p):
     """orderby_opt :"""
-    p[0] = None  
+    p[0] = None
 
 def p_orderby_opt(p):
     """orderby_opt : TK_ORDER TK_BY sortlist"""
@@ -538,6 +539,13 @@ def p_sortorder_desc_kor(p):
 def p_drop_table(p):
     """cmd : TK_DROP TK_TABLE id"""
     dropTable(pParse, p[3])
+
+"""
+    DELETE
+"""
+def p_delete_from(p):
+    """cmd : TK_DELETE TK_FROM id where_opt"""
+    deleteFrom(pParse, p[3], p[4])
 
 def p_error(p):
     if p:
