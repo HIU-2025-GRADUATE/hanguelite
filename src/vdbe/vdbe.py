@@ -881,39 +881,61 @@ class Vdbe:
           if i >= 0 and i < self.nCursor:
             self.aCsr[i].index = 0
 
-        # 
+        # ** P1 커서는 SQL 인덱스를 가리킵니다. 해당 커서로
+        # ** 가장 최근에 가져온 데이터는 여러 개의 정수들로 이루어져 있으며,
+        # ** 각 정수는 SQL 테이블 파일의 레코드 키입니다.
+        # ** 이 명령은 P1의 데이터에서 다음 정수 테이블 키를 가져와
+        # ** 스택에 푸시합니다. fetch 이후 이 명령이 처음 실행되면
+        # ** 첫 번째 정수 테이블 키가 푸시되고, 이후 실행될 때마다
+        # ** 다음 정수 테이블 키가 순차적으로 푸시됩니다.
+        # **
+        # ** 이 명령을 실행할 때 P1의 데이터에 더 이상 정수 테이블 키가
+        # ** 남아 있지 않다면, 아무 것도 푸시하지 않고 즉시 P2에 해당하는
+        # ** 명령으로 점프합니다.
+        
+        # TODO: 여기 로직 다 변경됐음. 확인 필요
         elif pOp.opcode == OP_NextIdx:
           i = pOp.p1
-          self.aStack.append(0)
-          if i >= 0 and i < self.nCursor and self.aCsr[i].pCursor!=0:
-            nIdx = self.aCsr[i].pCursor.dataLength()
-            aIdx = self.aCsr[i].pCursor.readData(0)
+          pCrsr = self.aCsr[i].pCursor
+          if i >= 0 and i < self.nCursor and pCrsr:
+            k = pCrsr.dataLength()
 
-            if nIdx > 1:
-              # TODO k = *(aIdx++)
-              k = aIdx[1]
-              if k > nIdx-1:
-                k = nIdx - 1
-            else:
-              k = nIdx
-            
-            for j in range(self.aCsr[i].index, k):
-              if aIdx[j] != 0:
-                self.aStack[-1]=aIdx[j]
+            j = self.aCsr[i].index
+            while j < k:
+              if pCrsr.data[j] != 0:
+                self.aStack.append(pCrsr.data[j])
                 break
-
+              j += 1
+            
             if j >= k:
               j = -1
-              pc = pOp.p2-1
-              self.aStack.pop()
+              pc = pOp.p2 - 1
             
             self.aCsr[i].index = j+1
 
         # 스택의 top은 SQL index 키, 그 다음 값은 SQL table entry 키인 정수 값
         # tos의 인덱스 키와 일치하는 레코드를 p1 커서에서 찾고 없다면 새 레코드를 생성
         # 그 후 해당 레코드의 데이터에 정수 테이블 키를 추가하고 p1 커서 파일에 작성
+        
+        # TODO: 여기 로직 다 변경됐음. 확인 필요
         elif pOp.opcode == OP_PutIdx:
-          pass
+          i = pOp.p1
+          tos = self.aStack.pop()
+          nos = self.aStack.pop()
+          pCrsr = self.aCsr[i].pCursor
+
+          if i >= 0 and i < self.nCursor and pCrsr != 0:
+            # 원본 소스코드는 굉장히 복잡해 보이지만 메모리 관리 때문에 케이스가 나뉨
+            # 파이썬에서는 메모리 관리를 신경쓰지 않기 때문에 간소화
+            # HACK: pCrsr에 key=tos, value=nos로 가지는 행 put
+            r = pCrsr.fetch(tos)
+
+            if r == 0:
+              pCrsr.put(tos, nos)
+
+            else:
+              pCrsr.data.append(nos)
+              pCrsr.put(tos, pCrsr.data)
         
         # 스택의 top은 SQL index 키, 그 다음 값은 SQL table entry 키인 정수 값
         # p1 커서에서 tos에 있는 인덱스 키와 일치하는 레코드를 찾고
@@ -922,7 +944,29 @@ class Vdbe:
         # 만약 해당 작업으로 p1 커서의 데이터에서 마지막 정수 테이블 키까지 모두 제거되면
         # p1 커서에서 대응되는 레코드도 삭제
         elif pOp.opcode == OP_DeleteIdx:
-          pass
+          i = pOp.p1
+          tos = self.aStack.pop()
+          nos = self.aStack.pop()
+          pCrsr = self.aCsr[i].pCursor
+
+          if i >= 0 and i < self.nCursor and pCrsr != 0:
+            r = pCrsr.fetch(tos)
+
+            if r == 0:
+              pc += 1
+              continue
+
+            if len(pCrsr.data) == 1 and pCrsr.data[0] == nos:
+              pCrsr.delete(tos)
+
+            else:
+              try:
+                idx = pCrsr.data.index(nos)
+              except:
+                pc += 1
+                continue
+              del pCrsr.data[idx]
+              pCrsr.put(tos, pCrsr.data)
 
         # 파일 이름이 p3 인 파일을 디스크에서 삭제
         elif pOp.opcode == OP_Destroy:
