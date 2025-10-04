@@ -1,7 +1,7 @@
 from src.parse import parser, set_parse_object
 from src.sqliteInt import Parse, sqlite
+from src.dto.selectQueryDTO import *
 import os
-
 
 def runParser(parse: Parse, sql: str):
     set_parse_object(parse)
@@ -24,6 +24,12 @@ def main():
 
         try:
             execute_sql(db, s)
+            if dto.getFlag():
+                print('### main method query result test ###')
+                print(dto.columnNames)
+                print(dto.rows)
+                dto.clearDto()
+
         except Exception as e:
             print(e)
 
