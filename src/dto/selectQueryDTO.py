@@ -15,6 +15,11 @@ class SelectQueryDTO:
 
     def getFlag(self):
         return self.flag
+    
+    def clearDto(self):
+        self.flag = False
+        self.columnNames.clear()
+        self.rows.clear()
 
 
 dto = SelectQueryDTO()
