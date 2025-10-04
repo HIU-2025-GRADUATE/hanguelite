@@ -509,8 +509,8 @@ def p_from_kor(p):
     p[0] = p[1]
 
 def p_where_opt_expr_kor(p):
-    """where_opt : expr TK_WHERE_POST_KR"""
-    p[0] = p[1]
+    """where_opt : TK_WHERE_PRE_KR expr TK_WHERE_POST_KR"""
+    p[0] = p[2]
 
 def p_groupby_opt_kor(p):
     """groupby_opt : TK_GROUP_BY_PRE_KR exprlist TK_GROUP_BY_POST_KR"""
