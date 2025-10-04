@@ -10,5 +10,11 @@ class SelectQueryDTO:
     def addRow(self, row:list):
         self.rows.append(tuple(row))
 
+    def setFlag(self, val:bool):
+        self.flag = val
+
+    def getFlag(self):
+        return self.flag
+
 
 dto = SelectQueryDTO()
