@@ -467,7 +467,7 @@ class Vdbe:
           if len(self.aStack) < argc:
             raise Exception("[OP_Callback] not enough stack")
 
-          if not dto.getFlag():
+          if tableName != 'hqlite_master' and not dto.getFlag():
             dto.setFlag(True)
             dto.setColumnNames(self.azColName)
 
