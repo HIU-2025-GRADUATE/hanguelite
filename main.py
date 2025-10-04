@@ -1,7 +1,7 @@
 from src.parse import parser, set_parse_object
 from src.sqliteInt import Parse, sqlite
 import os
-
+import re
 
 def runParser(parse: Parse, sql: str):
     set_parse_object(parse)
@@ -9,6 +9,11 @@ def runParser(parse: Parse, sql: str):
 
 def execute_sql(db, sql):
     parse = Parse(db)
+
+    if bool(re.search("[가-힣]", sql)):
+        s = sql.split()
+        sql = s[-1] + " " + " ".join(s[:-1])
+    
     runParser(parse, sql)
 
 
