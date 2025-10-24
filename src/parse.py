@@ -501,8 +501,8 @@ def p_expr_dot(p):
 
 def p_oneselect_kor(p):
     # """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt orderby_opt"""
-    """oneselect : from where_opt groupby_opt having_opt selcollist TK_COL_LIST_POST_KR orderby_opt TK_SELECT_KR"""
-    p[0] = Select(p[5], p[1], p[2], p[3], p[4], p[7], 0)
+    """oneselect : TK_SELECT_KR from where_opt groupby_opt having_opt selcollist TK_COL_LIST_POST_KR orderby_opt"""
+    p[0] = Select(p[6], p[2], p[3], p[4], p[5], p[8], 0)
 
 def p_from_kor(p):
     """from : seltablist TK_FROM_KR"""
