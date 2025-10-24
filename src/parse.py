@@ -185,6 +185,14 @@ def p_item_null(p):
     p[0] = Expr(TK_NULL, None, None, None)
 
 """
+    INSERT KOR
+"""
+def p_command_insert_value_kor(p):
+    """cmd : TK_INSERT_KOR id inscollist_opt TK_TABLE_INTO_KOR TK_LP itemlist TK_RP TK_COL_LIST_POST_KR """
+    targetTable, itemList, colList = str(p[2]), p[6], p[3]
+    insert(pParse, targetTable, itemList, None, colList)
+
+"""
     UPDATE
 """
 def p_command_update(p):
