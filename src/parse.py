@@ -564,6 +564,13 @@ def p_delete_from(p):
     """cmd : TK_DELETE TK_FROM id where_opt"""
     deleteFrom(pParse, p[3], p[4])
 
+"""
+    DELETE KOR
+"""
+def p_delete_from_kor(p):
+    """cmd : TK_DELETE_KOR id TK_FROM_KR where_opt"""
+    deleteFrom(pParse, p[2], p[4])
+
 def p_error(p):
     if p:
         print(f"[SYNTAX ERROR] Unexpected token: {p.type} ({p.value}) at line {p.lineno}")

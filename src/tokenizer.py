@@ -40,7 +40,7 @@ tokens = (
     'TK_EQ', 'TK_PLUS', 'TK_MINUS',
     "TK_SELECT_KR", "TK_FROM_KR", "TK_WHERE_PRE_KR", "TK_WHERE_POST_KR", "TK_GROUP_BY_PRE_KR", "TK_GROUP_BY_POST_KR",
     "TK_HAVING_PRE_KR", "TK_HAVING_POST_KR", "TK_ORDER_BY_KR", "TK_ASC_KR", "TK_DESC_KR", "TK_COL_LIST_POST_KR", "TK_TABLE_KOR", "TK_CREATE_KOR",
-    "TK_TABLE_INTO_KOR", "TK_INSERT_KOR", "TK_EURO", "TK_UPDATE_KOR"
+    "TK_TABLE_INTO_KOR", "TK_INSERT_KOR", "TK_EURO", "TK_UPDATE_KOR", "TK_DELETE_KOR"
 ) + tuple(reserved.values())
 
 # 정규표현식 규칙
@@ -76,6 +76,7 @@ t_TK_TABLE_INTO_KOR         = r"테이블에"
 t_TK_INSERT_KOR             = r"추가해줘"
 t_TK_EURO                   = r"(으로|로)"
 t_TK_UPDATE_KOR             = r"(변경해줘|바꿔줘)"
+t_TK_DELETE_KOR             = r"(삭제해줘|지워줘)"
 
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
