@@ -214,6 +214,15 @@ def p_set_list_single(p):
     p[0] = exprList
 
 """
+    UPDATE KOR
+"""
+def p_command_update_kor(p):
+    """cmd : TK_UPDATE_KOR id TK_FROM_KR where_opt setlist TK_EURO """
+    table, setList, whereOpt = p[2], p[5], p[4]
+    update(pParse, table, setList, whereOpt)
+    p[0] = p[1]
+
+"""
     SELECT
 """
 def p_cmd(p):
