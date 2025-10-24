@@ -99,9 +99,9 @@ def p_id_from_string(p):
     CREATE_KOR
 """
 def p_command_create_kor(p):
-    """cmd : id TK_LP columnlist TK_RP TK_TABLE_KOR TK_CREATE_KOR """
+    """cmd : TK_CREATE_KOR id TK_LP columnlist TK_RP TK_TABLE_KOR """
     createQuery = " ".join(map(str, p[1:]))
-    startTable(pParse, p[1])
+    startTable(pParse, p[2])
     # column 세팅
     for column in columnToAdd:
         table: Table = pParse.pNewTable
