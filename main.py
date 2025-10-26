@@ -1,8 +1,10 @@
 from src.parse import parser, set_parse_object
 from src.sqliteInt import Parse, sqlite
 from src.dto.selectQueryDTO import *
+from src.dto.response import *
 import os
 import re
+import copy
 
 def runParser(parse: Parse, sql: str):
     set_parse_object(parse)
@@ -31,13 +33,15 @@ def main():
         try:
             execute_sql(db, s)
             if dto.getFlag():
-                print('### main method query result test ###')
-                print(dto.columnNames)
-                print(dto.rows)
+                data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
                 dto.clearDto()
+                return Response(200, None, data)
+            else:
+                return Response(200, None, None)
+            
 
         except Exception as e:
-            print(e)
+            return Response(400, None, None)
 
 if __name__ == '__main__':
     main()
