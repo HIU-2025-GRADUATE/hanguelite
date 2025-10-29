@@ -41,7 +41,7 @@ def main():
             
 
         except Exception as e:
-            return Response(400, None, None)
+            return Response(400, str(e), None)
 
 if __name__ == '__main__':
     main()
