@@ -5,6 +5,7 @@ from src.vdbe.agg import *
 from ..constant import SQLITE_INTERNAL, SQLITE_OK
 from ..exception.exception import BadInstruction
 from src.util import *
+from src.dto.selectQueryDTO import *
 
 #  Allowed values for Stack.flags
 STK_Null = 0x0001     # Value is NULL */
@@ -466,6 +467,10 @@ class Vdbe:
           if len(self.aStack) < argc:
             raise Exception("[OP_Callback] not enough stack")
 
+          if tableName != 'hqlite_master' and not dto.getFlag():
+            dto.setFlag(True)
+            dto.setColumnNames(self.azColName)
+
           args = []
           for _ in range(argc):
             args.append(self.aStack.pop())
@@ -476,8 +481,8 @@ class Vdbe:
             print(f"call callback with args: {args}")
             xCallback(argc, args, [])
           else:
-            print("### CALLBACK DEBUGGING ###")
-            print(args)
+            print("### NEW ROW ADDED ###")
+            dto.addRow(args)
 
         elif pOp.opcode == OP_Concat:
           nField = pOp.p1
