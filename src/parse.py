@@ -1,6 +1,8 @@
 from ply import yacc
+from src.delete import deleteFrom
 from src.select import *
 from src.insert import *
+from src.update import *
 from src.tokenizer import tokens
 
 # 전역 파서 컨텍스트 등 (예: pParse, SRT_Callback 등)
@@ -9,6 +11,7 @@ from src.tokenizer import tokens
 
 pParse: Parse = None
 createQuery: str = ""
+columnToAdd: [Column] = list()
 
 precedence = (
     ('left', 'TK_OR'),
@@ -59,6 +62,7 @@ def p_create_table_args(p):
     p[0] = " ".join(p[1:])
     createQuery += p[0]
     endTable(pParse, createQuery)
+    columnToAdd.clear() # KOR_CREATE
 
 def p_columnlist_multiple(p):
     """columnlist : columnlist TK_COMMA column"""
@@ -74,7 +78,9 @@ def p_column(p):
 
 def p_columnid(p):
     """columnid : id"""
-    addColumn(pParse, p[1])
+    addColumn(pParse, p[1]) # ENG CREATE
+    columnName: Token = p[1] # KOR CREATE
+    columnToAdd.append(Column(columnName.z))
     p[0] = p[1]
 
 def p_type(p):
@@ -88,6 +94,21 @@ def p_typename(p):
 def p_id_from_string(p):
     """id : TK_STRING"""
     p[0] = p[1]
+
+"""
+    CREATE_KOR
+"""
+def p_command_create_kor(p):
+    """cmd : TK_CREATE_KOR id TK_LP columnlist TK_RP TK_TABLE_KOR """
+    createQuery = " ".join(map(str, p[1:]))
+    startTable(pParse, p[2])
+    # column 세팅
+    for column in columnToAdd:
+        table: Table = pParse.pNewTable
+        table.aCol.append(column)
+        table.nCol += 1
+    endTable(pParse, createQuery)
+    columnToAdd.clear()
 
 """
     INSERT
@@ -162,6 +183,44 @@ def p_item_str(p):
 def p_item_null(p):
     """item : TK_NULL"""
     p[0] = Expr(TK_NULL, None, None, None)
+
+"""
+    INSERT KOR
+"""
+def p_command_insert_value_kor(p):
+    """cmd : TK_INSERT_KOR id inscollist_opt TK_TABLE_INTO_KOR TK_LP itemlist TK_RP TK_COL_LIST_POST_KR """
+    targetTable, itemList, colList = str(p[2]), p[6], p[3]
+    insert(pParse, targetTable, itemList, None, colList)
+
+"""
+    UPDATE
+"""
+def p_command_update(p):
+    """cmd : TK_UPDATE id TK_SET setlist where_opt"""
+    table, setList, whereOpt = p[2], p[4], p[5]
+    update(pParse, table, setList, whereOpt)
+    p[0] = p[1]
+
+def p_set_list(p):
+    """setlist : setlist TK_COMMA id TK_EQ expr"""
+    exprList = p[1]
+    exprList.append(p[5], p[3])
+    p[0] = exprList
+
+def p_set_list_single(p):
+    """setlist : id TK_EQ expr"""
+    exprList = ExprList()
+    exprList.append(p[3], p[1])
+    p[0] = exprList
+
+"""
+    UPDATE KOR
+"""
+def p_command_update_kor(p):
+    """cmd : TK_UPDATE_KOR id TK_FROM_KR where_opt setlist TK_EURO """
+    table, setList, whereOpt = p[2], p[5], p[4]
+    update(pParse, table, setList, whereOpt)
+    p[0] = p[1]
 
 """
     SELECT
@@ -239,7 +298,7 @@ def p_where_opt_empty(p):
 
 def p_where_opt_expr(p):
     """where_opt : TK_WHERE expr"""
-    p[0] = p[2]  
+    p[0] = p[2]
 
 def p_groupby_opt_empty(p):
     """groupby_opt :"""
@@ -247,23 +306,23 @@ def p_groupby_opt_empty(p):
 
 def p_groupby_opt(p):
     """groupby_opt : TK_GROUP TK_BY exprlist"""
-    p[0] = p[3] 
+    p[0] = p[3]
 
 def p_having_opt_empty(p):
     """having_opt :"""
-    p[0] = None  
+    p[0] = None
 
 def p_having_opt(p):
     """having_opt : TK_HAVING expr"""
-    p[0] = p[2] 
+    p[0] = p[2]
 
 def p_orderby_opt_empty(p):
     """orderby_opt :"""
-    p[0] = None  
+    p[0] = None
 
 def p_orderby_opt(p):
     """orderby_opt : TK_ORDER TK_BY sortlist"""
-    p[0] = p[3] 
+    p[0] = p[3]
 
 def p_sortlist_comma(p):
     """sortlist : sortlist TK_COMMA sortitem sortorder"""
@@ -452,10 +511,65 @@ def p_expr_dot(p):
     e1 = Expr(TK_ID, None, None, p[1])
     e2 = Expr(TK_ID, None, None, p[3])
     p[0] = Expr(TK_DOT, e1, e2, None, p[2])
-    
+
+"""
+    SELECT_KOR
+"""
+
+def p_oneselect_kor(p):
+    # """oneselect : TK_SELECT selcollist from where_opt groupby_opt having_opt orderby_opt"""
+    """oneselect : TK_SELECT_KR from where_opt groupby_opt having_opt selcollist TK_COL_LIST_POST_KR orderby_opt"""
+    p[0] = Select(p[6], p[2], p[3], p[4], p[5], p[8], 0)
+
+def p_from_kor(p):
+    """from : seltablist TK_FROM_KR"""
+    p[0] = p[1]
+
+def p_where_opt_expr_kor(p):
+    """where_opt : TK_WHERE_PRE_KR expr TK_WHERE_POST_KR"""
+    p[0] = p[2]
+
+def p_groupby_opt_kor(p):
+    """groupby_opt : TK_GROUP_BY_PRE_KR exprlist TK_GROUP_BY_POST_KR"""
+    p[0] = p[2] 
+
+def p_having_opt_kor(p):
+    """having_opt : TK_HAVING_PRE_KR expr TK_HAVING_POST_KR"""
+    p[0] = p[2]
+
+def p_orderby_opt_kor(p):
+    """orderby_opt : sortlist TK_ORDER_BY_KR"""
+    p[0] = p[1] 
+
+def p_sortorder_asc_kor(p):
+    """sortorder : TK_ASC_KR"""
+    p[0] = 0
+
+def p_sortorder_desc_kor(p):
+    """sortorder : TK_DESC_KR"""
+    p[0] = 1
+
+"""
+    DROP
+"""
+
 def p_drop_table(p):
     """cmd : TK_DROP TK_TABLE id"""
     dropTable(pParse, p[3])
+
+"""
+    DELETE
+"""
+def p_delete_from(p):
+    """cmd : TK_DELETE TK_FROM id where_opt"""
+    deleteFrom(pParse, p[3], p[4])
+
+"""
+    DELETE KOR
+"""
+def p_delete_from_kor(p):
+    """cmd : TK_DELETE_KOR id TK_FROM_KR where_opt"""
+    deleteFrom(pParse, p[2], p[4])
 
 def p_error(p):
     if p:
