@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>방명록</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+            margin: 20px;
+            background-color: #f9fbfd;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: #007bff;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .guestbook-form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .guestbook-form input[type="text"],
+        .guestbook-form textarea {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .guestbook-form textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .guestbook-form button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .guestbook-form button:hover {
+            background-color: #0056b3;
+        }
+        .entries-section {
+            margin-top: 40px;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 20px;
+        }
+        .entry {
+            background-color: #f8f8f8;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .entry h3 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 18px;
+        }
+        .entry p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .entry small {
+            display: block;
+            text-align: right;
+            color: #888;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            text-align: center;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>방명록</h1>
+
+        <form action="{{ url_for('guestbook_submit') }}" method="post" class="guestbook-form">
+            <label for="name">이름:</label>
+            <input type="text" id="name" name="name" required>
+
+            <label for="message">메시지:</label>
+            <textarea id="message" name="message" required></textarea>
+
+            <button type="submit">남기기</button>
+        </form>
+
+        <div class="entries-section">
+            <h2>남겨진 방명록</h2>
+            {% if entries %}
+                {% for entry in entries | reverse %} {# 최신 게시물이 위로 오도록 역순으로 정렬 #}
+                    <div class="entry">
+                        <h3>{{ entry.name }}</h3>
+                        <p>{{ entry.message }}</p>
+                        <small>{{ entry.timestamp }}</small>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p>아직 남겨진 방명록이 없습니다.</p>
+            {% endif %}
+        </div>
+        
+        <a href="{{ url_for('index') }}" class="back-link">&larr; 메인 페이지로 돌아가기</a>
+    </div>
+</body>
+</html>

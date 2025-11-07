@@ -21,5 +21,5 @@ class SelectQueryDTO:
         self.columnNames.clear()
         self.rows.clear()
 
-
-dto = SelectQueryDTO()
+if __name__=='__main__':
+    dto = SelectQueryDTO()

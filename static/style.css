@@ -1,0 +1,290 @@
+/* --- 기본 & 폰트 설정 --- */
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+                 Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    background-color: #f9fbfd; /* 매우 연한 파란/회색 배경 */
+    color: #333;
+}
+
+/* --- 아이콘 기본 스타일 --- */
+.material-icons {
+    font-size: 20px;
+    vertical-align: middle;
+}
+
+/* --- 상단 헤더 --- */
+.main-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #ffffff;
+}
+.main-header h1 {
+    font-size: 18px;
+    margin: 0 0 0 10px;
+    font-weight: 600;
+}
+.main-header .header-actions {
+    margin-left: auto;
+    display: flex; /* 방명록 링크를 우측 정렬하기 위함 */
+    align-items: center;
+}
+/* [추가] 방명록 링크 스타일 */
+.guestbook-link {
+    color: #555;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+.guestbook-link:hover {
+    background-color: #f0f0f0;
+}
+
+
+/* --- 메인 3단 컨테이너 --- */
+.container {
+    display: flex;
+    /* 전체 높이에서 헤더 높이(약 51px) 빼기 */
+    height: calc(100vh - 51px); 
+}
+
+/* --- 공통 헤더 스타일 (각 컬럼 내부) --- */
+.sidebar-header, .query-header, .result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #ffffff;
+}
+h2 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 600;
+}
+.icon-button {
+    color: #555;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+}
+.icon-button:hover {
+    background-color: #f0f0f0;
+}
+
+/* --- 1. 왼쪽: 테이블 리스트 --- */
+.sidebar {
+    flex: 0 0 280px; /* 고정 너비 280px */
+    background-color: #ffffff;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.search-box {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+.search-box .material-icons {
+    color: #999;
+}
+.search-box input {
+    border: none;
+    outline: none;
+    margin-left: 8px;
+    width: 100%;
+    font-size: 14px;
+}
+.table-list {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding: 10px;
+}
+.table-list details {
+    margin-bottom: 5px;
+}
+.table-list summary {
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    list-style: none; /* 기본 화살표 제거 */
+    display: flex;
+    align-items: center;
+}
+.table-list summary:hover {
+    background-color: #f4f7f6;
+}
+.table-list summary::-webkit-details-marker {
+    display: none; /* 기본 화살표 제거 (Chrome) */
+}
+.table-list .chevron {
+    font-size: 20px;
+    transition: transform 0.2s;
+    margin-right: 5px;
+}
+.table-list details[open] > summary .chevron {
+    transform: rotate(90deg);
+}
+.table-list .table-icon {
+    font-size: 18px;
+    margin-right: 8px;
+    color: #555;
+}
+.table-list small {
+    margin-left: auto;
+    color: #999;
+    font-size: 12px;
+}
+.table-list ul {
+    list-style: none;
+    padding-left: 35px; /* 아이콘 너비만큼 들여쓰기 */
+    margin: 0;
+}
+.table-list li {
+    padding: 6px 0;
+    font-size: 14px;
+    color: #444;
+}
+
+/* --- 2. 중앙: 쿼리 편집기 --- */
+.query-editor-pane {
+    flex: 2; /* 비율 2 */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.query-header {
+    border-left: 1px solid #e0e0e0;
+}
+.query-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.text-button {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #333;
+}
+.text-button .material-icons {
+    font-size: 18px;
+    margin-right: 5px;
+}
+.text-button:hover {
+    background-color: #f0f0f0;
+}
+.run-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+.run-button:hover {
+    background-color: #0056b3;
+}
+
+/* CodeMirror 편집기 영역 */
+#query-input {
+    display: none;
+}
+.CodeMirror {
+    flex-grow: 1 !important; 
+    border-top: 1px solid #e0e0e0;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 14px;
+    height: 100%;
+}
+
+/* --- 3. 오른쪽: 결과 테이블 --- */
+.result-pane {
+    flex: 1.5; /* 비율 1.5 */
+    border-left: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.result-status {
+    padding: 10px 15px;
+    font-size: 14px;
+    border-bottom: 1px solid #e0e0e0;
+}
+.result-status p {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.result-status small {
+    color: #777;
+    margin-left: 10px;
+}
+.status-success .material-icons {
+    color: #28a745; /* Green */
+}
+.status-error .material-icons {
+    color: #dc3545; /* Red */
+}
+.status-loading {
+    color: #007bff; /* Blue */
+}
+
+.result-output {
+    flex-grow: 1;
+    overflow: auto; /* 결과 많으면 스크롤 */
+}
+.result-output table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.result-output th, 
+.result-output td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    white-space: nowrap;
+}
+.result-output th {
+    background-color: #f9f9f9;
+    font-weight: 600;
+    color: #555;
+    position: sticky;
+    top: 0; /* 스크롤 시 헤더 고정 */
+}
+.result-output tbody tr:nth-child(odd) {
+    background-color: #fdfdfd;
+}
+.result-output tbody tr:hover {
+    background-color: #f0f5ff; /* 연한 파란색 */
+}
+.result-output .row-index {
+    color: #999;
+    text-align: right;
+    font-size: 12px;
+}
+
+/* --- CodeMirror 하이라이트 스타일 --- */
+.highlighted-query {
+    background-color: #fff9c4; /* 연한 노란색 배경 */
+}

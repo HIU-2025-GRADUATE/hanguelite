@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Executor</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/sql/sql.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="main-header">
+        <span class="material-icons">storage</span>
+        <h1>Query Executor</h1>
+        <div class="header-actions">
+            <a href="/guestbook" class="guestbook-link">방명록</a>
+            </div>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Tables</h2>
+                <span class="material-icons icon-button">refresh</span>
+            </div>
+            <div class="search-box">
+                <span class="material-icons">search</span>
+                <input type="text" placeholder="Search tables...">
+            </div>
+            <nav class="table-list">
+                {% for table_name, info in schema.items() %}
+                <details open>
+                    <summary>
+                        <span class="material-icons chevron">expand_more</span>
+                        <span class="material-icons table-icon">table_view</span>
+                        {{ table_name }}
+                        <small>{{ info.rows }}</small>
+                    </summary>
+                    <ul>
+                        {% for col in info.cols %}
+                        <li>{{ col }}</li>
+                        {% endfor %}
+                    </ul>
+                </details>
+                {% endfor %}
+            </nav>
+        </aside>
+
+        <main class="query-editor-pane">
+            <div class="query-header">
+                <h2>SQL Query</h2>
+                <div class="query-actions">
+                    <button id="history-button" class="text-button">
+                        <span class="material-icons">history</span> History
+                    </button>
+                    <button id="save-button" class="text-button">
+                        <span class="material-icons">save</span> Save
+                    </button>
+                    <button id="run-button" class="run-button">
+                        <span class="material-icons">play_arrow</span> Run
+                    </button>
+                </div>
+            </div>
+            <textarea id="query-input">SELECT * FROM student;</textarea>
+        </main>
+
+        <section class="result-pane">
+            <div class="result-header">
+                <h2>Query Results</h2>
+                <div class="result-actions">
+                    </div>
+            </div>
+            <div id="result-status" class="result-status">
+                <p>Run a query to see results.</p>
+            </div>
+            <div id="result-output" class="result-output">
+                </div>
+        </section>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // CodeMirror 편집기 초기화
+            const editor = CodeMirror.fromTextArea(document.getElementById('query-input'), {
+                mode: 'text/x-sql',
+                lineNumbers: true,
+                theme: 'default'
+            });
+            editor.setSize("100%", "100%");
+
+            const runButton = document.getElementById('run-button');
+            const resultStatus = document.getElementById('result-status');
+            const resultOutput = document.getElementById('result-output');
+
+            let currentMarks = [];
+
+            function highlightSelection(editor) {
+                currentMarks.forEach(mark => mark.clear());
+                currentMarks = [];
+
+                const selection = editor.getSelection();
+                
+                if (selection) {
+                    const from = editor.getCursor("start");
+                    const to = editor.getCursor("end");
+                    
+                    const mark = editor.markText(from, to, { 
+                        className: 'highlighted-query'
+                    });
+                    currentMarks.push(mark);
+                }
+            }
+            
+            editor.on('cursorActivity', () => {
+                highlightSelection(editor);
+            });
+            
+            editor.on('blur', () => {
+                currentMarks.forEach(mark => mark.clear());
+                currentMarks = [];
+            });
+            
+            editor.on('focus', () => {
+                highlightSelection(editor);
+            });
+
+
+            runButton.addEventListener('click', async () => {
+                
+                let query = editor.getSelection(); 
+                
+                if (!query) { 
+                    query = editor.getValue(); 
+                }
+
+                resultStatus.innerHTML = '<p class="status-loading">Running query...</p>';
+                resultOutput.innerHTML = ''; 
+
+                try {
+                    const response = await fetch('/api/query', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ query: query.trim() }), 
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        resultStatus.innerHTML = `
+                            <p class="status-success">
+                                <span class="material-icons">check_circle</span>
+                                Success
+                                <small>${data.count} rows returned</small>
+                            </p>`;
+                        generateTable(data.results);
+                    } else {
+                        resultStatus.innerHTML = `
+                            <p class="status-error">
+                                <span class="material-icons">error</span>
+                                Error: ${data.error}
+                            </p>`;
+                    }
+                } catch (err) {
+                    resultStatus.innerHTML = `
+                        <p class="status-error">
+                            <span class="material-icons">error</span>
+                            Server communication failed: ${err.message}
+                        </p>`;
+                }
+            });
+
+            function generateTable(data) {
+                if (!data || data.length === 0) {
+                    resultOutput.innerHTML = '<p>No results found.</p>';
+                    return;
+                }
+
+                const headers = Object.keys(data[0]);
+                let table = '<table><thead><tr>';
+                table += '<th></th>'; 
+                headers.forEach(header => {
+                    table += `<th>${header}</th>`;
+                });
+                table += '</tr></thead>';
+
+                table += '<tbody>';
+                data.forEach((row, index) => {
+                    table += '<tr>';
+                    table += `<td class="row-index">${index + 1}</td>`; 
+                    headers.forEach(header => {
+                        table += `<td>${row[header]}</td>`;
+                    });
+                    table += '</tr>';
+                });
+                table += '</tbody></table>';
+
+                resultOutput.innerHTML = table;
+            }
+        });
+    </script>
+</body>
+</html>
