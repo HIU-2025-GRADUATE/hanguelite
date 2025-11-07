@@ -1,5 +1,27 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for # redirect, url_for 추가
-import time # time 모듈도 추가 (방명록 타임스탬프용)
+from flask import Flask, render_template, request, jsonify, redirect, url_for
+import time
+
+# main 함수
+from src.parse import parser, set_parse_object
+from src.sqliteInt import Parse, sqlite
+from src.dto.selectQueryDTO import *
+from src.dto.response import *
+import os
+import re
+import copy
+
+def runParser(parse: Parse, sql: str):
+    set_parse_object(parse)
+    parser.parse(sql, debug=False)
+
+def execute_sql(db, sql):
+    parse = Parse(db)
+
+    if bool(re.search("[가-힣]", sql)):
+        s = sql.split()
+        sql = s[-1] + " " + " ".join(s[:-1])
+    
+    runParser(parse, sql)
 
 app = Flask(__name__)
 
@@ -56,36 +78,59 @@ MOCK_DB = {
 @app.route('/')
 def index():
     """메인 페이지 렌더링. 테이블 스키마 정보를 전달합니다."""
+    db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
+    s = 'select * from hqlite_master;'
+
+    execute_sql(db, s)
+
+    data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
+
+    tables = []
+    for rows in data['rows']:
+        if rows[0] == 'table':
+            line = rows[3].split('( ')[1].split(' )')[0]
+            tables.append({
+                'table_name': rows[1],
+                'column_name': list(map(lambda x: x.strip(), line.split(',')))
+            })
+    
+    print(tables)
+
+    dto.clearDto()
+    
     return render_template('index.html', schema=MOCK_SCHEMA)
 
+
+# SQL 쿼리문 실행
 @app.route('/api/query', methods=['POST'])
 def handle_query():
     """SQL 쿼리 요청을 처리합니다."""
     data = request.get_json()
-    
-    # [수정됨] .rstrip(';') 을 추가해 쿼리 끝의 세미콜론을 제거합니다.
+
     query = data.get('query', '').strip().rstrip(';').lower()
 
-    # 쿼리 실행 시뮬레이션을 위한 딜레이
-    time.sleep(0.5) 
-
-    # 이미지의 JOIN 쿼리 흉내
-    if "count(o.id) as order_count" in query:
-        results = MOCK_DB["join_query_result"]
-        return jsonify({"results": results, "count": len(results)})
-
-    elif query == "select * from users":
-        results = MOCK_DB["users"]
-        return jsonify({"results": results, "count": len(results)})
+    print(query)
     
-    elif query == "select * from products":
-        results = MOCK_DB["products"]
-        return jsonify({"results": results, "count": len(results)})
+    db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
+    execute_sql(db, query)
+    data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
+    dto.clearDto()
+    # print(data)
 
-    else:
-        # 일치하는 쿼리가 없는 경우
-        return jsonify({"error": "지원하지 않는 쿼리입니다. (가짜 데이터이므로 일부 쿼리만 동작합니다)"}), 400
-    
+    results = []
+    results.append(data['column_names'])
+    for line in data['rows']:
+        tmp = dict()
+        for i in range(len(data['column_names'])):
+            tmp[data['column_names'][i]] = line[i]
+        results.append(tmp)
+        del tmp
+
+    print(results)
+
+    # results = MOCK_DB["join_query_result"]
+    return jsonify({"results": results, "count": len(results)})
+
 # --- 방명록 기능 (간단한 예시) ---
 GUESTBOOK_ENTRIES = [] # 방명록 게시물 저장용 리스트 (서버 재시작시 초기화)
 

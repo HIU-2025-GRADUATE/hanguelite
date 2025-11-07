@@ -19,7 +19,6 @@ def execute_sql(db, sql):
     
     runParser(parse, sql)
 
-
 def main():
     db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
     while True:

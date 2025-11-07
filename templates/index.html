@@ -179,7 +179,8 @@
                     return;
                 }
 
-                const headers = Object.keys(data[0]);
+                /* const headers = Object.keys(data[0]); */
+                const headers = data[0];
                 let table = '<table><thead><tr>';
                 table += '<th></th>'; 
                 headers.forEach(header => {
@@ -188,6 +189,7 @@
                 table += '</tr></thead>';
 
                 table += '<tbody>';
+                data = data.slice(1);
                 data.forEach((row, index) => {
                     table += '<tr>';
                     table += `<td class="row-index">${index + 1}</td>`; 
