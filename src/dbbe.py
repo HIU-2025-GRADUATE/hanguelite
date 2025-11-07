@@ -325,6 +325,13 @@ class DbbeCursor:
         self.data = None
         rc = gdbm_delete(self.pFile.dbf, key)
         return rc
+    
+    # int sqliteDbbeKeyLength(DbbeCursor *pCursr)
+    def dataLength(self):
+        if self.readPending and self.pFile and self.pFile.dbf:
+            self.data = gdbm_fetch(self.pFile.dbf, self.key)
+            self.readPending = 0
+        return len(self.data)
 
     def __getFileNameOfTable(self, directory: str, tableName: str):
         if tableName:

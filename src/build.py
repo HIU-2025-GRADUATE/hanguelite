@@ -43,14 +43,10 @@ def startTable(parse: Parse, pName: Token):
     table: Table = db.findTable(pName.z)
 
     if table:
-        parse.zErrMsg = "table %s already exists" % pName.z
-        parse.nErr += 1
-        return
+        raise Exception("table %s already exists" % pName.z)
 
     if db.findIndex(pName.z):
-        parse.zErrMsg = "there is already an index named %s" % pName.z
-        parse.nErr += 1
-        return
+        raise Exception("there is already an index named %s" % pName.z)
 
     parse.pNewTable = Table(pName.z)
 

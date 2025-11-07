@@ -99,9 +99,9 @@ def p_id_from_string(p):
     CREATE_KOR
 """
 def p_command_create_kor(p):
-    """cmd : id TK_LP columnlist TK_RP TK_TABLE_KOR TK_CREATE_KOR """
+    """cmd : TK_CREATE_KOR id TK_LP columnlist TK_RP TK_TABLE_KOR """
     createQuery = " ".join(map(str, p[1:]))
-    startTable(pParse, p[1])
+    startTable(pParse, p[2])
     # column 세팅
     for column in columnToAdd:
         table: Table = pParse.pNewTable
@@ -185,6 +185,14 @@ def p_item_null(p):
     p[0] = Expr(TK_NULL, None, None, None)
 
 """
+    INSERT KOR
+"""
+def p_command_insert_value_kor(p):
+    """cmd : TK_INSERT_KOR id inscollist_opt TK_TABLE_INTO_KOR TK_LP itemlist TK_RP TK_COL_LIST_POST_KR """
+    targetTable, itemList, colList = str(p[2]), p[6], p[3]
+    insert(pParse, targetTable, itemList, None, colList)
+
+"""
     UPDATE
 """
 def p_command_update(p):
@@ -204,6 +212,15 @@ def p_set_list_single(p):
     exprList = ExprList()
     exprList.append(p[3], p[1])
     p[0] = exprList
+
+"""
+    UPDATE KOR
+"""
+def p_command_update_kor(p):
+    """cmd : TK_UPDATE_KOR id TK_FROM_KR where_opt setlist TK_EURO """
+    table, setList, whereOpt = p[2], p[5], p[4]
+    update(pParse, table, setList, whereOpt)
+    p[0] = p[1]
 
 """
     SELECT
@@ -546,6 +563,13 @@ def p_drop_table(p):
 def p_delete_from(p):
     """cmd : TK_DELETE TK_FROM id where_opt"""
     deleteFrom(pParse, p[3], p[4])
+
+"""
+    DELETE KOR
+"""
+def p_delete_from_kor(p):
+    """cmd : TK_DELETE_KOR id TK_FROM_KR where_opt"""
+    deleteFrom(pParse, p[2], p[4])
 
 def p_error(p):
     if p:
