@@ -33,6 +33,7 @@ def main():
             execute_sql(db, s)
             if dto.getFlag():
                 data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
+                print(data)
                 dto.clearDto()
                 return Response(200, None, data)
             else:

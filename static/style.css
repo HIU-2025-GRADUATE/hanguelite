@@ -288,3 +288,80 @@ h2 {
 .highlighted-query {
     background-color: #fff9c4; /* 연한 노란색 배경 */
 }
+
+/* 하단 터미널 창 */
+.terminal-pane {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #1e1e1e; /* 어두운 터미널 배경색 */
+    color: #cccccc;
+    font-family: 'Consolas', 'Courier New', Courier, monospace;
+    z-index: 100; /* 다른 요소들 위에 오도록 설정 */
+    border-top: 1px solid #444;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+}
+
+.terminal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    background-color: #333;
+    /* === [수정] === */
+    cursor: ns-resize; /* 남-북(위아래) 크기 조절 커서 */
+}
+
+        /* === [추가] 패널이 접혔을 땐 토글 커서(pointer) 표시 === */
+.terminal-pane.collapsed .terminal-header {
+    cursor: pointer;
+}
+
+        /* === [추가] 헤더의 텍스트가 드래그를 방해하지 않도록 === */
+.terminal-header span {
+    font-size: 0.9em;
+    pointer-events: none; /* 마우스 이벤트가 헤더로 전달되도록 */
+}
+
+.terminal-controls .icon-button {
+    cursor: pointer;
+    font-size: 20px;
+    /* === [추가] === */
+    pointer-events: auto; /* 버튼은 클릭 가능해야 함 */
+}
+
+.terminal-controls .icon-button:hover {
+    color: #fff;
+}
+
+.terminal-output {
+    height: 200px; /* 터미널 창의 기본 높이 */
+    padding: 10px;
+    overflow-y: auto; /* 내용이 많아지면 스크롤 */
+    font-size: 0.85em;
+    line-height: 1.4;
+    /* 높이와 패딩 변경 시 부드러운 애니메이션 효과 */
+    transition: height 0.2s ease-out, padding 0.2s ease-out;
+}
+
+.terminal-output p {
+    margin: 0;
+    white-space: pre-wrap; /* 줄바꿈 및 공백 유지 */
+}
+
+/* 'collapsed' 클래스가 추가됐을 때 (접혔을 때) */
+.terminal-pane.collapsed .terminal-output {
+    height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+}
+
+        /* === [추가] 드래그 중 텍스트 선택 방지용 클래스 === */
+.resizing-no-select {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}

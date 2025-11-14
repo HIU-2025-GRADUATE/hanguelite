@@ -16,120 +16,100 @@ def runParser(parse: Parse, sql: str):
 
 def execute_sql(db, sql):
     parse = Parse(db)
-
-    if bool(re.search("[가-힣]", sql)):
-        s = sql.split()
-        sql = s[-1] + " " + " ".join(s[:-1])
+    check = ['select', 'insert', 'update', 'delete', 'create', 'drop']
+    s = sql.split()
     
+    if s[0].lower() not in check:
+        sql = s[-1] + " " + " ".join(s[:-1])
+
     runParser(parse, sql)
 
+def extend_logs(old, new, sql):
+    old.append(f"SQL: {sql}")
+    old.append('--------------------')
+    old.extend(new)
+    old.append("=================================================================")
+    return old
+
+
 app = Flask(__name__)
-
-# --- 가짜 데이터베이스 ---
-MOCK_SCHEMA = {
-    "users": {
-        "cols": ["id", "name", "email", "created_at"],
-        "rows": "1.2k rows"
-    },
-    "orders": {
-        "cols": ["id", "user_id", "total", "status"],
-        "rows": "850 rows"
-    },
-    "products": {
-        "cols": ["id", "name", "price", "category"],
-        "rows": "340 rows"
-    },
-    "categories": {
-        "cols": ["id", "name", "description"],
-        "rows": "25 rows"
-    },
-    "order_items": {
-        "cols": ["id", "order_id", "product_id", "quantity"],
-        "rows": "2.3k rows"
-    }
-}
-
-MOCK_DB = {
-    "users": [
-        {"id": 1, "name": "John Doe", "email": "john@example.com", "created_at": "2024-01-10"},
-        {"id": 2, "name": "Jane Smith", "email": "jane@example.com", "created_at": "2024-01-11"},
-        {"id": 3, "name": "Mike Johnson", "email": "mike@example.com", "created_at": "2024-01-12"},
-    ],
-    "products": [
-        {"id": 101, "name": "Laptop", "price": 1200, "category": 1},
-        {"id": 102, "name": "Mouse", "price": 50, "category": 2},
-    ],
-    "join_query_result": [
-        {"id": 1, "name": "John Doe", "email": "john@example.com", "orders": 15},
-        {"id": 2, "name": "Jane Smith", "email": "jane@example.com", "orders": 12},
-        {"id": 3, "name": "Mike Johnson", "email": "mike@example.com", "orders": 8},
-        {"id": 4, "name": "Sarah Wilson", "email": "sarah@example.com", "orders": 7},
-        {"id": 5, "name": "David Brown", "email": "david@example.com", "orders": 6},
-        {"id": 6, "name": "Lisa Davis", "email": "lisa@example.com", "orders": 5},
-        {"id": 7, "name": "Tom Miller", "email": "tom@example.com", "orders": 4},
-        {"id": 8, "name": "Amy Taylor", "email": "amy@example.com", "orders": 3},
-        {"id": 9, "name": "Chris Lee", "email": "chris@example.com", "orders": 2},
-        {"id": 10, "name": "Emma White", "email": "emma@example.com", "orders": 1},
-    ]
-}
-# --- (가짜 데이터 끝) ---
+db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
 
 
 @app.route('/')
 def index():
-    """메인 페이지 렌더링. 테이블 스키마 정보를 전달합니다."""
-    db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
+    global db
+    # db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
+    debugs = list()
+    dto.clearDto()
+
     s = 'select * from hqlite_master;'
-
     execute_sql(db, s)
-
     data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
+    debugs = extend_logs(debugs, dto.logs, s)
+    dto.clearDto()
 
-    tables = []
+    tables = dict()
     for rows in data['rows']:
         if rows[0] == 'table':
-            line = rows[3].split('( ')[1].split(' )')[0]
-            tables.append({
-                'table_name': rows[1],
-                'column_name': list(map(lambda x: x.strip(), line.split(',')))
-            })
-    
-    print(tables)
+            line = rows[3].split('(')[1].split(')')[0]
+            tables[rows[1]] = dict()
+            tables[rows[1]]['cols'] = list(map(lambda x: x.strip(), line.split(',')))
+            # tables[rows[1]]['cols'] = list(map(lambda x: x.strip().split(' ')[0], line.split(',')))
 
-    dto.clearDto()
+            sql = 'select count(*) from ' + rows[1]
+            execute_sql(db, sql)
+            data_rows = copy.deepcopy(dto.rows)
+            debugs = extend_logs(debugs, dto.logs, sql)
+            dto.clearDto()
+            
+            if len(data_rows)==0:
+                tables[rows[1]]['rows'] = '0 rows'
+            else:
+                tables[rows[1]]['rows'] = f'{data_rows[0][0]} rows'
+
+            del data_rows
+    del data
+    # print(debugs)
     
-    return render_template('index.html', schema=MOCK_SCHEMA)
+    return render_template('index.html', schema=tables, debugs=debugs)
 
 
 # SQL 쿼리문 실행
 @app.route('/api/query', methods=['POST'])
 def handle_query():
+    global db
+    debugs = list()
+    dto.clearDto()
+
     """SQL 쿼리 요청을 처리합니다."""
     data = request.get_json()
+    # query = data.get('query', '').strip().rstrip(';').lower()
 
-    query = data.get('query', '').strip().rstrip(';').lower()
+    query_list = data.get('query', []).split('\n')
+    for raw_query in query_list:
+        query = raw_query.strip().rstrip(';').lower()
+        if query == '':
+            continue
+        execute_sql(db, query)
+        data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
+        debugs = extend_logs(debugs, dto.logs, query)
+        dto.clearDto()
+        # print(data)
 
-    print(query)
-    
-    db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
-    execute_sql(db, query)
-    data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
-    dto.clearDto()
-    # print(data)
+        results = []
+        results.append(data['column_names'])
+        for line in data['rows']:
+            tmp = dict()
+            for i in range(len(data['column_names'])):
+                tmp[data['column_names'][i]] = line[i]
+            results.append(tmp)
+            del tmp
 
-    results = []
-    results.append(data['column_names'])
-    for line in data['rows']:
-        tmp = dict()
-        for i in range(len(data['column_names'])):
-            tmp[data['column_names'][i]] = line[i]
-        results.append(tmp)
-        del tmp
-
-    print(results)
-
+    # print(results)
+    # print(debugs)
     # results = MOCK_DB["join_query_result"]
-    return jsonify({"results": results, "count": len(results)})
+    return jsonify({"results": results, "count": len(results), "debugs": debugs})
 
 # --- 방명록 기능 (간단한 예시) ---
 GUESTBOOK_ENTRIES = [] # 방명록 게시물 저장용 리스트 (서버 재시작시 초기화)

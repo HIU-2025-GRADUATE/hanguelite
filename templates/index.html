@@ -9,14 +9,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/codemirror.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/6.65.7/mode/sql/sql.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
+
+    </head>
 <body>
     <header class="main-header">
         <span class="material-icons">storage</span>
         <h1>Query Executor</h1>
         <div class="header-actions">
             <a href="/guestbook" class="guestbook-link">방명록</a>
-            </div>
+        </div>
     </header>
 
     <div class="container">
@@ -70,139 +71,282 @@
             <div class="result-header">
                 <h2>Query Results</h2>
                 <div class="result-actions">
-                    </div>
+                </div>
             </div>
             <div id="result-status" class="result-status">
                 <p>Run a query to see results.</p>
             </div>
             <div id="result-output" class="result-output">
-                </div>
+            </div>
         </section>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // CodeMirror 편집기 초기화
-            const editor = CodeMirror.fromTextArea(document.getElementById('query-input'), {
-                mode: 'text/x-sql',
-                lineNumbers: true,
-                theme: 'default'
-            });
-            editor.setSize("100%", "100%");
+    <div class="terminal-pane" id="terminal-pane">
+        <header class="terminal-header" id="terminal-header">
+            <span>Debug Logs</span>
+            <div class="terminal-controls">
+                <span class="material-icons icon-button" id="toggle-terminal-button">expand_more</span>
+            </div>
+        </header>
+        <div class="terminal-output" id="terminal-output">
+                <!-- === [Jinja2 템플릿 추가] === -->
+                <!-- 페이지 로드 시 전달된 debugs 데이터를 렌더링합니다. -->
+                {% if debugs %}
+                    {% for log_entry in debugs %}
+                        <p>{{ log_entry }}</p>
+                    {% endfor %}
+                {% endif %}
+                <!-- === [Jinja2 템플릿 끝] === -->
+        </div>
+    </div>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // CodeMirror 편집기 초기화
+            const editor = CodeMirror.fromTextArea(document.getElementById('query-input'), {
+                mode: 'text/x-sql',
+                lineNumbers: true,
+                theme: 'default'
+            });
+            editor.setSize("100%", "100%");
 
-            const runButton = document.getElementById('run-button');
-            const resultStatus = document.getElementById('result-status');
-            const resultOutput = document.getElementById('result-output');
-
-            let currentMarks = [];
-
-            function highlightSelection(editor) {
-                currentMarks.forEach(mark => mark.clear());
-                currentMarks = [];
-
-                const selection = editor.getSelection();
-                
-                if (selection) {
-                    const from = editor.getCursor("start");
-                    const to = editor.getCursor("end");
-                    
-                    const mark = editor.markText(from, to, { 
-                        className: 'highlighted-query'
-                    });
-                    currentMarks.push(mark);
-                }
-            }
+            const runButton = document.getElementById('run-button');
+            const resultStatus = document.getElementById('result-status');
+            const resultOutput = document.getElementById('result-output');
             
-            editor.on('cursorActivity', () => {
-                highlightSelection(editor);
-            });
-            
-            editor.on('blur', () => {
-                currentMarks.forEach(mark => mark.clear());
-                currentMarks = [];
-            });
-            
-            editor.on('focus', () => {
-                highlightSelection(editor);
-            });
+            // === [터미널 DOM 요소 참조] ===
+            const terminalPane = document.getElementById('terminal-pane');
+            const terminalHeader = document.getElementById('terminal-header');
+            const terminalOutput = document.getElementById('terminal-output');
+            const toggleButton = document.getElementById('toggle-terminal-button');
+            // === [참조 끝] ===
 
+            let currentMarks = [];
 
-            runButton.addEventListener('click', async () => {
-                
-                let query = editor.getSelection(); 
-                
-                if (!query) { 
-                    query = editor.getValue(); 
-                }
+            function highlightSelection(editor) {
+                currentMarks.forEach(mark => mark.clear());
+                currentMarks = [];
 
-                resultStatus.innerHTML = '<p class="status-loading">Running query...</p>';
-                resultOutput.innerHTML = ''; 
+                const selection = editor.getSelection();
+                
+                if (selection) {
+                    const from = editor.getCursor("start");
+                    const to = editor.getCursor("end");
+                    
+                    const mark = editor.markText(from, to, { 
+                        className: 'highlighted-query'
+                    });
+                    currentMarks.push(mark);
+                }
+            }
+            
+            editor.on('cursorActivity', () => {
+                highlightSelection(editor);
+            });
+            
+            editor.on('blur', () => {
+                currentMarks.forEach(mark => mark.clear());
+                currentMarks = [];
+            });
+            
+            editor.on('focus', () => {
+                highlightSelection(editor);
+            });
 
-                try {
-                    const response = await fetch('/api/query', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ query: query.trim() }), 
-                    });
+            // === [디버그 로그 추가 함수] ===
+            function addLogsToTerminal(logs) {
+                if (logs && logs.length > 0) {
+                    logs.forEach(log_entry => {
+                        const p = document.createElement('p');
+                        p.textContent = log_entry;
+                        terminalOutput.appendChild(p);
+                    });
+                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                }
+            }
+            // === [함수 끝] ===
 
-                    const data = await response.json();
+            runButton.addEventListener('click', async () => {
+                let query = editor.getSelection(); 
+                if (!query) { 
+                    query = editor.getValue(); 
+                }
 
-                    if (response.ok) {
-                        resultStatus.innerHTML = `
-                            <p class="status-success">
-                                <span class="material-icons">check_circle</span>
-                                Success
-                                <small>${data.count} rows returned</small>
-                            </p>`;
-                        generateTable(data.results);
-                    } else {
-                        resultStatus.innerHTML = `
-                            <p class="status-error">
-                                <span class="material-icons">error</span>
-                                Error: ${data.error}
-                            </p>`;
-                    }
-                } catch (err) {
-                    resultStatus.innerHTML = `
-                        <p class="status-error">
-                            <span class="material-icons">error</span>
-                            Server communication failed: ${err.message}
-                        </p>`;
-                }
-            });
+                resultStatus.innerHTML = '<p class="status-loading">Running query...</p>';
+                resultOutput.innerHTML = ''; 
 
-            function generateTable(data) {
-                if (!data || data.length === 0) {
-                    resultOutput.innerHTML = '<p>No results found.</p>';
-                    return;
-                }
+                try {
+                    const response = await fetch('/api/query', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: query.trim() }), 
+                    });
+                    const data = await response.json();
 
-                /* const headers = Object.keys(data[0]); */
-                const headers = data[0];
-                let table = '<table><thead><tr>';
-                table += '<th></th>'; 
-                headers.forEach(header => {
-                    table += `<th>${header}</th>`;
-                });
-                table += '</tr></thead>';
+                    if (response.ok) {
+                        resultStatus.innerHTML = `
+                            <p class="status-success">
+                                <span class="material-icons">check_circle</span>
+                                Success
+                                <small>${data.count} rows returned</small>
+                            </p>`;
+                        generateTable(data.results);
+                        addLogsToTerminal(data.debugs); // 로그 추가
+                    } else {
+                        resultStatus.innerHTML = `
+                            <p class="status-error">
+                                <span class="material-icons">error</span>
+                                Error: ${data.error}
+                            </p>`;
+                        addLogsToTerminal(data.debugs); // 에러 시 로그 추가
+                    }
+                } catch (err) {
+                    resultStatus.innerHTML = `
+                        <p class="status-error">
+                            <span class="material-icons">error</span>
+                            Server communication failed: ${err.message}
+                        </p>`;
+                }
+            });
 
-                table += '<tbody>';
-                data = data.slice(1);
-                data.forEach((row, index) => {
-                    table += '<tr>';
-                    table += `<td class="row-index">${index + 1}</td>`; 
-                    headers.forEach(header => {
-                        table += `<td>${row[header]}</td>`;
-                    });
-                    table += '</tr>';
-                });
-                table += '</tbody></table>';
+            function generateTable(data) {
+                // ... (기존 generateTable 함수 내용)
+                if (!data || data.length === 0) {
+                    resultOutput.innerHTML = '<p>No results found.</p>';
+                    return;
+                }
+                const headers = data[0];
+                let table = '<table><thead><tr>';
+                table += '<th></th>'; 
+                headers.forEach(header => {
+                    table += `<th>${header}</th>`;
+                });
+                table += '</tr></thead>';
+                table += '<tbody>';
+                data = data.slice(1);
+                data.forEach((row, index) => {
+                    table += '<tr>';
+                    table += `<td class="row-index">${index + 1}</td>`; 
+                    headers.forEach(header => {
+                        table += `<td>${row[header]}</td>`;
+                    });
+                    table += '</tr>';
+                });
+                table += '</tbody></table>';
+                resultOutput.innerHTML = table;
+            }
+            
+            // === [터미널 토글 및 리사이즈 로직] ===
 
-                resultOutput.innerHTML = table;
-            }
-        });
-    </script>
+            // --- 1. 토글 로직 (기존) ---
+            /** 터미널을 토글하는 함수 */
+            function toggleTerminal() {
+                terminalPane.classList.toggle('collapsed');
+                
+                if (terminalPane.classList.contains('collapsed')) {
+                    // [수정] 접힐 때: 아이콘 변경하고, 인라인 height를 제거
+                    toggleButton.textContent = 'expand_less';
+                    terminalOutput.style.height = ''; // CSS의 height: 0이 적용되도록 함
+                } else {
+                    // [수정] 펼쳐질 때: 아이콘 변경하고, 저장된 높이(lastResizedHeight)가 있다면 적용
+                    toggleButton.textContent = 'expand_more';
+                    if (lastResizedHeight) {
+                        terminalOutput.style.height = lastResizedHeight;
+                    }
+                    // (저장된 높이가 없으면 style.height = '' 상태가 되어 CSS의 기본 높이 200px이 적용됨)
+                }
+            }
+
+            toggleButton.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                toggleTerminal();
+            });
+
+            // --- 2. 리사이즈 로직 (신규) ---
+            let isResizing = false;
+            let hasDragged = false; // 드래그와 클릭(토글)을 구분하기 위한 플래그
+            let startY;
+            let startHeight;
+
+            // 헤더에서 마우스 버튼 누를 때
+            function onResizeMouseDown(e) {
+                // 토글 버튼 자체를 클릭한 거면 리사이즈 시작 안 함
+                if (e.target.id === 'toggle-terminal-button') {
+                    return;
+                }
+
+                // 창이 접혀있으면 리사이즈 대신 토글(클릭)이 되도록 함
+                if (terminalPane.classList.contains('collapsed')) {
+                    return;
+                }
+
+                isResizing = true;
+                hasDragged = false; // 드래그 플래그 초기화
+                startY = e.clientY; // 마우스의 시작 Y좌표
+                // 현재 터미널 출력창의 실제 계산된 높이
+                startHeight = parseInt(window.getComputedStyle(terminalOutput).height, 10);
+                
+                // 드래그 중 텍스트 선택 방지 클래스 추가
+                document.body.classList.add('resizing-no-select');
+                
+                // 드래그 중에는 부드러운 애니메이션(transition)을 비활성화 (랙 방지)
+                terminalOutput.style.transition = 'none';
+
+                // document 전체에 mousemove, mouseup 이벤트 리스너 추가
+                document.addEventListener('mousemove', onResizeMouseMove);
+                document.addEventListener('mouseup', onResizeMouseUp);
+            }
+
+            // 마우스를 움직일 때
+            function onResizeMouseMove(e) {
+                if (!isResizing) return;
+
+                hasDragged = true; // 마우스를 움직였으므로 '드래그'로 간주
+
+                // 마우스가 움직인 거리 (위로 드래그하면 deltaY가 양수)
+                const deltaY = startY - e.clientY;
+                let newHeight = startHeight + deltaY;
+
+                // 최소/최대 높이 제한
+                const minHeight = 40; // 최소 높이
+                const maxHeight = window.innerHeight - 80; // 최대 높이 (화면 상단 여유)
+
+                if (newHeight < minHeight) newHeight = minHeight;
+                if (newHeight > maxHeight) newHeight = maxHeight;
+
+                terminalOutput.style.height = newHeight + 'px';
+            }
+
+            // 마우스 버튼을 뗄 때
+            function onResizeMouseUp() {
+                isResizing = false;
+                
+                // 텍스트 선택 방지 클래스 제거
+                document.body.classList.remove('resizing-no-select');
+                
+                // 애니메이션(transition) 다시 활성화
+                terminalOutput.style.transition = ''; // CSS에 정의된 기본값으로 복원
+
+                // 전역 이벤트 리스너 제거
+                document.removeEventListener('mousemove', onResizeMouseMove);
+                document.removeEventListener('mouseup', onResizeMouseUp);
+            }
+
+            // --- 3. 이벤트 리스너 연결 ---
+            
+            // 리사이즈 시작 이벤트
+            terminalHeader.addEventListener('mousedown', onResizeMouseDown);
+
+            // 헤더 클릭 시 토글 (드래그가 아닐 때만)
+            terminalHeader.addEventListener('click', () => {
+                // 마우스를 드래그(리사이즈)하지 않고 그냥 '클릭'했을 때만 토글 실행
+                if (!hasDragged) {
+                    toggleTerminal();
+                }
+            });
+            
+            // === [로직 끝] ===
+            
+        });
+    </script>
 </body>
 </html>
