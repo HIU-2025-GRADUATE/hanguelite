@@ -31,6 +31,9 @@ def extend_logs(old, new, sql):
     old.append("=================================================================")
     return old
 
+def parse_col_info(raw):
+    tmp = raw.strip().split(' ')
+    return f"{tmp[0]} ({tmp[1]})"
 
 app = Flask(__name__)
 db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
@@ -54,7 +57,7 @@ def index():
         if rows[0] == 'table':
             line = rows[3].split('(')[1].split(')')[0]
             tables[rows[1]] = dict()
-            tables[rows[1]]['cols'] = list(map(lambda x: x.strip(), line.split(',')))
+            tables[rows[1]]['cols'] = list(map(lambda x: parse_col_info(x), line.split(',')))
             # tables[rows[1]]['cols'] = list(map(lambda x: x.strip().split(' ')[0], line.split(',')))
 
             sql = 'select count(*) from ' + rows[1]
@@ -111,21 +114,49 @@ def handle_query():
     # results = MOCK_DB["join_query_result"]
     return jsonify({"results": results, "count": len(results), "debugs": debugs})
 
-# --- 방명록 기능 (간단한 예시) ---
-GUESTBOOK_ENTRIES = [] # 방명록 게시물 저장용 리스트 (서버 재시작시 초기화)
 
+
+"""방명록 페이지를 렌더링합니다."""
 @app.route('/guestbook')
 def guestbook_index():
-    """방명록 페이지를 렌더링합니다."""
-    return render_template('guestbook.html', entries=GUESTBOOK_ENTRIES)
+    try:
+        query = 'select * from guestbook'
+        execute_sql(db, query)
+        db_data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
+        dto.clearDto()
+    
+    except:
+        query = 'create table guestbook (name varchar, _time timestamp, message varchar);'
+        execute_sql(db, query)
+
+        query = 'select * from guestbook'
+        execute_sql(db, query)
+        db_data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
+        dto.clearDto()
+    
+    entries = list()
+    for row in db_data['rows']:
+        entries.append(dict(zip(['name', 'timestamp', 'message'], row)))
+
+    sorted_entries = sorted(entries, key=lambda x: x['timestamp'])
+
+    return render_template('guestbook.html', entries=sorted_entries)
 
 @app.route('/guestbook/submit', methods=['POST'])
 def guestbook_submit():
+    global db
+    debugs = list()
     """방명록 게시물을 제출합니다."""
+
     name = request.form.get('name', 'Anonymous')
     message = request.form.get('message', '')
     if name and message:
-        GUESTBOOK_ENTRIES.append({'name': name, 'message': message, 'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")})
+        query = f"insert into guestbook values ('{name}', '{time.strftime("%Y-%m-%d %H:%M:%S")}', '{message}')"
+        print(f"   Query: {query}")
+        execute_sql(db, query)
+        dto.clearDto()
+
+
     return redirect(url_for('guestbook_index')) # 방명록 페이지로 리디렉션
 
 if __name__ == '__main__':

@@ -12,11 +12,12 @@ def runParser(parse: Parse, sql: str):
 
 def execute_sql(db, sql):
     parse = Parse(db)
-
-    if bool(re.search("[가-힣]", sql)):
-        s = sql.split()
-        sql = s[-1] + " " + " ".join(s[:-1])
+    check = ['select', 'insert', 'update', 'delete', 'create', 'drop']
+    s = sql.split()
     
+    if s[0].lower() not in check:
+        sql = s[-1] + " " + " ".join(s[:-1])
+
     runParser(parse, sql)
 
 def main():

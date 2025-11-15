@@ -93,7 +93,7 @@ def p_typename(p):
 
 def p_id_from_string(p):
     """id : TK_STRING"""
-    p[0] = p[1]
+    p[0] = Token(p[1])
 
 """
     CREATE_KOR

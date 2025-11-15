@@ -19,7 +19,6 @@ def gdbm_open(filePath, mode):
         else:
             raise e
 
-
 def gdbm_fetch(dbf, key):
     return eval(dbf[key].decode('utf-8'))
 

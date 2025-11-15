@@ -115,7 +115,7 @@
         <div class="entries-section">
             <h2>남겨진 방명록</h2>
             {% if entries %}
-                {% for entry in entries | reverse %} {# 최신 게시물이 위로 오도록 역순으로 정렬 #}
+                {% for entry in entries | reverse %}
                     <div class="entry">
                         <h3>{{ entry.name }}</h3>
                         <p>{{ entry.message }}</p>
@@ -126,7 +126,6 @@
                 <p>아직 남겨진 방명록이 없습니다.</p>
             {% endif %}
         </div>
-        
         <a href="{{ url_for('index') }}" class="back-link">&larr; 메인 페이지로 돌아가기</a>
     </div>
 </body>
