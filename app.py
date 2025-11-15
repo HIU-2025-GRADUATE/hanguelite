@@ -115,7 +115,6 @@ def handle_query():
     return jsonify({"results": results, "count": len(results), "debugs": debugs})
 
 
-
 """방명록 페이지를 렌더링합니다."""
 @app.route('/guestbook')
 def guestbook_index():

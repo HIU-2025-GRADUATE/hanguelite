@@ -412,10 +412,10 @@ class Vdbe:
     pc = 0
     rc = None
 
-    print("-----")
-    for _op in self.aOp:
-      print(_op)
-    print("-----")
+    # print("-----")
+    # for _op in self.aOp:
+    #   print(_op)
+    # print("-----")
 
     for i in range(len(self.aOp)):
       dto.addDebug(f"{i:02}: {str(self.aOp[i])}")
@@ -425,8 +425,9 @@ class Vdbe:
       while pc < self.nOp:
         # pc가 가리키는 명령어 실행
         pOp = self.aOp[pc]
-        print(self.aStack)
-        print(str(pOp))
+        
+        # print(self.aStack)
+        # print(str(pOp))
         # print(zOpName[pOp.opcode], pOp.p1, pOp.p2, pOp.p3)
 
         if pOp.opcode == OP_Goto:
@@ -863,7 +864,7 @@ class Vdbe:
         elif pOp.opcode == OP_Key:
           i = pOp.p1
           if 0 <= i < self.nCursor and self.aCsr[i].pCursor is not None:
-            z = self.aCsr[i].pCursor.readKey() # byte 형식의 키를 읽어온다.
+            z = self.aCsr[i].pCursor.readKey()
             self.aStack.append(z)
 
         elif pOp.opcode == OP_Rewind:
