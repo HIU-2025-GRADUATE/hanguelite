@@ -88,14 +88,16 @@ def handle_query():
     """SQL 쿼리 요청을 처리합니다."""
     data = request.get_json()
     # query = data.get('query', '').strip().rstrip(';').lower()
+    raw_query = data.get('query', [])
 
-    query_list = data.get('query', []).split('\n')
+    query_list = raw_query.split('\n')
     for raw_query in query_list:
         query = raw_query.strip().rstrip(';').lower()
-        if query == '':
+        if query == '' or query.startswith('--'):
             continue
         execute_sql(db, query)
         data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
+        # print("Data:",data)
         debugs = extend_logs(debugs, dto.logs, query)
         dto.clearDto()
         # print(data)
