@@ -102,6 +102,11 @@ def t_STRING(t):
     t.type = 'TK_STRING'
     return t
 
+def t_AS(t):
+    r'(으로서|로서)'
+    t.type = 'TK_AS'
+    return t
+
 # 에러 처리
 def t_error(t):
     # print("Illegal character '%s'" % t.value[0])
