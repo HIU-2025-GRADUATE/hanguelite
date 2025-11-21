@@ -1120,7 +1120,7 @@ class Vdbe:
         # sorter는 건들지 않음
         elif pOp.opcode == OP_SortKey:
           i = pOp.p1
-          if i < 0 or i >= len(self.apSort):
+          if i < len(self.apSort) and self.apSort[i] is not None:
             pSorter = self.apSort[i]
             self.aStack.append(pSorter.zKey)
 
