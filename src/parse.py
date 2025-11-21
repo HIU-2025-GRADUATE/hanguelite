@@ -326,7 +326,8 @@ def p_orderby_opt(p):
 
 def p_sortlist_comma(p):
     """sortlist : sortlist TK_COMMA sortitem sortorder"""
-    exprList = p[1].append(p[3], None)
+    exprList = p[1]
+    exprList.append(p[3], None)
     exprList.a[exprList.nExpr - 1].sortOrder = p[4]
     p[0] = exprList
 

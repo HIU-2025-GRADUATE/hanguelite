@@ -1127,12 +1127,18 @@ class Vdbe:
         # 스택의 top에는 SortMakeRec에 의해 생성된 callback record가 존재
         # 해당 값을 pop 해서 callback을 실행
         elif pOp.opcode == OP_SortCallback:
-          record = self.aStack.pop()
+          import ast
+          record = ast.literal_eval(self.aStack.pop())
+          
+          if tableName != 'hqlite_master' and not dto.getFlag():
+            dto.setFlag(True)
+            dto.setColumnNames(self.azColName)
+
           if xCallback != None:
             xCallback(pOp.p1, record, [])
           else:
-            print("### CALLBACK DEBUGGING ###")
-            print(record)
+            print("### NEW ROW ADDED ###")
+            dto.addRow(record)
 
         # p1 sorter를 닫고 모든 원소를 삭제
         elif pOp.opcode == OP_SortClose:
