@@ -326,7 +326,8 @@ def p_orderby_opt(p):
 
 def p_sortlist_comma(p):
     """sortlist : sortlist TK_COMMA sortitem sortorder"""
-    exprList = p[1].append(p[3], None)
+    exprList = p[1]
+    exprList.append(p[3], None)
     exprList.a[exprList.nExpr - 1].sortOrder = p[4]
     p[0] = exprList
 
@@ -552,10 +553,16 @@ def p_sortorder_desc_kor(p):
 """
     DROP
 """
-
 def p_drop_table(p):
     """cmd : TK_DROP TK_TABLE id"""
     dropTable(pParse, p[3])
+
+"""
+    DROP KOR
+"""
+def p_drop_table_kor(p):
+    """cmd : TK_DROP_KOR id TK_TABLE_KOR"""
+    dropTable(pParse, p[2])
 
 """
     DELETE

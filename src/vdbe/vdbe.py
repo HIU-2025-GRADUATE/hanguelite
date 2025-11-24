@@ -1125,24 +1125,25 @@ class Vdbe:
         # sorter는 건들지 않음
         elif pOp.opcode == OP_SortKey:
           i = pOp.p1
-          if i < 0 or i >= len(self.apSort):
+          if i < len(self.apSort) and self.apSort[i] is not None:
             pSorter = self.apSort[i]
             self.aStack.append(pSorter.zKey)
 
         # 스택의 top에는 SortMakeRec에 의해 생성된 callback record가 존재
         # 해당 값을 pop 해서 callback을 실행
         elif pOp.opcode == OP_SortCallback:
+          import ast
+          record = ast.literal_eval(self.aStack.pop())
+          
           if tableName != 'hqlite_master' and not dto.getFlag():
             dto.setFlag(True)
             dto.setColumnNames(self.azColName)
-            
-          record = self.aStack.pop()
+
           if xCallback != None:
             xCallback(pOp.p1, record, [])
           else:
-            data = eval(record)
             print("### NEW ROW ADDED ###")
-            dto.addRow(data)
+            dto.addRow(record)
 
         # p1 sorter를 닫고 모든 원소를 삭제
         elif pOp.opcode == OP_SortClose:
