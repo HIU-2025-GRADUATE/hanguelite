@@ -412,10 +412,10 @@ class Vdbe:
     pc = 0
     rc = None
 
-    print("-----")
-    for _op in self.aOp:
-      print(_op)
-    print("-----")
+    # print("-----")
+    # for _op in self.aOp:
+    #   print(_op)
+    # print("-----")
 
     for i in range(len(self.aOp)):
       dto.addDebug(f"{i:02}: {str(self.aOp[i])}")
@@ -426,8 +426,8 @@ class Vdbe:
         # pc가 가리키는 명령어 실행
         pOp = self.aOp[pc]
         
-        print(self.aStack)
-        print(str(pOp))
+        # print(self.aStack)
+        # print(str(pOp))
 
         if pOp.opcode == OP_Goto:
           pc = pOp.p2 - 1
