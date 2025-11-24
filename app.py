@@ -163,4 +163,4 @@ def guestbook_submit():
     return redirect(url_for('guestbook_index')) # 방명록 페이지로 리디렉션
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
