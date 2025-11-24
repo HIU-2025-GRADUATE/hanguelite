@@ -152,6 +152,8 @@ def guestbook_submit():
     name = request.form.get('name', 'Anonymous')
     message = request.form.get('message', '')
     if name and message:
+        with open(f"./guestbook/{time.strftime("%Y%m%d_%H%M%S.txt")}", 'a+') as f:
+            f.write(f"{name} : {message}\n")
         query = f"insert into guestbook values ('{name}', '{time.strftime("%Y-%m-%d %H:%M:%S")}', '{message}')"
         print(f"   Query: {query}")
         execute_sql(db, query)
