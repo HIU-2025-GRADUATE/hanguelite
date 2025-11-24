@@ -26,6 +26,12 @@
         </div>
     </header>
 
+    <nav class="mobile-tabs">
+        <button class="mobile-tab-btn active" data-target="query-editor-pane">SQL Query</button>
+        <button class="mobile-tab-btn" data-target="sidebar">Tables</button>
+        <button class="mobile-tab-btn" data-target="result-pane">Query Result</button>
+    </nav>
+
     <div class="container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -107,7 +113,7 @@
                 <!-- === [Jinja2 템플릿 끝] === -->
         </div>
     </div>
-<script>
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
             // CodeMirror 편집기 초기화
             const editor = CodeMirror.fromTextArea(document.getElementById('query-input'), {
@@ -138,6 +144,78 @@
             // === [추가] 사이드바 새로고침 및 검색 DOM 요소 ===
             const refreshButton = document.querySelector('.sidebar-header .icon-button');
             const searchInput = document.querySelector('.search-box input');
+            // === [추가 끝] ===
+
+            // === [추가] 모바일 탭 전환 로직 ===
+            const tabs = document.querySelectorAll('.mobile-tab-btn');
+            const sidebar = document.querySelector('.sidebar');
+            const queryPane = document.querySelector('.query-editor-pane');
+            const resultPane = document.querySelector('.result-pane');
+
+            // 초기 상태 설정 (화면이 좁을 때 SQL Query 탭이 기본이 되도록)
+            function initMobileTabs() {
+                if (window.innerWidth <= 1100) {
+                    // 현재 활성화된 탭 찾기
+                    const activeTab = document.querySelector('.mobile-tab-btn.active');
+                    const targetClass = activeTab.getAttribute('data-target');
+                    
+                    // 모든 패널 숨김 및 active 제거
+                    [sidebar, queryPane, resultPane].forEach(el => el.classList.remove('panel-active'));
+                    
+                    // 타겟 패널 활성화
+                    document.querySelector(`.${targetClass}`).classList.add('panel-active');
+                    
+                    // CodeMirror가 렌더링 되지 않았을 수 있으므로 리프레시
+                    if (targetClass === 'query-editor-pane' && editor) {
+                        setTimeout(() => editor.refresh(), 10);
+                    }
+                } else {
+                    // 데스크탑으로 돌아오면 강제로 모든 display 속성 복구 (CSS media query가 처리하지만 안전장치)
+                    [sidebar, queryPane, resultPane].forEach(el => el.classList.remove('panel-active'));
+                }
+            }
+
+            // 탭 클릭 이벤트
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // 1. 탭 버튼 스타일 활성화
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    // 2. 패널 전환
+                    const targetClass = tab.getAttribute('data-target');
+                    
+                    // 모든 패널 숨김
+                    [sidebar, queryPane, resultPane].forEach(el => el.classList.remove('panel-active'));
+                    
+                    // 선택된 패널 보이기
+                    const targetPanel = document.querySelector(`.${targetClass}`);
+                    if(targetPanel) {
+                        targetPanel.classList.add('panel-active');
+                    }
+
+                    // 3. (중요) SQL 탭으로 돌아왔을 때 에디터 깨짐 방지
+                    if (targetClass === 'query-editor-pane') {
+                        // display:none 상태에서 풀리면 크기 계산을 다시 해야 함
+                        editor.refresh();
+                    }
+                });
+            });
+
+            // 화면 리사이즈 시 초기화 로직 (데스크탑 <-> 모바일 전환 대응)
+            window.addEventListener('resize', () => {
+                // 모바일 진입 시 현재 활성 탭에 맞춰 패널 보여주기 위해 갱신 필요
+                if(window.innerWidth <= 1100) {
+                    const activeTab = document.querySelector('.mobile-tab-btn.active');
+                    if(activeTab) activeTab.click(); 
+                } else {
+                    // 데스크탑에서는 panel-active 클래스가 필요 없으므로(CSS flex 레이아웃 사용) 제거
+                    [sidebar, queryPane, resultPane].forEach(el => el.classList.remove('panel-active'));
+                }
+            });
+
+            // 페이지 로드 시 최초 1회 실행 (기본 탭 활성화)
+            initMobileTabs();
             // === [추가 끝] ===
 
             let currentMarks = [];
@@ -332,54 +410,58 @@
                 toggleTerminal();
             });
 
-            // --- 2. 리사이즈 로직 (신규) ---
+// --- 2. 리사이즈 로직 (Pointer Event로 수정: 모바일/PC 통합) ---
             let isResizing = false;
-            let hasDragged = false; // 드래그와 클릭(토글)을 구분하기 위한 플래그
+            let hasDragged = false;
             let startY;
             let startHeight;
 
-            // 헤더에서 마우스 버튼 누를 때
-            function onResizeMouseDown(e) {
-                // 토글 버튼 자체를 클릭한 거면 리사이즈 시작 안 함
-                if (e.target.id === 'toggle-terminal-button') {
-                    return;
-                }
+            // 리사이즈 시작 (pointerdown)
+            function onResizeStart(e) {
+                // 토글 버튼 클릭 시에는 리사이즈 로직 무시
+                if (e.target.id === 'toggle-terminal-button') return;
 
-                // 창이 접혀있으면 리사이즈 대신 토글(클릭)이 되도록 함
-                if (terminalPane.classList.contains('collapsed')) {
-                    return;
-                }
+                // 접혀있는 상태에서는 드래그 대신 토글(클릭) 동작을 위해 리턴
+                if (terminalPane.classList.contains('collapsed')) return;
+
+                // 터치 시 기본 브라우저 동작(스크롤 등) 방지
+                // e.preventDefault(); (필요 시 주석 해제, pointer-events에서는 보통 touch-action CSS로 처리됨)
 
                 isResizing = true;
-                hasDragged = false; // 드래그 플래그 초기화
-                startY = e.clientY; // 마우스의 시작 Y좌표
-                // 현재 터미널 출력창의 실제 계산된 높이
+                hasDragged = false;
+                
+                // Pointer Event는 마우스/터치 좌표를 모두 clientY로 제공합니다.
+                startY = e.clientY; 
                 startHeight = parseInt(window.getComputedStyle(terminalOutput).height, 10);
                 
-                // 드래그 중 텍스트 선택 방지 클래스 추가
+                // 드래그 중 텍스트 선택 방지
                 document.body.classList.add('resizing-no-select');
-                
-                // 드래그 중에는 부드러운 애니메이션(transition)을 비활성화 (랙 방지)
                 terminalOutput.style.transition = 'none';
 
-                // document 전체에 mousemove, mouseup 이벤트 리스너 추가
-                document.addEventListener('mousemove', onResizeMouseMove);
-                document.addEventListener('mouseup', onResizeMouseUp);
+                // 포인터 캡처 설정 (드래그가 화면 밖으로 나가도 이벤트를 계속 받기 위함)
+                terminalHeader.setPointerCapture(e.pointerId);
+
+                // document가 아닌 header에 직접 바인딩해도 setPointerCapture 덕분에 동작함
+                // 하지만 안전하게 기존 구조 유지하여 document에 바인딩
+                terminalHeader.addEventListener('pointermove', onResizeMove);
+                terminalHeader.addEventListener('pointerup', onResizeEnd);
+                // 혹시 모를 취소 상황(예: 알림창 팝업) 대응
+                terminalHeader.addEventListener('pointercancel', onResizeEnd); 
             }
 
-            // 마우스를 움직일 때
-            function onResizeMouseMove(e) {
+            // 리사이즈 중 (pointermove)
+            function onResizeMove(e) {
                 if (!isResizing) return;
 
-                hasDragged = true; // 마우스를 움직였으므로 '드래그'로 간주
+                // 움직임이 감지되면 클릭이 아닌 드래그로 판단
+                hasDragged = true;
 
-                // 마우스가 움직인 거리 (위로 드래그하면 deltaY가 양수)
                 const deltaY = startY - e.clientY;
                 let newHeight = startHeight + deltaY;
 
-                // 최소/최대 높이 제한
-                const minHeight = 40; // 최소 높이
-                const maxHeight = window.innerHeight - 80; // 최대 높이 (화면 상단 여유)
+                // 높이 제한 (최소 40px ~ 최대 화면높이-80px)
+                const minHeight = 40;
+                const maxHeight = window.innerHeight - 80;
 
                 if (newHeight < minHeight) newHeight = minHeight;
                 if (newHeight > maxHeight) newHeight = maxHeight;
@@ -387,29 +469,32 @@
                 terminalOutput.style.height = newHeight + 'px';
             }
 
-            // 마우스 버튼을 뗄 때
-            function onResizeMouseUp() {
-                isResizing = false;
-                
-                // 텍스트 선택 방지 클래스 제거
-                document.body.classList.remove('resizing-no-select');
-                
-                // 애니메이션(transition) 다시 활성화
-                terminalOutput.style.transition = ''; // CSS에 정의된 기본값으로 복원
+            // 리사이즈 종료 (pointerup)
+            function onResizeEnd(e) {
+                if (!isResizing) return;
 
-                // 전역 이벤트 리스너 제거
-                document.removeEventListener('mousemove', onResizeMouseMove);
-                document.removeEventListener('mouseup', onResizeMouseUp);
+                isResizing = false;
+                document.body.classList.remove('resizing-no-select');
+                terminalOutput.style.transition = ''; 
+
+                // 캡처 해제 및 이벤트 제거
+                terminalHeader.releasePointerCapture(e.pointerId);
+                terminalHeader.removeEventListener('pointermove', onResizeMove);
+                terminalHeader.removeEventListener('pointerup', onResizeEnd);
+                terminalHeader.removeEventListener('pointercancel', onResizeEnd);
+
+                // 드래그가 끝난 시점의 높이를 저장 (토글 시 복원용)
+                lastResizedHeight = terminalOutput.style.height;
             }
 
-            // --- 3. 이벤트 리스너 연결 ---
+            // --- 3. 이벤트 리스너 연결 (mousedown -> pointerdown 교체) ---
             
-            // 리사이즈 시작 이벤트
-            terminalHeader.addEventListener('mousedown', onResizeMouseDown);
+            // 리사이즈 시작 이벤트 (PC/모바일 공용)
+            terminalHeader.addEventListener('pointerdown', onResizeStart);
 
-            // 헤더 클릭 시 토글 (드래그가 아닐 때만)
-            terminalHeader.addEventListener('click', () => {
-                // 마우스를 드래그(리사이즈)하지 않고 그냥 '클릭'했을 때만 토글 실행
+            // 헤더 클릭 시 토글 로직 (드래그 안 했을 때만)
+            terminalHeader.addEventListener('click', (e) => {
+                // 드래그가 발생하지 않았을 때만 토글 실행
                 if (!hasDragged) {
                     toggleTerminal();
                 }

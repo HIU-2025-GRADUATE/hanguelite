@@ -309,10 +309,11 @@ h2 {
     align-items: center;
     padding: 5px 10px;
     background-color: #333;
-    /* === [수정] === */
-    cursor: ns-resize; /* 남-북(위아래) 크기 조절 커서 */
+    cursor: ns-resize;
+    
+    /* === [필수 추가] 터치 디바이스에서 드래그 시 스크롤(화면 이동) 방지 === */
+    touch-action: none; 
 }
-
         /* === [추가] 패널이 접혔을 땐 토글 커서(pointer) 표시 === */
 .terminal-pane.collapsed .terminal-header {
     cursor: pointer;
@@ -364,4 +365,81 @@ h2 {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+}
+
+/* ... 기존 CSS 내용 ... */
+
+/* === [추가] 모바일 탭 네비게이션 (기본적으로 숨김) === */
+.mobile-tabs {
+    display: none; /* 데스크탑에서는 보이지 않음 */
+    background-color: #fff;
+    border-bottom: 2px solid #000; /* 스크린샷의 굵은 하단 선 */
+    padding-top: 5px;
+}
+
+.mobile-tab-btn {
+    flex: 0 0 auto;
+    padding: 10px 20px;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    background-color: #f9f9f9;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: -1px; /* 테두리 겹침 */
+    color: #555;
+}
+
+.mobile-tab-btn.active {
+    background-color: #fff;
+    border: 2px solid #000; /* 활성 탭 굵은 테두리 */
+    border-bottom: 2px solid #fff; /* 하단 선을 가리기 위해 흰색 처리 */
+    margin-bottom: -2px; /* 탭바의 하단 선 위로 덮어쓰기 */
+    color: #000;
+    z-index: 10;
+}
+
+
+/* === [추가] 반응형 미디어 쿼리 (1100px 이하) === */
+@media (max-width: 1100px) {
+    /* 1. 탭바 보이기 */
+    .mobile-tabs {
+        display: flex;
+        height: 45px; /* 탭 영역 높이 고정 */
+        padding-left: 10px;
+    }
+
+    /* 2. 컨테이너 높이 재조정 (헤더 + 탭 높이 제외) */
+    .container {
+        height: calc(100vh - 51px - 45px);
+        display: block; /* Flex 해제 (패널 하나만 꽉 차게 보여주기 위함) */
+        position: relative;
+    }
+
+    /* 3. 모든 패널을 절대 위치 혹은 숨김 처리 후 활성화된 것만 표시 */
+    .sidebar, 
+    .query-editor-pane, 
+    .result-pane {
+        display: none !important; /* 기본적으로 숨김 */
+        width: 100%;
+        height: 100%;
+        border-right: none;
+        border-left: none;
+    }
+
+    /* 4. 활성화된 패널만 보이기 */
+    .panel-active {
+        display: flex !important; /* 원래 속성이 flex이므로 */
+    }
+    
+    /* 사이드바는 원래 flex-direction이 column임 */
+    .sidebar.panel-active {
+        display: flex !important;
+        flex: none; /* 고정 너비 해제 */
+    }
+
+    /* 결과창 테이블 헤더 스티키 위치 조정 */
+    .result-output th {
+        top: 0; 
+    }
 }
