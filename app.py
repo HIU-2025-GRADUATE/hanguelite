@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 import time
+import re
 
 # main 함수
 from src.parse import parser, set_parse_object
@@ -8,6 +9,21 @@ from src.dto.selectQueryDTO import *
 from src.dto.response import Response
 import os
 import copy
+
+def preprocess_korean_sql(sql: str) -> str:
+    rules: list[tuple[re.Pattern, callable]] = [
+        (re.compile(r'(으로|로)\s*묶고'),
+         lambda m: f'{m.group(1)}묶고'),
+        (re.compile(r'(으로|로)\s*정렬해서'),
+         lambda m: f'{m.group(1)}정렬해서'),
+        (re.compile(r'일\s*때'),
+         lambda m: '일때'),
+    ]
+
+    for pattern, repl in rules:
+        sql = pattern.sub(repl, sql)
+
+    return sql
 
 def runParser(parse: Parse, sql: str):
     set_parse_object(parse)
@@ -22,6 +38,7 @@ def execute_sql(db, sql: str):
 
         if s[0].lower() not in check:
             sql = s[-1] + " " + " ".join(s[:-1])
+            sql = preprocess_korean_sql(sql)
 
         runParser(parse, sql)
 
