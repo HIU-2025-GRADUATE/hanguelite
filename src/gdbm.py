@@ -1,5 +1,6 @@
 import csv, os, dbm
 from io import TextIOWrapper
+import ast
 
 GDBM_REPLACE = 0
 GDBM_INSERT = 1
@@ -20,7 +21,8 @@ def gdbm_open(filePath, mode):
             raise e
 
 def gdbm_fetch(dbf, key):
-    return eval(dbf[key].decode('utf-8'))
+    return ast.literal_eval(dbf[key].decode('utf-8'))
+    # return eval(dbf[key].decode('utf-8'))
 
 def gdbm_exists(dbf, key):
     return (key in dbf.keys())

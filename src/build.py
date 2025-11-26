@@ -167,7 +167,7 @@ def dropTable(parse: Parse, tableName: Token):
         VdbeOp(OP_ListWrite, 0, 0),
         VdbeOp(OP_Goto, 0, 3),
         VdbeOp(OP_ListRewind, 0, 0),
-        VdbeOp(OP_ListRead, 0, 4),
+        VdbeOp(OP_ListRead, 0, 14),
         VdbeOp(OP_Delete, 0, 0),
         VdbeOp(OP_Goto, 0, 11),
         VdbeOp(OP_Destroy, 0, 0, table.zName),

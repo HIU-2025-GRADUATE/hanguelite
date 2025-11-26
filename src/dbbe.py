@@ -137,7 +137,7 @@ class Dbbe:
     # SQL table 이름 혹은 인덱스 값에 해당하는 file 이름으로 변환함
     def fileOfTable(self, zTable):
         fileList = os.listdir(self.zDir)
-        if zTable+'.dat' in fileList:
+        if zTable in fileList:
             zFile = os.path.join(self.zDir, zTable)
         else:
             zFile = None
@@ -148,8 +148,11 @@ class Dbbe:
         zFile = self.fileOfTable(zTable)
         if zFile is None:
             return
-        for ext in ['.bak', '.dat', '.dir']:
-            os.unlink(zFile + ext)
+        for ext in ['', '.bak', '.dat', '.dir', '.db']:
+            try:
+                os.unlink(zFile + ext)
+            except:
+                continue
         del zFile
 
 class DbbeCursor:
@@ -298,6 +301,8 @@ class DbbeCursor:
         if self.readPending and self.pFile and self.pFile.dbf:
             self.data = gdbm_fetch(self.pFile.dbf, self.key)
             self.readPending = False
+        # if self.data == None:
+        #     return ''
         if offset < 0 or offset >= len(self.data):
             return ''
         return self.data[offset]

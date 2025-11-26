@@ -88,14 +88,16 @@ def handle_query():
     """SQL 쿼리 요청을 처리합니다."""
     data = request.get_json()
     # query = data.get('query', '').strip().rstrip(';').lower()
+    raw_query = data.get('query', [])
 
-    query_list = data.get('query', []).split('\n')
+    query_list = raw_query.split('\n')
     for raw_query in query_list:
         query = raw_query.strip().rstrip(';').lower()
-        if query == '':
+        if query == '' or query.startswith('--'):
             continue
         execute_sql(db, query)
         data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
+        # print("Data:",data)
         debugs = extend_logs(debugs, dto.logs, query)
         dto.clearDto()
         # print(data)
@@ -113,7 +115,6 @@ def handle_query():
     # print(debugs)
     # results = MOCK_DB["join_query_result"]
     return jsonify({"results": results, "count": len(results), "debugs": debugs})
-
 
 
 """방명록 페이지를 렌더링합니다."""
@@ -151,6 +152,8 @@ def guestbook_submit():
     name = request.form.get('name', 'Anonymous')
     message = request.form.get('message', '')
     if name and message:
+        with open(f"./guestbook/{time.strftime("%Y%m%d_%H%M%S.txt")}", 'a+') as f:
+            f.write(f"{name} : {message}\n")
         query = f"insert into guestbook values ('{name}', '{time.strftime("%Y-%m-%d %H:%M:%S")}', '{message}')"
         print(f"   Query: {query}")
         execute_sql(db, query)
@@ -160,4 +163,4 @@ def guestbook_submit():
     return redirect(url_for('guestbook_index')) # 방명록 페이지로 리디렉션
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)

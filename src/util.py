@@ -231,18 +231,18 @@ def compare(a_text: str, b_text: str):
 # int sqliteSortCompare(const char *a, const char *b)
 def sortCompare(a, b) -> int:
     res = 0
-    firstA = a[0]
-    while res == 0 and a and b:
-        lenA = a.find('\000')
-        lenB = b.find('\000')
-        res = compare(a[1:lenA], b[1:lenB])
-        if res == 0:
-            a = a[lenA+1:]
-            b = b[lenA+1:]
 
-    if firstA == '-':
+    while res == 0 and len(a) > 0 and len(b) > 0:
+        res = compare(a[1:], b[1:])
+
+        if res == 0:
+            length = a.find('\000') + 1
+            a = a[length:]
+            b = b[length:]
+
+    if len(a) > 0 and a[0] == '-':
         res = -res
-    
+
     return res
 
 if __name__ == "__main__":

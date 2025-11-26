@@ -412,10 +412,10 @@ class Vdbe:
     pc = 0
     rc = None
 
-    print("-----")
-    for _op in self.aOp:
-      print(_op)
-    print("-----")
+    # print("-----")
+    # for _op in self.aOp:
+    #   print(_op)
+    # print("-----")
 
     for i in range(len(self.aOp)):
       dto.addDebug(f"{i:02}: {str(self.aOp[i])}")
@@ -425,9 +425,9 @@ class Vdbe:
       while pc < self.nOp:
         # pc가 가리키는 명령어 실행
         pOp = self.aOp[pc]
-        print(self.aStack)
-        print(str(pOp))
-        # print(zOpName[pOp.opcode], pOp.p1, pOp.p2, pOp.p3)
+        
+        # print(self.aStack)
+        # print(str(pOp))
 
         if pOp.opcode == OP_Goto:
           pc = pOp.p2 - 1
@@ -863,7 +863,7 @@ class Vdbe:
         elif pOp.opcode == OP_Key:
           i = pOp.p1
           if 0 <= i < self.nCursor and self.aCsr[i].pCursor is not None:
-            z = self.aCsr[i].pCursor.readKey() # byte 형식의 키를 읽어온다.
+            z = self.aCsr[i].pCursor.readKey()
             self.aStack.append(z)
 
         elif pOp.opcode == OP_Rewind:
@@ -1125,19 +1125,25 @@ class Vdbe:
         # sorter는 건들지 않음
         elif pOp.opcode == OP_SortKey:
           i = pOp.p1
-          if i < 0 or i >= len(self.apSort):
+          if i < len(self.apSort) and self.apSort[i] is not None:
             pSorter = self.apSort[i]
             self.aStack.append(pSorter.zKey)
 
         # 스택의 top에는 SortMakeRec에 의해 생성된 callback record가 존재
         # 해당 값을 pop 해서 callback을 실행
         elif pOp.opcode == OP_SortCallback:
-          record = self.aStack.pop()
+          import ast
+          record = ast.literal_eval(self.aStack.pop())
+          
+          if tableName != 'hqlite_master' and not dto.getFlag():
+            dto.setFlag(True)
+            dto.setColumnNames(self.azColName)
+
           if xCallback != None:
             xCallback(pOp.p1, record, [])
           else:
-            print("### CALLBACK DEBUGGING ###")
-            print(record)
+            print("### NEW ROW ADDED ###")
+            dto.addRow(record)
 
         # p1 sorter를 닫고 모든 원소를 삭제
         elif pOp.opcode == OP_SortClose:
