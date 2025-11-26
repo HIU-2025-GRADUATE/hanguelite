@@ -64,6 +64,10 @@ def parse_col_info(raw):
 app = Flask(__name__)
 db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
 
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_prefix=1)
+
 
 @app.route('/')
 def index():
