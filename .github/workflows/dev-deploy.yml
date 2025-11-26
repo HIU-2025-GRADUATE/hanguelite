@@ -50,6 +50,8 @@ jobs:
               -p 5555:5555 \
               -v /home/ubuntu/hanguelite/db:/app/db \
               -v /home/ubuntu/hanguelite/guestbook:/app/guestbook \
+              -v /etc/localtime:/etc/localtime:ro \
+              -v /etc/timezone:/etc/timezone:ro \
               ${{ secrets.DOCKER_IMAGE_TAG }}
   
             echo "==== Clean up old images ===="
