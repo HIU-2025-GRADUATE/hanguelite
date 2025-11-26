@@ -104,45 +104,49 @@ def index():
 # SQL 쿼리문 실행
 @app.route('/api/query', methods=['POST'])
 def handle_query():
-    global db
-    debugs = list()
-    dto.clearDto()
+    try:
+        global db
+        debugs = list()
+        dto.clearDto()
 
-    """SQL 쿼리 요청을 처리합니다."""
-    data = request.get_json()
-    raw_query = data.get('query', [])
+        """SQL 쿼리 요청을 처리합니다."""
+        data = request.get_json()
+        raw_query = data.get('query', [])
 
-    query_list = raw_query.split('\n')
-    real_query = "\n".join([query_line for query_line in query_list if query_line.strip() != '' and not query_line.strip().startswith('--')])
+        query_list = raw_query.split('\n')
+        real_query = "\n".join([query_line for query_line in query_list if query_line.strip() != '' and not query_line.strip().startswith('--')])
 
-    print("-----------")
-    print("real_query:", '\n'+real_query)
-    print("-----------")
+        print("-----------")
+        print("real_query:", '\n'+real_query)
+        print("-----------")
 
-    for query in real_query.split(';'):
-        response: Response = execute_sql(db, query)
-        print("response:", response.status, response.data, response.msg)
+        for query in real_query.split(';'):
+            response: Response = execute_sql(db, query)
+            print("response:", response.status, response.data, response.msg)
 
-        if response.status == 200:
-            response_data: SelectQueryDTO = response.data
-            data = {'column_names': copy.deepcopy(response_data.columnNames), 'rows': copy.deepcopy(response_data.rows)}
-            print("Data:",data)
-            debugs = extend_logs(debugs, response_data.logs, query)
-            dto.clearDto()
+            if response.status == 200:
+                response_data: SelectQueryDTO = response.data
+                data = {'column_names': copy.deepcopy(response_data.columnNames), 'rows': copy.deepcopy(response_data.rows)}
+                print("Data:",data)
+                debugs = extend_logs(debugs, response_data.logs, query)
+                dto.clearDto()
 
-            results = []
-            results.append(data['column_names'])
-            for line in data['rows']:
-                tmp = dict()
-                for i in range(len(data['column_names'])):
-                    tmp[data['column_names'][i]] = line[i]
-                results.append(tmp)
+                results = []
+                results.append(data['column_names'])
+                for line in data['rows']:
+                    tmp = dict()
+                    for i in range(len(data['column_names'])):
+                        tmp[data['column_names'][i]] = line[i]
+                    results.append(tmp)
 
-            return jsonify({"results": results, "count": len(results), "debugs": debugs, "msg": "ok"}), 200
-        elif response.status == 201:
-            return jsonify({"results": [], "count": 0, "debugs": debugs, "msg": "ok"}), 201
-        else:
-            return jsonify({"results": [], "count": '', "debugs": debugs, "msg": response.msg}), 400
+                return jsonify({"results": results, "count": len(results), "debugs": debugs, "msg": "ok"}), 200
+            elif response.status == 201:
+                return jsonify({"results": [], "count": 0, "debugs": debugs, "msg": "ok"}), 201
+            else:
+                return jsonify({"results": [], "count": '', "debugs": debugs, "msg": response.msg}), 400
+    except Exception as e:
+        print(e)
+        return jsonify({"results": [], "count": '', "debugs": debugs, "msg": str(e)}), 500
 
 
 """방명록 페이지를 렌더링합니다."""
