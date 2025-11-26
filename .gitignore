@@ -2,5 +2,6 @@
 .idea/**
 .DS_store
 src/parser.out
+guestbook/
 **/__pycache__/**
 **.db
