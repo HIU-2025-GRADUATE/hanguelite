@@ -42,13 +42,13 @@ jobs:
             sudo docker pull ${{ secrets.DOCKER_IMAGE_TAG }}
             
             echo "==== Stop and remove old container ===="
-            docker stop my-flask || true
-            docker rm my-flask || true
+            sudo docker stop my-flask || true
+            sudo docker rm my-flask || true
   
             echo "==== Run new container ===="
-            docker run -d --name my-flask \
+            sudo docker run -d --name my-flask \
               -p 5555:5555 \
               ${{ secrets.DOCKER_IMAGE_TAG }}
   
             echo "==== Clean up old images ===="
-            docker image prune -f
+            sudo docker image prune -f
