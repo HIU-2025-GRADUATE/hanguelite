@@ -583,6 +583,7 @@ def p_error(p):
         print(f"[SYNTAX ERROR] Unexpected token: {p.type} ({p.value}) at line {p.lineno}")
         raise Exception(f"[SYNTAX ERROR] Unexpected token: {p.type} ({p.value}) at line {p.lineno}")
     else:
+        raise Exception(f"[SYNTAX ERROR] 문법이 잘못되었습니다.")
         print('Syntax error in input!')
 
 # Build the parser
