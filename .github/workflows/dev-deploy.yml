@@ -37,18 +37,18 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           key: ${{ secrets.KEY }}
-        script: |
-          echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-          sudo docker pull ${{ secrets.DOCKER_IMAGE_TAG }}
-          
-          echo "==== Stop and remove old container ===="
-          docker stop my-flask || true
-          docker rm my-flask || true
-
-          echo "==== Run new container ===="
-          docker run -d --name my-flask \
-            -p 5555:5555 \
-            ${{ secrets.DOCKER_IMAGE_TAG }}
-
-          echo "==== Clean up old images ===="
-          docker image prune -f
+          script: |
+            echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            sudo docker pull ${{ secrets.DOCKER_IMAGE_TAG }}
+            
+            echo "==== Stop and remove old container ===="
+            docker stop my-flask || true
+            docker rm my-flask || true
+  
+            echo "==== Run new container ===="
+            docker run -d --name my-flask \
+              -p 5555:5555 \
+              ${{ secrets.DOCKER_IMAGE_TAG }}
+  
+            echo "==== Clean up old images ===="
+            docker image prune -f
