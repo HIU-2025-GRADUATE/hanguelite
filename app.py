@@ -5,24 +5,33 @@ import time
 from src.parse import parser, set_parse_object
 from src.sqliteInt import Parse, sqlite
 from src.dto.selectQueryDTO import *
-from src.dto.response import *
+from src.dto.response import Response
 import os
-import re
 import copy
 
 def runParser(parse: Parse, sql: str):
     set_parse_object(parse)
     parser.parse(sql, debug=False)
 
-def execute_sql(db, sql):
-    parse = Parse(db)
-    check = ['select', 'insert', 'update', 'delete', 'create', 'drop']
-    s = sql.split()
-    
-    if s[0].lower() not in check:
-        sql = s[-1] + " " + " ".join(s[:-1])
+def execute_sql(db, sql: str):
+    try:
+        dto.clearDto()
+        parse = Parse(db)
+        check = ['select', 'insert', 'update', 'delete', 'create', 'drop']
+        s = sql.split()
 
-    runParser(parse, sql)
+        if s[0].lower() not in check:
+            sql = s[-1] + " " + " ".join(s[:-1])
+
+        runParser(parse, sql)
+
+        if dto.flag:
+            return Response(200, None, dto)
+        else:
+            return Response(201, None, None)
+
+    except Exception as e:
+        return Response(400, str(e), None)
 
 def extend_logs(old, new, sql):
     old.append(f"SQL: {sql}")
@@ -42,15 +51,12 @@ db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
 @app.route('/')
 def index():
     global db
-    # db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
     debugs = list()
-    dto.clearDto()
 
     s = 'select * from hqlite_master;'
     execute_sql(db, s)
     data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
     debugs = extend_logs(debugs, dto.logs, s)
-    dto.clearDto()
 
     tables = dict()
     for rows in data['rows']:
@@ -87,34 +93,39 @@ def handle_query():
 
     """SQL 쿼리 요청을 처리합니다."""
     data = request.get_json()
-    # query = data.get('query', '').strip().rstrip(';').lower()
     raw_query = data.get('query', [])
 
     query_list = raw_query.split('\n')
-    for raw_query in query_list:
-        query = raw_query.strip().rstrip(';').lower()
-        if query == '' or query.startswith('--'):
-            continue
-        execute_sql(db, query)
-        data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
-        # print("Data:",data)
-        debugs = extend_logs(debugs, dto.logs, query)
-        dto.clearDto()
-        # print(data)
+    real_query = "\n".join([query_line for query_line in query_list if query_line.strip() != '' and not query_line.strip().startswith('--')])
 
-        results = []
-        results.append(data['column_names'])
-        for line in data['rows']:
-            tmp = dict()
-            for i in range(len(data['column_names'])):
-                tmp[data['column_names'][i]] = line[i]
-            results.append(tmp)
-            del tmp
+    print("-----------")
+    print("real_query:", '\n'+real_query)
+    print("-----------")
 
-    # print(results)
-    # print(debugs)
-    # results = MOCK_DB["join_query_result"]
-    return jsonify({"results": results, "count": len(results), "debugs": debugs})
+    for query in real_query.split(';'):
+        response: Response = execute_sql(db, query)
+        print("response:", response.status, response.data, response.msg)
+
+        if response.status == 200:
+            response_data: SelectQueryDTO = response.data
+            data = {'column_names': copy.deepcopy(response_data.columnNames), 'rows': copy.deepcopy(response_data.rows)}
+            print("Data:",data)
+            debugs = extend_logs(debugs, response_data.logs, query)
+            dto.clearDto()
+
+            results = []
+            results.append(data['column_names'])
+            for line in data['rows']:
+                tmp = dict()
+                for i in range(len(data['column_names'])):
+                    tmp[data['column_names'][i]] = line[i]
+                results.append(tmp)
+
+            return jsonify({"results": results, "count": len(results), "debugs": debugs, "msg": "ok"}), 200
+        elif response.status == 201:
+            return jsonify({"results": [], "count": 0, "debugs": debugs, "msg": "ok"}), 201
+        else:
+            return jsonify({"results": [], "count": '', "debugs": debugs, "msg": response.msg}), 400
 
 
 """방명록 페이지를 렌더링합니다."""
@@ -152,15 +163,14 @@ def guestbook_submit():
     name = request.form.get('name', 'Anonymous')
     message = request.form.get('message', '')
     if name and message:
-        with open(f"./guestbook/{time.strftime("%Y%m%d_%H%M%S.txt")}", 'a+') as f:
+        with open(f"./guestbook/{time.strftime('%Y%m%d_%H%M%S.txt')}", 'a+') as f:
             f.write(f"{name} : {message}\n")
-        query = f"insert into guestbook values ('{name}', '{time.strftime("%Y-%m-%d %H:%M:%S")}', '{message}')"
+        query = f"insert into guestbook values ('{name}', '{time.strftime('%Y-%m-%d %H:%M:%S')}', '{message}')"
         print(f"   Query: {query}")
         execute_sql(db, query)
         dto.clearDto()
 
-
     return redirect(url_for('guestbook_index')) # 방명록 페이지로 리디렉션
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', port=5555)
