@@ -150,9 +150,13 @@ def handle_query():
 def guestbook_index():
     try:
         query = 'select * from guestbook'
-        execute_sql(db, query)
+        response: Response = execute_sql(db, query)
         db_data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
         dto.clearDto()
+
+        print(response.status, response.data, response.msg)
+        if response.status == 400:
+            raise Exception(response.msg)
     
     except:
         query = 'create table guestbook (name varchar, _time timestamp, message varchar);'
