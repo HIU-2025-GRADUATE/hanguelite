@@ -32,6 +32,37 @@ reserved = {
     'DELETE': 'TK_DELETE',
 }
 
+# 한국어 키워드 목록 (정규식 아님, 순수 문자열만)
+kor_keywords = {
+    '테이블에서': 'TK_FROM_KR',
+    '조건이': 'TK_WHERE_PRE_KR',
+    '일때': 'TK_WHERE_POST_KR',
+    '그룹을': 'TK_GROUP_BY_PRE_KR',
+    '으로묶고': 'TK_GROUP_BY_POST_KR',
+    '로묶고': 'TK_GROUP_BY_POST_KR',
+    '그중에서': 'TK_HAVING_PRE_KR',
+    '인': 'TK_HAVING_POST_KR',
+    '오름차순': 'TK_ASC_KR',
+    '내림차순': 'TK_DESC_KR',
+    '으로정렬해서': 'TK_ORDER_BY_KR',
+    '로정렬해서': 'TK_ORDER_BY_KR',
+    '찾아줘': 'TK_SELECT_KR',
+    '테이블을': 'TK_TABLE_KOR',
+    '만들어줘': 'TK_CREATE_KOR',
+    '테이블에': 'TK_TABLE_INTO_KOR',
+    '추가해줘': 'TK_INSERT_KOR',
+    '으로': 'TK_EURO',
+    '로': 'TK_EURO',
+    '변경해줘': 'TK_UPDATE_KOR',
+    '바꿔줘': 'TK_UPDATE_KOR',
+    '삭제해줘': 'TK_DELETE_KOR',
+    '지워줘': 'TK_DELETE_KOR',
+    '제거해줘': 'TK_DROP_KOR',
+    '을': 'TK_COL_LIST_POST_KR',
+    '를': 'TK_COL_LIST_POST_KR',
+}
+
+
 # 토큰 이름 목록: parse.y에서 사용되는 토큰들과 SQLite의 tokenize.c에 있는 키워드들
 tokens = (
     'TK_STAR', 'TK_ID', 'TK_DOT', 'TK_COLUMN', 'TK_IGNORE',
@@ -80,8 +111,11 @@ t_TK_DELETE_KOR             = r"(삭제해줘|지워줘)"
 t_TK_DROP_KOR               = r"제거해줘"
 
 def t_ID(t):
-    r'[a-zA-Z_][a-zA-Z0-9_]*'
-    t.type = reserved.get(t.value.upper(), 'TK_ID')
+    r'[가-힣a-zA-Z_][가-힣a-zA-Z0-9_]*'
+    if t.value in kor_keywords:
+        t.type = kor_keywords.get(t.value)
+    else:
+        t.type = reserved.get(t.value.upper(), 'TK_ID')
     return t
 
 def t_FLOAT(t):

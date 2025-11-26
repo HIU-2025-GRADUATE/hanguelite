@@ -136,21 +136,40 @@ def dropTable(parse: Parse, tableName: Token):
     if not vdbe:
         return
 
+    # dropTableOps = [
+    #     VdbeOp( OP_Open, 0, 1, MASTER_NAME ),
+    #     VdbeOp( OP_ListOpen, 0, 0 ),
+    #     VdbeOp(OP_String, 0, 0, table.zName ),
+    #     VdbeOp(OP_Next, 0, ADDR(10)),
+    #     VdbeOp(OP_Dup, 0, 0),
+    #     VdbeOp(OP_Field, 0, 2),
+    #     VdbeOp(OP_Ne, 0, ADDR(3)),
+    #     VdbeOp(OP_Key, 0, 0),
+    #     VdbeOp(OP_ListWrite, 0, 0),
+    #     VdbeOp(OP_Goto, 0, ADDR(3)),
+    #     VdbeOp(OP_ListRewind, 0, 0),
+    #     VdbeOp(OP_ListRead, 0, ADDR(14)),
+    #     VdbeOp(OP_Delete, 0, 0),
+    #     VdbeOp(OP_Goto, 0, ADDR(11)),
+    #     VdbeOp(OP_Destroy, 0, 0, table.zName),
+    #     VdbeOp(OP_Close, 0, 0),
+    # ]
+
     dropTableOps = [
         VdbeOp( OP_Open, 0, 1, MASTER_NAME ),
         VdbeOp( OP_ListOpen, 0, 0 ),
         VdbeOp(OP_String, 0, 0, table.zName ),
-        VdbeOp(OP_Next, 0, ADDR(10)),
+        VdbeOp(OP_Next, 0, 10),
         VdbeOp(OP_Dup, 0, 0),
         VdbeOp(OP_Field, 0, 2),
-        VdbeOp(OP_Ne, 0, ADDR(3)),
+        VdbeOp(OP_Ne, 0, 3),
         VdbeOp(OP_Key, 0, 0),
         VdbeOp(OP_ListWrite, 0, 0),
-        VdbeOp(OP_Goto, 0, ADDR(3)),
+        VdbeOp(OP_Goto, 0, 3),
         VdbeOp(OP_ListRewind, 0, 0),
-        VdbeOp(OP_ListRead, 0, ADDR(14)),
+        VdbeOp(OP_ListRead, 0, 14),
         VdbeOp(OP_Delete, 0, 0),
-        VdbeOp(OP_Goto, 0, ADDR(11)),
+        VdbeOp(OP_Goto, 0, 11),
         VdbeOp(OP_Destroy, 0, 0, table.zName),
         VdbeOp(OP_Close, 0, 0),
     ]

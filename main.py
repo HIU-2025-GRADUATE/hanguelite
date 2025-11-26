@@ -12,13 +12,13 @@ def runParser(parse: Parse, sql: str):
 
 def execute_sql(db, sql):
     parse = Parse(db)
-
-    if bool(re.search("[가-힣]", sql)):
-        s = sql.split()
-        sql = s[-1] + " " + " ".join(s[:-1])
+    check = ['select', 'insert', 'update', 'delete', 'create', 'drop']
+    s = sql.split()
     
-    runParser(parse, sql)
+    if s[0].lower() not in check:
+        sql = s[-1] + " " + " ".join(s[:-1])
 
+    runParser(parse, sql)
 
 def main():
     db = sqlite.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db'))
@@ -34,6 +34,7 @@ def main():
             execute_sql(db, s)
             if dto.getFlag():
                 data = {'column_names': copy.deepcopy(dto.columnNames), 'rows': copy.deepcopy(dto.rows)}
+                print(data)
                 dto.clearDto()
                 return Response(200, None, data)
             else:

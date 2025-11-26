@@ -1,0 +1,54 @@
+on:
+  pull_request:
+    branches:
+      - develop
+  push:
+    branches:
+      - develop
+
+jobs:
+  build_application:
+    name: build application and make jar file
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Build Docker Image & Push
+      - name: Login to Dockerhub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Build Docker Image & Push Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_IMAGE_TAG }}
+
+      # Deploy
+      - name: ssh connect
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          key: ${{ secrets.KEY }}
+          script: |
+            echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            sudo docker pull ${{ secrets.DOCKER_IMAGE_TAG }}
+            
+            echo "==== Stop and remove old container ===="
+            sudo docker stop my-flask || true
+            sudo docker rm my-flask || true
+  
+            echo "==== Run new container ===="
+            sudo docker run -d --name my-flask \
+              -p 5555:5555 \
+              ${{ secrets.DOCKER_IMAGE_TAG }}
+  
+            echo "==== Clean up old images ===="
+            sudo docker image prune -f

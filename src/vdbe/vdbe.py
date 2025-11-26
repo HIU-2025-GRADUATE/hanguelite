@@ -412,17 +412,22 @@ class Vdbe:
     pc = 0
     rc = None
 
-    print("-----")
-    for _op in self.aOp:
-      print(_op)
-    print("-----")
+    # print("-----")
+    # for _op in self.aOp:
+    #   print(_op)
+    # print("-----")
+
+    for i in range(len(self.aOp)):
+      dto.addDebug(f"{i:02}: {str(self.aOp[i])}")
+
     try:
       showHeader = True
       while pc < self.nOp:
         # pc가 가리키는 명령어 실행
         pOp = self.aOp[pc]
-        # print(zOpName[pOp.opcode], pOp.p1, pOp.p2, pOp.p3)
+        
         # print(self.aStack)
+        # print(str(pOp))
 
         if pOp.opcode == OP_Goto:
           pc = pOp.p2 - 1
@@ -858,7 +863,7 @@ class Vdbe:
         elif pOp.opcode == OP_Key:
           i = pOp.p1
           if 0 <= i < self.nCursor and self.aCsr[i].pCursor is not None:
-            z = self.aCsr[i].pCursor.readKey() # byte 형식의 키를 읽어온다.
+            z = self.aCsr[i].pCursor.readKey()
             self.aStack.append(z)
 
         elif pOp.opcode == OP_Rewind:
@@ -1008,7 +1013,7 @@ class Vdbe:
             raise BadInstruction(f"illegal operation at {pc}")
 
           val = self.apList[i].readline()
-          if val == '':
+          if len(val) == 0:
             pc = pOp.p2-1
           else:
             import ast
