@@ -48,6 +48,8 @@ jobs:
             echo "==== Run new container ===="
             sudo docker run -d --name my-flask \
               -p 5555:5555 \
+              -v /home/ubuntu/hanguelite/db:/app/db \
+              -v /home/ubuntu/hanguelite/guestbook:/app/guestbook \
               ${{ secrets.DOCKER_IMAGE_TAG }}
   
             echo "==== Clean up old images ===="
