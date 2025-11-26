@@ -581,6 +581,7 @@ def p_delete_from_kor(p):
 def p_error(p):
     if p:
         print(f"[SYNTAX ERROR] Unexpected token: {p.type} ({p.value}) at line {p.lineno}")
+        raise Exception(f"[SYNTAX ERROR] Unexpected token: {p.type} ({p.value}) at line {p.lineno}")
     else:
         print('Syntax error in input!')
 
