@@ -45,9 +45,10 @@ def execute_sql(db, sql: str):
         if dto.flag:
             return Response(200, None, dto)
         else:
-            return Response(201, None, None)
+            return Response(201, None, dto)
 
     except Exception as e:
+        raise e
         return Response(400, str(e), None)
 
 def extend_logs(old, new, sql):
@@ -124,9 +125,15 @@ def handle_query():
         print("real_query:", '\n'+real_query)
         print("-----------")
 
+        final_response = None
         for query in real_query.split(';'):
+            if not query:
+                continue
             response: Response = execute_sql(db, query)
             print("response:", response.status, response.data, response.msg)
+
+            if response.status == 400:
+                return jsonify({"results": [], "count": '', "debugs": debugs, "msg": response.msg}), 400
 
             if response.status == 200:
                 response_data: SelectQueryDTO = response.data
@@ -143,11 +150,15 @@ def handle_query():
                         tmp[data['column_names'][i]] = line[i]
                     results.append(tmp)
 
-                return jsonify({"results": results, "count": len(results), "debugs": debugs, "msg": "ok"}), 200
+                final_response = (jsonify({"results": results, "count": len(results), "debugs": debugs, "msg": "ok"}), 200)
             elif response.status == 201:
-                return jsonify({"results": [], "count": 0, "debugs": debugs, "msg": "ok"}), 201
+                response_data: SelectQueryDTO = response.data
+                debugs = extend_logs(debugs, response_data.logs, query)
+                final_response = (jsonify({"results": [], "count": 0, "debugs": debugs, "msg": "ok"}), 201)
             else:
-                return jsonify({"results": [], "count": '', "debugs": debugs, "msg": response.msg}), 400
+                raise Exception(f"Unknown Response Status: {response.status}")
+
+        return final_response
     except Exception as e:
         print(e)
         return jsonify({"results": [], "count": '', "debugs": debugs, "msg": str(e)}), 500
@@ -202,4 +213,4 @@ def guestbook_submit():
     return redirect(url_for('guestbook_index')) # 방명록 페이지로 리디렉션
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5555)
+    app.run(host='0.0.0.0', port=5556)
