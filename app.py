@@ -48,7 +48,6 @@ def execute_sql(db, sql: str):
             return Response(201, None, dto)
 
     except Exception as e:
-        raise e
         return Response(400, str(e), None)
 
 def extend_logs(old, new, sql):
