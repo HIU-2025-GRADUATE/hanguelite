@@ -80,7 +80,8 @@
                     </button>
                 </div>
             </div>
-            <textarea id="query-input">SELECT * FROM student;</textarea>
+            {% from "_macros.html" import default_sql %}
+            <textarea id="query-input">{{ default_sql() }}</textarea>
         </main>
 
         <section class="result-pane">
