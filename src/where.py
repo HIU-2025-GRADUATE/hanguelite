@@ -89,29 +89,29 @@ def whereBegin(pParse : Parse, pTabList : IdList, pWhere : Expr, pushKey : int):
         pIdx = pTab.pIndex
         pBestIdx = None
 
-        # while pIdx:
-        #     if pIdx.nColumn > 32:
-        #         pIdx = pIdx.pNext
-        #         continue
+        while pIdx:
+            if pIdx.nColumn > 32:
+                pIdx = pIdx.pNext
+                continue
 
-        #     columnMask = 0
-        #     for j in range(nExpr):
-        #         if aExpr[j].idxLeft == idx and (aExpr[j].prereqRight & loopMask) == aExpr[j].prereqRight:
-        #             iColumn = aExpr[j].p.pLeft.iColumn
-        #             for k in range(pIdx.nColumn):
-        #                 if pIdx.aiColumn[k] == iColumn:
-        #                     columnMask |= 1 << k
-        #                     break
-        #         if aExpr[j].idxRight == idx and (aExpr[j].prereqLeft & loopMask) == aExpr[j].prereqLeft:
-        #             iColumn = aExpr[j].p.pRight.iColumn
-        #             for k in range(pIdx.nColumn):
-        #                 if pIdx.aiColumn[k] == iColumn:
-        #                     columnMask |= 1 << k
-        #                     break
-        #     if columnMask + 1 == (1 << pIdx.nColumn):
-        #         if pBestIdx is None or pBestIdx.nColumn < pIdx.nColumn:
-        #             pBestIdx = pIdx
-        #     pIdx = pIdx.pNext
+            columnMask = 0
+            for j in range(nExpr):
+                if aExpr[j].idxLeft == idx and (aExpr[j].prereqRight & loopMask) == aExpr[j].prereqRight:
+                    iColumn = aExpr[j].p.pLeft.iColumn
+                    for k in range(pIdx.nColumn):
+                        if pIdx.aiColumn[k] == iColumn:
+                            columnMask |= 1 << k
+                            break
+                if aExpr[j].idxRight == idx and (aExpr[j].prereqLeft & loopMask) == aExpr[j].prereqLeft:
+                    iColumn = aExpr[j].p.pRight.iColumn
+                    for k in range(pIdx.nColumn):
+                        if pIdx.aiColumn[k] == iColumn:
+                            columnMask |= 1 << k
+                            break
+            if columnMask + 1 == (1 << pIdx.nColumn):
+                if pBestIdx is None or pBestIdx.nColumn < pIdx.nColumn:
+                    pBestIdx = pIdx
+            pIdx = pIdx.pNext
 
         aIdx[i] = pBestIdx
         loopMask |= 1 << idx
@@ -133,31 +133,31 @@ def whereBegin(pParse : Parse, pTabList : IdList, pWhere : Expr, pushKey : int):
         if pIdx is None:
             v.addOp(OP_Next, base + idx, brk, 0, cont)
             haveKey = False
-        # else:
-        #     for j in range(pIdx.nColumn):
-        #         for k in range(nExpr):
-        #             if aExpr[k].p is None:
-        #                 continue
-        #             if (aExpr[k].idxLeft == idx and
-        #                 (aExpr[k].prereqRight & loopMask) == aExpr[k].prereqRight and
-        #                 aExpr[k].p.pLeft.iColumn == pIdx.aiColumn[j]):
-        #                 sqliteExprCode(pParse, aExpr[k].p.pRight)
-        #                 aExpr[k].p = None
-        #                 break
-        #             if (aExpr[k].idxRight == idx and
-        #                 (aExpr[k].prereqLeft & loopMask) == aExpr[k].prereqLeft and
-        #                 aExpr[k].p.pRight.iColumn == pIdx.aiColumn[j]):
-        #                 sqliteExprCode(pParse, aExpr[k].p.pLeft)
-        #                 aExpr[k].p = None
-        #                 break
-        #     sqliteVdbeAddOp(v, OP_MakeKey, pIdx.nColumn, 0, 0, 0)
-        #     sqliteVdbeAddOp(v, OP_Fetch, base + pTabList.nId + i, 0, 0, 0)
-        #     sqliteVdbeAddOp(v, OP_NextIdx, base + pTabList.nId + i, brk, 0, cont)
-        #     if i == pTabList.nId - 1 and pushKey:
-        #         haveKey = True
-        #     else:
-        #         sqliteVdbeAddOp(v, OP_Fetch, idx, 0, 0, 0)
-        #         haveKey = False
+        else:
+            for j in range(pIdx.nColumn):
+                for k in range(nExpr):
+                    if aExpr[k].p is None:
+                        continue
+                    if (aExpr[k].idxLeft == idx and
+                        (aExpr[k].prereqRight & loopMask) == aExpr[k].prereqRight and
+                        aExpr[k].p.pLeft.iColumn == pIdx.aiColumn[j]):
+                        exprCode(pParse, aExpr[k].p.pRight)
+                        aExpr[k].p = None
+                        break
+                    if (aExpr[k].idxRight == idx and
+                        (aExpr[k].prereqLeft & loopMask) == aExpr[k].prereqLeft and
+                        aExpr[k].p.pRight.iColumn == pIdx.aiColumn[j]):
+                        exprCode(pParse, aExpr[k].p.pLeft)
+                        aExpr[k].p = None
+                        break
+            v.addOp(OP_MakeKey, pIdx.nColumn, 0, None, 0)
+            v.addOp(OP_Fetch, base + pTabList.nId + i, 0, None, 0)
+            v.addOp(OP_NextIdx, base + pTabList.nId + i, brk, None, cont)
+            if i == pTabList.nId - 1 and pushKey:
+                haveKey = True
+            else:
+                v.addOp(OP_Fetch, idx, 0, None, 0)
+                haveKey = False
 
         loopMask |= 1 << idx
 
